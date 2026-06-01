@@ -3310,7 +3310,7 @@ export default function App() {
     <div className="relative h-screen overflow-hidden bg-gray-50 flex flex-col md:flex-row">
       {/* Admin Quick Access Control Button */}
       {appUser?.role === 'admin' && (
-        <div className="fixed bottom-6 left-6 z-[60] flex flex-col items-start gap-4 pointer-events-none">
+        <div className="fixed bottom-36 left-6 z-[60] flex flex-col items-start gap-4 pointer-events-none">
           <AnimatePresence>
             {users.some(u => u.status === 'pending') && (
               <motion.div
