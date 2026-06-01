@@ -65,7 +65,14 @@ service cloud.firestore {
     function isValidUser(data) {
       return data.keys().hasAll(['email', 'role']) &&
              data.email is string && data.email.size() <= 200 &&
-             data.role in ['admin', 'user'];
+             data.role in ['admin', 'user'] &&
+             (!('status' in data) || data.status in ['pending', 'approved', 'blocked']) &&
+             (!('requestAt' in data) || data.requestAt is timestamp || data.requestAt == null) &&
+             (!('approvedAt' in data) || data.approvedAt is timestamp || data.approvedAt == null) &&
+             (!('rejectedAt' in data) || data.rejectedAt is timestamp || data.rejectedAt == null) &&
+             (!('handledByEmail' in data) || data.handledByEmail is string) &&
+             (!('handledByUid' in data) || data.handledByUid is string) &&
+             (!('createdAt' in data) || data.createdAt is timestamp);
     }
 
     function isValidMinistry(data) {
@@ -140,8 +147,14 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isSignedIn() && (isAdmin() || request.auth.uid == userId);
       allow list: if isAdmin();
-      allow create: if isEmailVerified() && (request.auth.uid == userId || isAdmin()) && isValidUser(incoming());
-      allow update: if isAdmin() && isValidUser(incoming());
+      allow create: if isEmailVerified() && (
+        isAdmin() || 
+        (request.auth.uid == userId && incoming().role == 'user')
+      ) && isValidUser(incoming());
+      allow update: if isEmailVerified() && (
+        isAdmin() || 
+        (request.auth.uid == userId && incoming().status == 'pending' && incoming().role == existing().role && incoming().email == existing().email)
+      ) && isValidUser(incoming());
       allow delete: if isAdmin();
     }
 

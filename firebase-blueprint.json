@@ -59,6 +59,12 @@
       "properties": {
         "email": { "type": "string", "format": "email" },
         "role": { "type": "string", "enum": ["admin", "user"] },
+        "status": { "type": "string", "enum": ["pending", "approved", "blocked"] },
+        "requestAt": { "type": "string", "format": "date-time" },
+        "approvedAt": { "type": "string", "format": "date-time" },
+        "rejectedAt": { "type": "string", "format": "date-time" },
+        "handledByEmail": { "type": "string" },
+        "handledByUid": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["email", "role"]

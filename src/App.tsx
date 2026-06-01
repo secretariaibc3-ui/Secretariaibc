@@ -1326,11 +1326,24 @@ export default function App() {
           unsubscribeUserDoc = onSnapshot(doc(db, 'users', firebaseUser.uid), async (snapshot) => {
             if (snapshot.exists()) {
               const userData = snapshot.data();
-              // Migração: Se o usuário existe mas não tem status, e era admin, aprova automaticamente
+              const defaultAdmins = ['secretariaibc3@gmail.com', 'secretaria1@gmail.com'];
+              const isDefaultAdmin = firebaseUser.email && defaultAdmins.includes(firebaseUser.email);
+              
+              // Migração: Se o usuário existe mas não tem status, aprova automaticamente se for admin ou default admin
               if (!userData.status) {
-                const status = userData.role === 'admin' ? 'approved' : 'pending';
-                await updateDoc(doc(db, 'users', firebaseUser.uid), { status });
-                setAppUser({ id: snapshot.id, ...userData, status } as AppUser);
+                const status = (userData.role === 'admin' || isDefaultAdmin) ? 'approved' : 'pending';
+                const role = isDefaultAdmin ? 'admin' : userData.role;
+                
+                try {
+                  await updateDoc(doc(db, 'users', firebaseUser.uid), { status, role });
+                  setAppUser({ id: snapshot.id, ...userData, status, role } as AppUser);
+                } catch (e) {
+                  console.error("Migration error:", e);
+                  setAppUser({ id: snapshot.id, ...userData, status: 'approved', role: 'admin' } as AppUser); // Fallback local
+                }
+              } else if (isDefaultAdmin && (userData.role !== 'admin' || userData.status !== 'approved')) {
+                // Force admin stay approved
+                await updateDoc(doc(db, 'users', firebaseUser.uid), { status: 'approved', role: 'admin' });
               } else {
                 setAppUser({ id: snapshot.id, ...userData } as AppUser);
               }
@@ -2928,6 +2941,18 @@ export default function App() {
     });
   }, [members, searchQuery, memberStatusFilter]);
 
+  const filteredNavItems = useMemo(() => {
+    if (appUser?.role === 'admin') return sideNavItems;
+    return sideNavItems.filter(item => item.id !== 'adm');
+  }, [sideNavItems, appUser?.role]);
+
+  // Handle unauthorized tab access
+  useEffect(() => {
+    if (appUser?.role === 'user' && activeTab === 'adm') {
+      setActiveTab('members');
+    }
+  }, [appUser?.role, activeTab]);
+
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -3039,8 +3064,6 @@ export default function App() {
   if (loading) {
     return <SplashScreen />;
   }
-
-  console.log("App render:", { hasUser: !!user, hasAppUser: !!appUser, activeTab });
 
   // Pending/Blocked Access Screen
   if (appUser && appUser.status !== 'approved') {
@@ -3280,19 +3303,6 @@ export default function App() {
       </div>
     );
   }
-
-
-  const filteredNavItems = useMemo(() => {
-    if (appUser?.role === 'admin') return sideNavItems;
-    return sideNavItems.filter(item => item.id !== 'adm');
-  }, [sideNavItems, appUser?.role]);
-
-  // Handle unauthorized tab access
-  useEffect(() => {
-    if (appUser?.role === 'user' && activeTab === 'adm') {
-      setActiveTab('members');
-    }
-  }, [appUser?.role, activeTab]);
 
   return (
     <div className="relative h-screen overflow-hidden bg-gray-50 flex flex-col md:flex-row">
