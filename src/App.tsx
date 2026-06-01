@@ -568,7 +568,7 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg" }: { is
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-2 sm:p-6 overflow-hidden">
           {/* Overlay - Synchronized with Content */}
           <motion.div 
             initial={{ opacity: 0 }}
@@ -592,11 +592,11 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg" }: { is
             }}
             style={{ backgroundColor: `rgba(255, 255, 255, calc(var(--glass-opacity, 80) / 100))` }}
             className={cn(
-              "relative backdrop-blur-2xl rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl w-full border border-white/40 flex flex-col max-h-[90vh] overflow-hidden",
+              "relative backdrop-blur-2xl rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl w-full border border-white/40 flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden",
               maxWidth
             )}
           >
-            <div className="flex items-center justify-between p-5 sm:p-6 pb-2 shrink-0">
+            <div className="flex items-center justify-between p-3 sm:p-6 pb-1 sm:pb-2 shrink-0">
               <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight">{title}</h3>
               <button 
                 onClick={onClose} 
@@ -605,7 +605,7 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg" }: { is
                 <X className="w-5 h-5 text-gray-400" />
               </button>
             </div>
-            <div className="p-5 sm:p-8 pt-2 sm:pt-4 overflow-y-auto custom-scrollbar flex-1 overscroll-contain">
+            <div className="p-3 sm:p-8 pt-1 sm:pt-4 overflow-y-auto custom-scrollbar flex-1 overscroll-contain">
               {children}
             </div>
           </motion.div>
@@ -3600,7 +3600,7 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
-        <header className="px-4 sm:px-8 pt-4 sm:pt-12 pb-4 sm:pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-0 z-20 transition-all glass-header">
+        <header className="px-4 sm:px-8 pt-2 sm:pt-12 pb-2 sm:pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-0 z-20 transition-all glass-header">
           <div className="flex items-center">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
@@ -3737,17 +3737,17 @@ export default function App() {
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto px-4 sm:px-8 pb-12 relative">
           {activeTab === 'members' ? (
-            <div className="max-w-6xl mx-auto space-y-6">
+            <div className="max-w-6xl mx-auto space-y-3 sm:space-y-6">
               {/* Sticky Header Section */}
-              <div className="sticky top-0 bg-[#FBFBFB]/80 backdrop-blur-md z-20 pt-2 pb-4 space-y-3 -mx-4 sm:-mx-8 px-4 sm:px-8 border-b border-gray-100">
+              <div className="sticky top-0 bg-[#FBFBFB]/80 backdrop-blur-md z-20 pt-1 pb-2 space-y-2 sm:space-y-3 -mx-4 sm:-mx-8 px-4 sm:px-8 border-b border-gray-100">
                 {/* Member Stats Cards & Search */}
-                <div className="flex flex-col lg:flex-row lg:items-center gap-3 sm:gap-4">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-2 sm:gap-4">
                   {/* Status Cards - Horizontal on Mobile */}
                   <div className="flex flex-row overflow-x-auto pb-1 sm:pb-0 gap-2 sm:gap-4 flex-1 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
                     <button 
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'active' ? 'all' : 'active')}
                       className={cn(
-                        "glass-card p-3 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2.5 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
+                        "glass-card p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
                         memberStatusFilter === 'active' ? "border-green-500 ring-4 ring-green-50 bg-green-50/50" : "hover:border-green-200"
                       )}
                     >
@@ -3765,7 +3765,7 @@ export default function App() {
                     <button 
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'absent' ? 'all' : 'absent')}
                       className={cn(
-                        "glass-card p-3 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2.5 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
+                        "glass-card p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
                         memberStatusFilter === 'absent' ? "border-orange-500 ring-4 ring-orange-50 bg-orange-50/50" : "hover:border-orange-200"
                       )}
                     >
@@ -3783,7 +3783,7 @@ export default function App() {
                     <button 
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'inactive' ? 'all' : 'inactive')}
                       className={cn(
-                        "bg-white p-3 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2.5 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
+                        "bg-white p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
                         memberStatusFilter === 'inactive' ? "border-red-500 ring-4 ring-red-50" : "border-gray-100 hover:border-red-200"
                       )}
                     >
@@ -3801,7 +3801,7 @@ export default function App() {
                   </div>
 
                   {/* Expandable Search bar */}
-                  <div className="relative flex items-center h-12 sm:h-14 w-full sm:w-80 lg:w-96 justify-start">
+                  <div className="relative flex items-center h-10 sm:h-14 w-full sm:w-80 lg:w-96 justify-start">
                     <motion.div 
                       layout
                       initial={false}
@@ -3809,7 +3809,7 @@ export default function App() {
                         "flex items-center h-full glass-card transition-all duration-300 overflow-hidden",
                         isSearchExpanded || window.innerWidth >= 640 
                           ? "w-full rounded-2xl sm:rounded-3xl pr-4 border-ibc-teal/20" 
-                          : "w-12 rounded-2xl"
+                          : "w-10 rounded-2xl"
                       )}
                     >
                       <button 
@@ -3865,7 +3865,7 @@ export default function App() {
               )}
 
               {/* Member List */}
-              <div className="space-y-2 max-w-5xl mx-auto">
+              <div className="space-y-1.5 sm:space-y-2 max-w-5xl mx-auto">
                 <AnimatePresence mode="popLayout">
                   {filteredMembers.map((member) => (
                     <motion.div
@@ -3881,7 +3881,7 @@ export default function App() {
                       key={member.id}
                       onClick={() => { setSelectedMember(member); setIsViewMemberModalOpen(true); }}
                       className={cn(
-                        "glass-card p-3 sm:p-4 rounded-2xl sm:rounded-3xl border flex flex-col sm:flex-row items-stretch sm:items-center justify-between transition-all duration-300 cursor-pointer group hover:shadow-2xl hover:shadow-gray-200/50 gap-4",
+                        "glass-card p-2 sm:p-4 rounded-2xl sm:rounded-3xl border flex flex-col sm:flex-row items-stretch sm:items-center justify-between transition-all duration-300 cursor-pointer group hover:shadow-2xl hover:shadow-gray-200/50 gap-2 sm:gap-4",
                         member.isActive && !member.isAbsent && "border-green-100/50",
                         !member.isActive && "border-red-200/50 bg-red-100/40",
                         member.isActive && member.isAbsent && "border-orange-300/50 bg-orange-100/40",
@@ -3916,7 +3916,7 @@ export default function App() {
                             <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-300" />
                           )}
                         </div>
-                        <div className="flex-1 min-w-0 py-1">
+                        <div className="flex-1 min-w-0 py-0 sm:py-1">
                           <div className="flex items-start justify-between gap-2 overflow-hidden">
                             <h4 className="text-base sm:text-lg font-black text-gray-900 tracking-tight leading-tight mb-1 truncate flex-1">
                               {member.name}
@@ -3943,15 +3943,15 @@ export default function App() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-50 mt-1 sm:mt-0" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-1">
+                      <div className="flex items-center justify-between sm:justify-end gap-1 sm:gap-2 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-gray-50 mt-0.5 sm:mt-0" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 sm:py-1">
                           <button 
                             onClick={(e) => { 
                               e.stopPropagation();
                               handleToggleAbsent(member.id, !!member.isAbsent);
                             }}
                             className={cn(
-                              "flex items-center px-1.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap",
+                              "flex items-center px-1.5 py-1 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap",
                               member.isAbsent ? "text-orange-500 bg-orange-50" : "text-gray-400 bg-gray-50 hover:bg-orange-50 hover:text-orange-500"
                             )}
                           >
@@ -3970,7 +3970,7 @@ export default function App() {
                               setNewFunctionValue("");
                               setIsEditMemberModalOpen(true); 
                             }}
-                            className="flex items-center px-1.5 py-1.5 sm:px-3 sm:py-2 bg-gray-50 text-gray-400 hover:text-ibc-blue hover:bg-ibc-blue/5 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
+                            className="flex items-center px-1.5 py-1 sm:px-3 sm:py-2 bg-gray-50 text-gray-400 hover:text-ibc-blue hover:bg-ibc-blue/5 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
                           >
                             <Edit2 className="w-2.5 sm:w-3.5 h-2.5 sm:h-3.5 mr-1 sm:mr-1.5" />
                             <span>Editar</span>
@@ -3983,7 +3983,7 @@ export default function App() {
                               {member.isActive ? (
                                 <button 
                                   onClick={() => { setSelectedMember(member); setIsDeactivateModalOpen(true); }}
-                                  className="flex items-center px-2 py-1.5 sm:px-3 sm:py-2 bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
+                                  className="flex items-center px-2 py-1 sm:px-3 sm:py-2 bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
                                 >
                                   <UserMinus className="w-3 sm:w-3.5 h-3 sm:h-3.5 mr-1 sm:mr-1.5" />
                                   Negativo
@@ -4009,7 +4009,7 @@ export default function App() {
                                       }
                                     );
                                   }}
-                                  className="flex items-center px-2 py-1.5 sm:px-3 sm:py-2 bg-ibc-teal/5 text-ibc-teal hover:bg-ibc-teal/10 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
+                                  className="flex items-center px-2 py-1 sm:px-3 sm:py-2 bg-ibc-teal/5 text-ibc-teal hover:bg-ibc-teal/10 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
                                 >
                                   <UserPlus className="w-3 sm:w-3.5 h-3 sm:h-3.5 mr-1 sm:mr-1.5" />
                                   Ativar
@@ -4042,7 +4042,7 @@ export default function App() {
                                   }
                                 );
                               }}
-                              className="flex items-center px-2 py-1.5 sm:px-3 sm:py-2 bg-red-50 text-gray-400 hover:text-red-600 hover:bg-red-100 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
+                              className="flex items-center px-2 py-1 sm:px-3 sm:py-2 bg-red-50 text-gray-400 hover:text-red-600 hover:bg-red-100 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
                             >
                               <Trash2 className="w-3 sm:w-3.5 h-3 sm:h-3.5 mr-1 sm:mr-1.5" />
                               Excluir
@@ -4067,8 +4067,8 @@ export default function App() {
               )}
             </div>
           ) : activeTab === 'ministries' ? (
-            <div className="max-w-6xl mx-auto space-y-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="max-w-6xl mx-auto space-y-4 sm:space-y-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                 <AnimatePresence mode="popLayout">
                   {ministries.map((m, idx) => (
                     <motion.div
@@ -4079,7 +4079,7 @@ export default function App() {
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ delay: idx * 0.05 }}
                       onClick={() => { setSelectedMinistry(m); setIsMinistryMembersModalOpen(true); }}
-                      className="p-4 sm:p-6 rounded-3xl border border-white/20 shadow-lg hover:shadow-2xl hover:shadow-gray-200/50 transition-all duration-500 group relative overflow-hidden cursor-pointer h-40 sm:h-48 flex flex-col justify-end active:scale-[0.98]"
+                      className="p-3 sm:p-6 rounded-3xl border border-white/20 shadow-lg hover:shadow-2xl hover:shadow-gray-200/50 transition-all duration-500 group relative overflow-hidden cursor-pointer h-32 sm:h-48 flex flex-col justify-end active:scale-[0.98]"
                       style={{ backgroundColor: `${m.color}cc`, backdropFilter: 'blur(20px)' }}
                     >
                       <div className="relative z-10 overflow-hidden">
@@ -4132,10 +4132,10 @@ export default function App() {
               )}
             </div>
           ) : activeTab === 'assembleia' ? (
-            <div className="max-w-6xl mx-auto space-y-8">
+            <div className="max-w-6xl mx-auto space-y-4 sm:space-y-8">
               {/* Quick Actions for Reuniões */}
               {appUser?.role === 'admin' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -4143,7 +4143,7 @@ export default function App() {
                       setPhotoPreview(null);
                       setIsAddAtaModalOpen(true);
                     }}
-                    className="bg-ibc-teal/5 p-6 rounded-3xl border-2 border-dashed border-ibc-teal/20 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-ibc-teal/10 transition-all group h-full min-h-[160px]"
+                    className="bg-ibc-teal/5 p-4 sm:p-6 rounded-3xl border-2 border-dashed border-ibc-teal/20 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-ibc-teal/10 transition-all group h-full min-h-[120px] sm:min-h-[160px]"
                   >
                     <div className="w-12 h-12 rounded-2xl bg-ibc-teal text-white flex items-center justify-center mb-4 shadow-lg shadow-ibc-teal/20 group-hover:scale-110 transition-transform">
                       <Plus className="w-6 h-6" />
@@ -4156,7 +4156,7 @@ export default function App() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     onClick={() => setIsAddPresencaModalOpen(true)}
-                    className="bg-ibc-teal/5 p-6 rounded-3xl border-2 border-dashed border-ibc-teal/20 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-ibc-teal/10 transition-all group h-full min-h-[160px]"
+                    className="bg-ibc-teal/5 p-4 sm:p-6 rounded-3xl border-2 border-dashed border-ibc-teal/20 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-ibc-teal/10 transition-all group h-full min-h-[120px] sm:min-h-[160px]"
                   >
                     <div className="w-12 h-12 rounded-2xl bg-ibc-teal text-white flex items-center justify-center mb-4 shadow-lg shadow-ibc-teal/20 group-hover:scale-110 transition-transform">
                       <Plus className="w-6 h-6" />
@@ -4193,7 +4193,7 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                 <AnimatePresence mode="popLayout">
                   {/* Render Atas for current sub-tab */}
                   {atas.filter(a => {
@@ -4208,7 +4208,7 @@ export default function App() {
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ delay: idx * 0.05 }}
                       onClick={() => { setSelectedAta(ata); setIsViewAtaModalOpen(true); }}
-                      className="glass-card p-6 rounded-[2.5rem] border border-gray-100/50 shadow-sm hover:shadow-2xl hover:shadow-gray-200/40 transition-all duration-500 group relative cursor-pointer active:scale-[0.99]"
+                      className="glass-card p-4 sm:p-6 rounded-[2.5rem] border border-gray-100/50 shadow-sm hover:shadow-2xl hover:shadow-gray-200/40 transition-all duration-500 group relative cursor-pointer active:scale-[0.99]"
                     >
                       <div className="flex items-center space-x-4">
                         <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-ibc-blue bg-ibc-blue/10 shadow-sm">
@@ -4272,7 +4272,7 @@ export default function App() {
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ delay: idx * 0.05 }}
                       onClick={() => { setSelectedPresenca(presenca); setIsViewPresencaModalOpen(true); }}
-                      className="glass-card p-6 rounded-[2.5rem] border border-gray-100/50 shadow-sm hover:shadow-2xl hover:shadow-gray-200/40 transition-all duration-500 group relative cursor-pointer active:scale-[0.99]"
+                      className="glass-card p-4 sm:p-6 rounded-[2.5rem] border border-gray-100/50 shadow-sm hover:shadow-2xl hover:shadow-gray-200/40 transition-all duration-500 group relative cursor-pointer active:scale-[0.99]"
                     >
                       <div className="flex items-center space-x-4">
                         <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-ibc-blue bg-ibc-blue/10 shadow-sm">
@@ -4322,9 +4322,9 @@ export default function App() {
               </div>
             </div>
           ) : activeTab === 'reports' ? (
-            <div className="max-w-6xl mx-auto space-y-6 sm:space-y-10">
+            <div className="max-w-6xl mx-auto space-y-4 sm:space-y-10">
               {/* Reports / Dashboard Section */}
-              <section className="space-y-4 sm:space-y-6">
+              <section className="space-y-3 sm:space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h3 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">Relatórios e Estatísticas</h3>
@@ -4346,11 +4346,11 @@ export default function App() {
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="glass-card p-4 sm:p-6 rounded-[2.5rem] border border-white/40 shadow-sm"
+                    className="glass-card p-3 sm:p-6 rounded-[2.5rem] border border-white/40 shadow-sm"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-ibc-teal/10 flex items-center justify-center text-ibc-teal">
@@ -4552,12 +4552,12 @@ export default function App() {
               </section>
             </div>
           ) : activeTab === 'rh' ? (
-            <div className="max-w-6xl mx-auto space-y-10">
+            <div className="max-w-6xl mx-auto space-y-4 sm:space-y-10">
               {/* Filtro Card */}
               <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                 <div 
                   onClick={() => setIsRHFilterCollapsed(!isRHFilterCollapsed)}
-                  className="flex items-center justify-between p-4 sm:p-8 cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between p-3 sm:p-8 cursor-pointer hover:bg-gray-50 transition-colors"
                 >
                   <div>
                     <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight flex items-center">
@@ -4581,8 +4581,8 @@ export default function App() {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                     >
-                      <div className="px-4 sm:px-8 pb-4 sm:pb-8 space-y-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="px-3 sm:px-8 pb-3 sm:pb-8 space-y-3 sm:space-y-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
                           <div>
                             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Filtrar Por</label>
                             <select 
@@ -6817,11 +6817,11 @@ export default function App() {
         maxWidth="max-w-4xl"
       >
         {selectedMember && (
-          <div className="space-y-8">
+          <div className="space-y-4 sm:space-y-8">
             {/* Seção Superior: Nome e Informações Principais Centralizadas */}
             <div className="flex flex-col items-center">
               {/* Foto de Perfil em destaque */}
-              <div className="relative mb-6">
+              <div className="relative mb-3 sm:mb-6">
                 <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white shadow-xl border-4 border-white overflow-hidden flex items-center justify-center ring-4 ring-gray-50">
                   {selectedMember.photoUrl ? (
                     <img 
@@ -6855,7 +6855,7 @@ export default function App() {
               )}
 
               {/* Grid de Informações Horizontais - Centralizado e Responsivo */}
-              <div className="w-full max-w-3xl mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 px-4">
+              <div className="w-full max-w-3xl mt-4 sm:mt-8 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 px-4">
                 <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center text-center">
                   <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Sexo</div>
                   <div className="text-sm font-bold text-gray-700">
@@ -6897,7 +6897,7 @@ export default function App() {
             </div>
 
             {/* Seção Inferior: Detalhes Adicionais em Colunas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4 sm:gap-6 sm:pt-6 border-t border-gray-100">
               {/* Ministérios */}
               <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
                 <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Ministérios</div>
@@ -7000,7 +7000,7 @@ export default function App() {
               )}
             </div>
 
-            <div className="flex space-x-3 pt-6 border-t border-gray-100">
+            <div className="flex space-x-3 pt-4 sm:pt-6 border-t border-gray-100">
               <button 
                 onClick={() => { 
                   setIsViewMemberModalOpen(false); 
