@@ -156,14 +156,14 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if isSignedIn() && (isFullAdmin() || request.auth.uid == userId);
-      allow list: if isFullAdmin();
+      allow get: if isSignedIn() && (isAdmin() || request.auth.uid == userId);
+      allow list: if isAdmin();
       allow create: if isEmailVerified() && (
-        isFullAdmin() || 
+        isAdmin() || 
         (request.auth.uid == userId && incoming().role == 'user')
       ) && isValidUser(incoming());
       allow update: if isEmailVerified() && (
-        isFullAdmin() || 
+        isAdmin() || 
         (request.auth.uid == userId && incoming().status == 'pending' && incoming().role == existing().role && incoming().email == existing().email)
       ) && isValidUser(incoming());
       allow delete: if isFullAdmin();

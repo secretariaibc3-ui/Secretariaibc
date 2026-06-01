@@ -2476,6 +2476,8 @@ export default function App() {
       await setDoc(doc(db, 'users', newUid), {
         email,
         role,
+        status: 'approved',
+        isFullAdmin: role === 'admin',
         createdAt: serverTimestamp()
       });
 
@@ -3374,6 +3376,7 @@ export default function App() {
             await updateDoc(doc(db, 'users', approvingUser.id), { 
               status: 'approved',
               role: role,
+              isFullAdmin: role === 'admin',
               approvedAt: serverTimestamp(),
               handledByEmail: appUser?.email,
               handledByUid: appUser?.id
@@ -5499,7 +5502,10 @@ export default function App() {
                                     onClick={async () => {
                                       const oldData = { ...u };
                                       const newRole = u.role === 'admin' ? 'user' : 'admin';
-                                      await updateDoc(doc(db, 'users', u.id), { role: newRole });
+                                      await updateDoc(doc(db, 'users', u.id), { 
+                                        role: newRole,
+                                        isFullAdmin: newRole === 'admin'
+                                      });
                                       triggerUndo({
                                         type: 'update',
                                         collection: 'users',
@@ -5610,7 +5616,10 @@ export default function App() {
                             onClick={async () => {
                               const oldData = { ...u };
                               const newRole = u.role === 'admin' ? 'user' : 'admin';
-                              await updateDoc(doc(db, 'users', u.id), { role: newRole });
+                              await updateDoc(doc(db, 'users', u.id), { 
+                                role: newRole,
+                                isFullAdmin: newRole === 'admin'
+                              });
                               triggerUndo({
                                 type: 'update',
                                 collection: 'users',
