@@ -110,8 +110,8 @@ async function startServer() {
 
   // Dynamic PWA Manifest Route
   app.get('/api/manifest', (req, res) => {
-    const iconUrl = req.query.icon as string || 'https://firebasestorage.googleapis.com/v0/b/igreja-batista-coqueiral.appspot.com/o/assets%2Flogo_ibc.png?alt=media';
-    const userName = req.query.name as string || 'IBC App';
+    const iconUrl = req.query.icon as string || '/logo-secretariaibc.png';
+    const userName = req.query.name as string || 'Secretaria IBC';
     const themeColor = "#0d9488";
 
     // Standard PWA icon sizes
@@ -134,9 +134,9 @@ async function startServer() {
 
     const manifest = {
       id: "/",
-      name: `IBC - ${userName}`,
+      name: userName === 'Secretaria IBC' ? 'Secretaria IBC' : `IBC - ${userName}`,
       short_name: userName,
-      description: "Sistema de Gestão IBC",
+      description: "Sistema de Secretaria e Gestão da Igreja Batista Coqueiral",
       start_url: "/",
       scope: "/",
       display: "standalone",

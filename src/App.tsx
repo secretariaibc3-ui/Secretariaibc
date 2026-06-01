@@ -809,7 +809,7 @@ export default function App() {
   // Dynamic PWA Update Effect
   useEffect(() => {
     const updateDynamicMetadata = () => {
-      const logoUrl = appSettings.logoUrl || 'https://firebasestorage.googleapis.com/v0/b/igreja-batista-coqueiral.appspot.com/o/assets%2Flogo_ibc.png?alt=media';
+      const logoUrl = appSettings.logoUrl || '/logo-secretariaibc.png';
       const appName = appSettings.appName || 'Secretaria IBC';
       
       // Update Manifest Link
@@ -863,7 +863,7 @@ export default function App() {
   useEffect(() => {
     // Current user name and photo
     const displayName = user?.displayName || 'IBC';
-    const profilePhoto = user?.photoURL || appSettings.logoUrl || 'https://firebasestorage.googleapis.com/v0/b/igreja-batista-coqueiral.appspot.com/o/assets%2Flogo_ibc.png?alt=media';
+    const profilePhoto = user?.photoURL || appSettings.logoUrl || '/logo-secretariaibc.png';
     
     // Update the manifest link dynamically
     const manifestLink = document.getElementById('pwa-manifest') as HTMLLinkElement;
