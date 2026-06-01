@@ -61,7 +61,8 @@ import {
   Scale,
   BookOpen,
   FileUp,
-  GripVertical
+  GripVertical,
+  ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'motion/react';
 import SplashScreen from './components/SplashScreen';
@@ -333,6 +334,12 @@ interface AppUser {
   id: string;
   email: string;
   role: 'admin' | 'user';
+  status?: 'pending' | 'approved' | 'blocked';
+  requestAt?: any;
+  approvedAt?: any;
+  rejectedAt?: any;
+  handledByEmail?: string;
+  handledByUid?: string;
   createdAt: any;
 }
 
@@ -437,6 +444,123 @@ const SidebarItem = ({
       </div>
     )}
   </div>
+);
+
+const AccessControlModal = ({ 
+  isOpen, 
+  onClose, 
+  pendingUsers, 
+  onStartApproval, 
+  onReject 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  pendingUsers: AppUser[]; 
+  onStartApproval: (user: AppUser) => void;
+  onReject: (id: string, email: string) => void;
+}) => (
+  <Modal isOpen={isOpen} onClose={onClose} title="Solicitações de Acesso" maxWidth="max-w-md">
+    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+      {pendingUsers.length === 0 ? (
+        <div className="text-center py-10">
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check className="w-8 h-8" />
+          </div>
+          <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Nenhuma solicitação pendente</p>
+        </div>
+      ) : (
+        pendingUsers.map((user) => (
+          <motion.div 
+            key={user.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white border border-gray-100 p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group"
+          >
+            <div className="flex flex-col gap-1 mb-4">
+              <span className="text-[10px] font-black text-ibc-teal uppercase tracking-[0.2em]">Pendente de Aprovação</span>
+              <h4 className="text-sm font-black text-gray-900 truncate">{user.email}</h4>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                Solicitado em: {user.requestAt?.seconds ? new Date(user.requestAt.seconds * 1000).toLocaleString('pt-BR') : 'Recentemente'}
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => onStartApproval(user)}
+                className="flex-1 bg-emerald-500 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10 active:scale-95"
+              >
+                <Check className="w-3.5 h-3.5" />
+                Aprovar
+              </button>
+              <button
+                onClick={() => onReject(user.id, user.email)}
+                className="flex-1 bg-rose-50 text-rose-500 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-2 active:scale-95"
+              >
+                <X className="w-3.5 h-3.5" />
+                Recusar
+              </button>
+            </div>
+          </motion.div>
+        ))
+      )}
+    </div>
+  </Modal>
+);
+
+const RoleSelectionModal = ({ 
+  user, 
+  isOpen, 
+  onClose, 
+  onConfirm 
+}: { 
+  user: { id: string, email: string } | null;
+  isOpen: boolean; 
+  onClose: () => void; 
+  onConfirm: (role: 'admin' | 'user') => void;
+}) => (
+  <Modal isOpen={isOpen} onClose={onClose} title="Definir Nível de Acesso" maxWidth="max-w-md">
+    <div className="flex flex-col gap-6">
+      <div className="bg-ibc-teal/5 p-4 rounded-2xl border border-ibc-teal/10">
+        <p className="text-[10px] text-ibc-teal font-black uppercase tracking-widest mb-1">Usuário em Aprovação</p>
+        <p className="text-sm font-bold text-gray-900">{user?.email}</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4">
+        <button
+          onClick={() => onConfirm('admin')}
+          className="flex flex-col items-start p-5 rounded-3xl border-2 border-gray-100 hover:border-ibc-teal hover:bg-ibc-teal/[0.02] transition-all group text-left"
+        >
+          <div className="w-10 h-10 bg-ibc-teal/10 text-ibc-teal rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <h4 className="text-sm font-black text-gray-900 mb-1">Administrador</h4>
+          <p className="text-[10px] text-gray-500 font-medium leading-relaxed uppercase tracking-tight">
+            Acesso total ao sistema. Pode cadastrar, editar, excluir e gerenciar usuários.
+          </p>
+        </button>
+
+        <button
+          onClick={() => onConfirm('user')}
+          className="flex flex-col items-start p-5 rounded-3xl border-2 border-gray-100 hover:border-ibc-teal hover:bg-ibc-teal/[0.02] transition-all group text-left"
+        >
+          <div className="w-10 h-10 bg-amber-500/10 text-amber-600 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+            <User className="w-5 h-5" />
+          </div>
+          <h4 className="text-sm font-black text-gray-900 mb-1">Usuário</h4>
+          <p className="text-[10px] text-gray-500 font-medium leading-relaxed uppercase tracking-tight">
+            Acesso limitado. Pode visualizar e editar membros, mas não acessa funções administrativas.
+          </p>
+        </button>
+      </div>
+
+      <button
+        onClick={onClose}
+        className="text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors py-2"
+      >
+        Cancelar
+      </button>
+    </div>
+  </Modal>
 );
 
 const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg" }: { isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; maxWidth?: string }) => {
@@ -776,6 +900,8 @@ export default function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const isReorderingNav = useRef(false);
   const navSaveTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [isAccessControlOpen, setIsAccessControlOpen] = useState(false);
+  const [approvingUser, setApprovingUser] = useState<{ id: string, email: string } | null>(null);
   const [isGalleryPickerOpen, setIsGalleryPickerOpen] = useState(false);
   const [galleryPickerType, setGalleryPickerType] = useState<'member-add' | 'member-edit'>('member-add');
   const [searchQuery, setSearchQuery] = useState('');
@@ -790,7 +916,7 @@ export default function App() {
   const [isViewMemberModalOpen, setIsViewMemberModalOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const publicAppLink = "https://ais-pre-div7x62fok4s5dzdt4hakw-139027147666.us-east1.run.app";
+  const publicAppLink = "https://secretariaibc.vercel.app/";
   const [isAddMinistryModalOpen, setIsAddMinistryModalOpen] = useState(false);
   const [isEditMinistryModalOpen, setIsEditMinistryModalOpen] = useState(false);
   const [isAddAtaModalOpen, setIsAddAtaModalOpen] = useState(false);
@@ -1185,46 +1311,72 @@ export default function App() {
   // Auth
   useEffect(() => {
     console.log("Setting up auth listener...");
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let unsubscribeUserDoc: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
+        if (unsubscribeUserDoc) {
+          unsubscribeUserDoc();
+          unsubscribeUserDoc = null;
+        }
+
         setUser(firebaseUser);
         if (firebaseUser) {
-          // Check if user exists in Firestore
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-          if (userDoc.exists()) {
-            setAppUser({ id: userDoc.id, ...userDoc.data() } as AppUser);
-          } else {
-            // Check if it's the default admin
-            const defaultAdmins = ['secretariaibc3@gmail.com', 'secretaria1@gmail.com'];
-            if (firebaseUser.email && defaultAdmins.includes(firebaseUser.email)) {
-              const newAdmin: Partial<AppUser> = {
-                email: firebaseUser.email,
-                role: 'admin',
-                createdAt: serverTimestamp()
-              };
-              await setDoc(doc(db, 'users', firebaseUser.uid), newAdmin);
-              setAppUser({ id: firebaseUser.uid, ...newAdmin } as AppUser);
+          // Listen to user document in real-time for immediate approval status update
+          unsubscribeUserDoc = onSnapshot(doc(db, 'users', firebaseUser.uid), async (snapshot) => {
+            if (snapshot.exists()) {
+              const userData = snapshot.data();
+              // Migração: Se o usuário existe mas não tem status, e era admin, aprova automaticamente
+              if (!userData.status) {
+                const status = userData.role === 'admin' ? 'approved' : 'pending';
+                await updateDoc(doc(db, 'users', firebaseUser.uid), { status });
+                setAppUser({ id: snapshot.id, ...userData, status } as AppUser);
+              } else {
+                setAppUser({ id: snapshot.id, ...userData } as AppUser);
+              }
+              setLoading(false);
             } else {
-              // Set as admin by default as requested by user
-              const newUser: Partial<AppUser> = {
-                email: firebaseUser.email || '',
-                role: 'admin',
-                createdAt: serverTimestamp()
-              };
-              await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
-              setAppUser({ id: firebaseUser.uid, ...newUser } as AppUser);
+              // Check if it's the default admin
+              const defaultAdmins = ['secretariaibc3@gmail.com', 'secretaria1@gmail.com'];
+              if (firebaseUser.email && defaultAdmins.includes(firebaseUser.email)) {
+                const newAdmin: Partial<AppUser> = {
+                  email: firebaseUser.email,
+                  role: 'admin',
+                  status: 'approved',
+                  createdAt: serverTimestamp()
+                };
+                await setDoc(doc(db, 'users', firebaseUser.uid), newAdmin);
+                setAppUser({ id: firebaseUser.uid, ...newAdmin } as AppUser);
+                setLoading(false);
+              } else {
+                // New user - don't create doc yet, set status to 'none' to show request screen
+                setAppUser({ 
+                  id: firebaseUser.uid, 
+                  email: firebaseUser.email || '', 
+                  role: 'user', 
+                  status: 'none' as any 
+                } as AppUser);
+                setLoading(false);
+              }
             }
-          }
+          }, (error) => {
+            console.error("User doc listener error:", error);
+            setLoading(false);
+          });
         } else {
           setAppUser(null);
+          setLoading(false);
         }
       } catch (error) {
         console.error("Auth status sync error:", error);
-      } finally {
         setLoading(false);
       }
     });
-    return unsubscribe;
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeUserDoc) unsubscribeUserDoc();
+    };
   }, []);
 
   // --- Reports Calculation ---
@@ -1506,6 +1658,27 @@ export default function App() {
       } else {
         setLoginError("Erro ao processar solicitação. Verifique sua conexão.");
       }
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleRequestAccess = async () => {
+    if (!user) return;
+    setIsAuthLoading(true);
+    try {
+      const newUser: Partial<AppUser> = {
+        email: user.email || '',
+        role: 'user',
+        status: 'pending',
+        requestAt: serverTimestamp(),
+        createdAt: serverTimestamp()
+      };
+      await setDoc(doc(db, 'users', user.uid), newUser);
+      setAppUser({ id: user.uid, ...newUser } as AppUser);
+    } catch (error) {
+      console.error("Error requesting access:", error);
+      setLoginError("Erro ao enviar solicitação.");
     } finally {
       setIsAuthLoading(false);
     }
@@ -2869,6 +3042,86 @@ export default function App() {
 
   console.log("App render:", { hasUser: !!user, hasAppUser: !!appUser, activeTab });
 
+  // Pending/Blocked Access Screen
+  if (appUser && appUser.status !== 'approved') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white p-10 rounded-3xl shadow-2xl shadow-gray-200/50 max-w-md w-full border border-gray-100 text-center"
+        >
+          <div className="w-24 h-24 bg-ibc-teal/5 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner overflow-hidden">
+            <img 
+              src={currentLogo} 
+              alt={appSettings.appName} 
+              className="w-full h-full object-contain"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+          
+          <div className="mb-8">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <h2 className="text-xl font-black text-gray-900 mb-2">Acesso Restrito</h2>
+            <p className="text-sm text-gray-500 leading-relaxed font-medium">
+              {(appUser.status as any) === 'none' ? (
+                "Você ainda não possui autorização para acessar este aplicativo. Solicite acesso ao administrador."
+              ) : appUser.status === 'pending' ? (
+                "Sua solicitação está em análise. Você receberá acesso assim que for aprovado pelo administrador."
+              ) : (
+                "Seu acesso foi bloqueado pelo administrador. Entre em contato para mais informações."
+              )}
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {(appUser.status as any) === 'none' && (
+              <button
+                onClick={handleRequestAccess}
+                disabled={isAuthLoading}
+                className={cn(
+                  "w-full bg-ibc-teal text-white py-4 px-6 rounded-2xl font-black uppercase tracking-widest hover:bg-ibc-teal/90 transition-all shadow-xl shadow-ibc-teal/20 active:scale-95 flex items-center justify-center gap-2",
+                  isAuthLoading && "opacity-50 cursor-wait"
+                )}
+              >
+                {isAuthLoading ? (
+                  <RefreshCcw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <UserPlus className="w-4 h-4" />
+                )}
+                Enviar solicitação de acesso
+              </button>
+            )}
+
+            {appUser.status === 'pending' && (
+              <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex items-start gap-3 text-left">
+                <Clock className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div className="flex flex-col">
+                  <p className="text-xs text-amber-700 font-bold leading-tight">
+                    Solicitação enviada.
+                  </p>
+                  <p className="text-[10px] text-amber-600 font-medium">
+                    Aguarde o contato da administração para liberação do acesso.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={handleLogout}
+              className="w-full bg-gray-100 text-gray-600 py-4 px-6 rounded-2xl font-black uppercase tracking-widest hover:bg-gray-200 transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Sair da conta
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6">
@@ -3029,8 +3282,99 @@ export default function App() {
   }
 
 
+  const filteredNavItems = useMemo(() => {
+    if (appUser?.role === 'admin') return sideNavItems;
+    return sideNavItems.filter(item => item.id !== 'adm');
+  }, [sideNavItems, appUser?.role]);
+
+  // Handle unauthorized tab access
+  useEffect(() => {
+    if (appUser?.role === 'user' && activeTab === 'adm') {
+      setActiveTab('members');
+    }
+  }, [appUser?.role, activeTab]);
+
   return (
     <div className="relative h-screen overflow-hidden bg-gray-50 flex flex-col md:flex-row">
+      {/* Admin Quick Access Control Button */}
+      {appUser?.role === 'admin' && (
+        <div className="fixed bottom-6 left-6 z-[60] flex flex-col items-start gap-4 pointer-events-none">
+          <AnimatePresence>
+            {users.some(u => u.status === 'pending') && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="bg-amber-500 text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 flex items-center gap-2 pointer-events-auto"
+              >
+                <div className="w-2 h-2 bg-white rounded-full animate-ping" />
+                {users.filter(u => u.status === 'pending').length} Solicitações Pendentes
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          <button
+            onClick={() => setIsAccessControlOpen(true)}
+            className="w-14 h-14 bg-white text-ibc-teal rounded-2xl shadow-2xl shadow-black/10 border border-gray-100 flex items-center justify-center hover:scale-110 active:scale-95 transition-all pointer-events-auto group relative"
+          >
+            <ShieldCheck className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+            {users.some(u => u.status === 'pending') && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 border-2 border-white rounded-full" />
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Access Control Modal */}
+      <AccessControlModal 
+        isOpen={isAccessControlOpen}
+        onClose={() => setIsAccessControlOpen(false)}
+        pendingUsers={users.filter(u => u.status === 'pending')}
+        onStartApproval={(u) => {
+          setApprovingUser({ id: u.id, email: u.email });
+          setIsAccessControlOpen(false);
+        }}
+        onReject={async (id, email) => {
+          showConfirm(
+            "Recusar Solicitação",
+            `Tem certeza que deseja recusar e bloquear o acesso de ${email}?`,
+            async () => {
+              await updateDoc(doc(db, 'users', id), { 
+                status: 'blocked',
+                rejectedAt: serverTimestamp(),
+                handledByEmail: appUser?.email,
+                handledByUid: appUser?.id
+              });
+              showAlert("Atenção", `Solicitação de ${email} recusada.`);
+            }
+          );
+        }}
+      />
+
+      {/* Role Selection Modal */}
+      <RoleSelectionModal 
+        isOpen={!!approvingUser}
+        onClose={() => setApprovingUser(null)}
+        user={approvingUser}
+        onConfirm={async (role) => {
+          if (!approvingUser) return;
+          try {
+            await updateDoc(doc(db, 'users', approvingUser.id), { 
+              status: 'approved',
+              role: role,
+              approvedAt: serverTimestamp(),
+              handledByEmail: appUser?.email,
+              handledByUid: appUser?.id
+            });
+            showAlert("Sucesso", `${approvingUser.email} foi aprovado como ${role === 'admin' ? 'Administrador' : 'Usuário'}.`);
+            setApprovingUser(null);
+          } catch (error) {
+            console.error("Error approving user:", error);
+            showAlert("Erro", "Não foi possível aprovar o usuário.");
+          }
+        }}
+      />
+
       <AnimatePresence>
         {deferredPrompt && (
           <motion.div 
@@ -3106,11 +3450,13 @@ export default function App() {
 
         <Reorder.Group 
           axis="y" 
-          values={sideNavItems} 
-          onReorder={handleNavReorder}
+          values={filteredNavItems} 
+          onReorder={(newOrder) => {
+            if (appUser?.role === 'admin') handleNavReorder(newOrder);
+          }}
           className="flex-1 px-4 space-y-2 list-none"
         >
-          {sideNavItems.map((item) => (
+          {filteredNavItems.map((item) => (
             <Reorder.Item 
               key={item.id} 
               value={item}
@@ -3199,11 +3545,13 @@ export default function App() {
         </div>
         <Reorder.Group 
           axis="y" 
-          values={sideNavItems} 
-          onReorder={handleNavReorder}
+          values={filteredNavItems} 
+          onReorder={(newOrder) => {
+            if (appUser?.role === 'admin') handleNavReorder(newOrder);
+          }}
           className="p-4 space-y-2 list-none"
         >
-          {sideNavItems.map((item) => (
+          {filteredNavItems.map((item) => (
             <Reorder.Item 
               key={item.id} 
               value={item}
@@ -3342,24 +3690,26 @@ export default function App() {
                 <Download className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
                 <span className="hidden sm:inline">Exportar</span>
               </button>
-              <button 
-                onClick={() => {
-                  setTempMinistryIds([]);
-                  setTempRelationships([]);
-                  setPhotoPreview(null);
-                  setIsAddingNewFunction(false);
-                  setNewFunctionValue("");
-                  setIsAddMemberModalOpen(true);
-                }}
-                className="bg-ibc-teal text-white px-3 py-2.5 sm:px-6 sm:py-3.5 rounded-xl sm:rounded-2xl flex items-center font-bold hover:bg-ibc-teal/90 transition-all shadow-lg shadow-ibc-teal/20 active:scale-95 text-xs whitespace-nowrap"
-              >
-                <Plus className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                <span className="hidden sm:inline">Novo Membro</span>
-                <span className="sm:hidden">Novo</span>
-              </button>
+              {appUser?.role === 'admin' && (
+                <button 
+                  onClick={() => {
+                    setTempMinistryIds([]);
+                    setTempRelationships([]);
+                    setPhotoPreview(null);
+                    setIsAddingNewFunction(false);
+                    setNewFunctionValue("");
+                    setIsAddMemberModalOpen(true);
+                  }}
+                  className="bg-ibc-teal text-white px-3 py-2.5 sm:px-6 sm:py-3.5 rounded-xl sm:rounded-2xl flex items-center font-bold hover:bg-ibc-teal/90 transition-all shadow-lg shadow-ibc-teal/20 active:scale-95 text-xs whitespace-nowrap"
+                >
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+                  <span className="hidden sm:inline">Novo Membro</span>
+                  <span className="sm:hidden">Novo</span>
+                </button>
+              )}
             </div>
           )}
-          {activeTab === 'ministries' && (
+          {activeTab === 'ministries' && appUser?.role === 'admin' && (
             <button 
               onClick={() => {
                 setIsAddMinistryModalOpen(true);
@@ -3616,40 +3966,44 @@ export default function App() {
                         </div>
 
                         <div className="flex items-center gap-1 sm:gap-2 border-l sm:border-none pl-1.5 sm:pl-0 border-gray-100">
-                          {member.isActive ? (
-                            <button 
-                              onClick={() => { setSelectedMember(member); setIsDeactivateModalOpen(true); }}
-                              className="flex items-center px-2 py-1.5 sm:px-3 sm:py-2 bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
-                            >
-                              <UserMinus className="w-3 sm:w-3.5 h-3 sm:h-3.5 mr-1 sm:mr-1.5" />
-                              Negativo
-                            </button>
-                          ) : (
-                            <button 
-                              onClick={() => {
-                                showConfirm(
-                                  'Reativar Membro',
-                                  `Deseja reativar o membro ${member.name}?`,
-                                  async () => {
-                                    try {
-                                      await updateDoc(doc(db, 'members', member.id), { 
-                                        isActive: true, 
-                                        exitDate: deleteField(), 
-                                        exitReason: deleteField(), 
-                                        updatedAt: serverTimestamp() 
-                                      });
-                                    } catch (error) {
-                                      console.error("Reactivate Error:", error);
-                                      showAlert("Erro", "Não foi possível reativar o membro.");
-                                    }
-                                  }
-                                );
-                              }}
-                              className="flex items-center px-2 py-1.5 sm:px-3 sm:py-2 bg-ibc-teal/5 text-ibc-teal hover:bg-ibc-teal/10 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
-                            >
-                              <UserPlus className="w-3 sm:w-3.5 h-3 sm:h-3.5 mr-1 sm:mr-1.5" />
-                              Ativar
-                            </button>
+                          {appUser?.role === 'admin' && (
+                            <>
+                              {member.isActive ? (
+                                <button 
+                                  onClick={() => { setSelectedMember(member); setIsDeactivateModalOpen(true); }}
+                                  className="flex items-center px-2 py-1.5 sm:px-3 sm:py-2 bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
+                                >
+                                  <UserMinus className="w-3 sm:w-3.5 h-3 sm:h-3.5 mr-1 sm:mr-1.5" />
+                                  Negativo
+                                </button>
+                              ) : (
+                                <button 
+                                  onClick={() => {
+                                    showConfirm(
+                                      'Reativar Membro',
+                                      `Deseja reativar o membro ${member.name}?`,
+                                      async () => {
+                                        try {
+                                          await updateDoc(doc(db, 'members', member.id), { 
+                                            isActive: true, 
+                                            exitDate: deleteField(), 
+                                            exitReason: deleteField(), 
+                                            updatedAt: serverTimestamp() 
+                                          });
+                                        } catch (error) {
+                                          console.error("Reactivate Error:", error);
+                                          showAlert("Erro", "Não foi possível reativar o membro.");
+                                        }
+                                      }
+                                    );
+                                  }}
+                                  className="flex items-center px-2 py-1.5 sm:px-3 sm:py-2 bg-ibc-teal/5 text-ibc-teal hover:bg-ibc-teal/10 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
+                                >
+                                  <UserPlus className="w-3 sm:w-3.5 h-3 sm:h-3.5 mr-1 sm:mr-1.5" />
+                                  Ativar
+                                </button>
+                              )}
+                            </>
                           )}
                           {appUser?.role === 'admin' && (
                             <button 
@@ -3768,36 +4122,38 @@ export default function App() {
           ) : activeTab === 'assembleia' ? (
             <div className="max-w-6xl mx-auto space-y-8">
               {/* Quick Actions for Reuniões */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  onClick={() => {
-                    setPhotoPreview(null);
-                    setIsAddAtaModalOpen(true);
-                  }}
-                  className="bg-ibc-teal/5 p-6 rounded-3xl border-2 border-dashed border-ibc-teal/20 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-ibc-teal/10 transition-all group h-full min-h-[160px]"
-                >
-                  <div className="w-12 h-12 rounded-2xl bg-ibc-teal text-white flex items-center justify-center mb-4 shadow-lg shadow-ibc-teal/20 group-hover:scale-110 transition-transform">
-                    <Plus className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-lg font-bold text-ibc-teal">Nova Ata</h3>
-                  <p className="text-xs text-ibc-teal/60 font-medium mt-1">Clique para registrar uma nova reunião</p>
-                </motion.div>
+              {appUser?.role === 'admin' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    onClick={() => {
+                      setPhotoPreview(null);
+                      setIsAddAtaModalOpen(true);
+                    }}
+                    className="bg-ibc-teal/5 p-6 rounded-3xl border-2 border-dashed border-ibc-teal/20 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-ibc-teal/10 transition-all group h-full min-h-[160px]"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-ibc-teal text-white flex items-center justify-center mb-4 shadow-lg shadow-ibc-teal/20 group-hover:scale-110 transition-transform">
+                      <Plus className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-lg font-bold text-ibc-teal">Nova Ata</h3>
+                    <p className="text-xs text-ibc-teal/60 font-medium mt-1">Clique para registrar uma nova reunião</p>
+                  </motion.div>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  onClick={() => setIsAddPresencaModalOpen(true)}
-                  className="bg-ibc-teal/5 p-6 rounded-3xl border-2 border-dashed border-ibc-teal/20 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-ibc-teal/10 transition-all group h-full min-h-[160px]"
-                >
-                  <div className="w-12 h-12 rounded-2xl bg-ibc-teal text-white flex items-center justify-center mb-4 shadow-lg shadow-ibc-teal/20 group-hover:scale-110 transition-transform">
-                    <Plus className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-lg font-bold text-ibc-teal">Nova Lista</h3>
-                  <p className="text-xs text-ibc-teal/60 font-medium mt-1">Clique para registrar uma nova lista de presença</p>
-                </motion.div>
-              </div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    onClick={() => setIsAddPresencaModalOpen(true)}
+                    className="bg-ibc-teal/5 p-6 rounded-3xl border-2 border-dashed border-ibc-teal/20 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-ibc-teal/10 transition-all group h-full min-h-[160px]"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-ibc-teal text-white flex items-center justify-center mb-4 shadow-lg shadow-ibc-teal/20 group-hover:scale-110 transition-transform">
+                      <Plus className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-lg font-bold text-ibc-teal">Nova Lista</h3>
+                    <p className="text-xs text-ibc-teal/60 font-medium mt-1">Clique para registrar uma nova lista de presença</p>
+                  </motion.div>
+                </div>
+              )}
 
               {/* Sub-tabs for Reuniões */}
               <div className="flex flex-wrap items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 w-fit shadow-sm max-w-full">
@@ -5006,13 +5362,25 @@ export default function App() {
                         <tr>
                           <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</th>
                           <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nível</th>
+                          <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                          <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Solicitação</th>
+                          <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Decisão</th>
                           <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
                         {users.map((u) => (
-                          <tr key={u.id} className="hover:bg-gray-50/30 transition-colors">
-                            <td className="px-8 py-5 text-sm font-semibold text-gray-700">{u.email}</td>
+                          <tr key={u.id} className={cn("hover:bg-gray-50/30 transition-colors", u.status === 'pending' && "bg-amber-50/30")}>
+                            <td className="px-8 py-5">
+                              <div className="flex flex-col">
+                                <span className="text-sm font-semibold text-gray-700">{u.email}</span>
+                                {u.status === 'pending' && (
+                                  <span className="mt-1 w-fit inline-flex items-center px-2 py-0.5 rounded text-[8px] font-black bg-amber-100 text-amber-800 uppercase tracking-widest">
+                                    Novo Acesso
+                                  </span>
+                                )}
+                              </div>
+                            </td>
                             <td className="px-8 py-5">
                               <span className={cn(
                                 "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm",
@@ -5021,9 +5389,48 @@ export default function App() {
                                 {u.role}
                               </span>
                             </td>
+                            <td className="px-8 py-5">
+                              <span className={cn(
+                                "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm flex items-center w-fit",
+                                u.status === 'approved' ? "bg-emerald-500 text-white" : 
+                                u.status === 'pending' ? "bg-amber-500 text-white animate-pulse" : "bg-rose-500 text-white"
+                              )}>
+                                {u.status === 'approved' ? <Check className="w-3 h-3 mr-1" /> : u.status === 'pending' ? <Clock className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
+                                {u.status === 'approved' ? 'Aprovado' : u.status === 'blocked' ? 'Bloqueado' : u.status === 'pending' ? 'Pendente' : 'Ativo'}
+                              </span>
+                            </td>
+                            <td className="px-8 py-5">
+                              <p className="text-[10px] font-bold text-gray-500 uppercase">
+                                {u.requestAt?.seconds ? new Date(u.requestAt.seconds * 1000).toLocaleDateString('pt-BR') : '-'}
+                              </p>
+                              <p className="text-[9px] text-gray-400">
+                                {u.requestAt?.seconds ? new Date(u.requestAt.seconds * 1000).toLocaleTimeString('pt-BR') : '-'}
+                              </p>
+                            </td>
+                            <td className="px-8 py-5">
+                              <div className="flex flex-col">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase">
+                                  {u.status === 'approved' && u.approvedAt?.seconds ? new Date(u.approvedAt.seconds * 1000).toLocaleDateString('pt-BR') : 
+                                   u.status === 'blocked' && u.rejectedAt?.seconds ? new Date(u.rejectedAt.seconds * 1000).toLocaleDateString('pt-BR') : '-'}
+                                </p>
+                                {u.handledByEmail && (
+                                  <p className="text-[9px] text-ibc-teal font-medium mt-1 truncate max-w-[120px]" title={u.handledByEmail}>
+                                    Por: {u.handledByEmail.split('@')[0]}
+                                  </p>
+                                )}
+                              </div>
+                            </td>
                             <td className="px-8 py-5 text-right">
                               {appUser?.role === 'admin' && u.email !== 'secretariaibc3@gmail.com' && (
                                 <div className="flex justify-end items-center space-x-4">
+                                  {u.status === 'pending' && (
+                                    <button 
+                                      onClick={() => setApprovingUser({ id: u.id, email: u.email })}
+                                      className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:opacity-70 transition-opacity"
+                                    >
+                                      Aprovar
+                                    </button>
+                                  )}
                                   <button 
                                     onClick={async () => {
                                       const oldData = { ...u };
@@ -5041,6 +5448,27 @@ export default function App() {
                                   >
                                     Mudar para {u.role === 'admin' ? 'User' : 'Admin'}
                                   </button>
+                                  {u.status === 'approved' ? (
+                                    <button 
+                                      onClick={async () => {
+                                        await updateDoc(doc(db, 'users', u.id), { status: 'blocked' });
+                                        showAlert("Atenção", `Acesso de ${u.email} bloqueado.`);
+                                      }}
+                                      className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:opacity-70 transition-opacity"
+                                    >
+                                      Bloquear
+                                    </button>
+                                  ) : u.status === 'blocked' ? (
+                                    <button 
+                                      onClick={async () => {
+                                        await updateDoc(doc(db, 'users', u.id), { status: 'approved' });
+                                        showAlert("Sucesso", `Acesso de ${u.email} restaurado.`);
+                                      }}
+                                      className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:opacity-70 transition-opacity"
+                                    >
+                                      Desbloquear
+                                    </button>
+                                  ) : null}
                                   <button 
                                     onClick={() => {
                                       showConfirm(
