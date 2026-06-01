@@ -1,0 +1,39 @@
+{
+  "id": "/",
+  "name": "Secretaria IBC",
+  "short_name": "Sec. IBC",
+  "description": "Sistema de Secretaria e Gestão IBC Coqueiral",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0D9488",
+  "orientation": "portrait",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/igreja-batista-coqueiral.appspot.com/o/assets%2Flogo_ibc.png?alt=media",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/igreja-batista-coqueiral.appspot.com/o/assets%2Flogo_ibc.png?alt=media",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/igreja-batista-coqueiral.appspot.com/o/assets%2Flogo_ibc.png?alt=media",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/igreja-batista-coqueiral.appspot.com/o/assets%2Flogo_ibc.png?alt=media",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

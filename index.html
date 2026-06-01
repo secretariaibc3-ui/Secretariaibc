@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secretaria IBC</title>
+    <script>
+      window.onerror = function(message, source, lineno, colno, error) {
+        const errorMsg = document.createElement('div');
+        errorMsg.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:white;color:red;padding:20px;z-index:99999;overflow:auto;font-family:monospace;';
+        errorMsg.innerHTML = '<h1>Runtime Error</h1><p>' + message + '</p><p>at ' + source + ':' + lineno + ':' + colno + '</p><pre>' + (error ? error.stack : '') + '</pre>';
+        document.body.appendChild(errorMsg);
+        return false;
+      };
+    </script>
+    <link id="pwa-manifest" rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0D9488" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Secretaria IBC" />
+    <link rel="apple-touch-icon" href="https://firebasestorage.googleapis.com/v0/b/igreja-batista-coqueiral.appspot.com/o/assets%2Flogo_ibc.png?alt=media" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

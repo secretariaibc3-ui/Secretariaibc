@@ -1,0 +1,198 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.uid == "q2qRJ6sgAEevGST5Cc3xJ03ks2H2" ||
+        (request.auth.token.email != null && request.auth.token.email.lower() == "secretariaibc3@gmail.com") ||
+        (request.auth.token.email != null && request.auth.token.email.lower() == "secretaria1@gmail.com") ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // ===============================================================
+    // Validation Blueprints
+    // ===============================================================
+
+    function isValidMember(data) {
+      return data.keys().hasAll(['name', 'function', 'isActive']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             data.function is string && data.function.size() > 0 && data.function.size() <= 200 &&
+             data.isActive is bool &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 800000)) &&
+             (!('birthDate' in data) || data.birthDate is string) &&
+             (!('startDate' in data) || data.startDate is string) &&
+             (!('gender' in data) || data.gender in ['Homem', 'Mulher']) &&
+             (!('isAbsent' in data) || data.isAbsent is bool) &&
+             (!('ministryIds' in data) || data.ministryIds is list) &&
+             (!('ministries' in data) || data.ministries is list) &&
+             (!('relationships' in data) || data.relationships is list) &&
+             (!('exitDate' in data) || data.exitDate is string) &&
+             (!('exitReason' in data) || data.exitReason is string) &&
+             (!('createdAt' in data) || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'role']) &&
+             data.email is string && data.email.size() <= 200 &&
+             data.role in ['admin', 'user'];
+    }
+
+    function isValidMinistry(data) {
+      return data.keys().hasAll(['name', 'color']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.color is string && data.color.matches("^#[0-9a-fA-F]{6}$") &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 800000));
+    }
+
+    function isValidAta(data) {
+      return data.keys().hasAll(['number', 'date', 'content']) &&
+             data.number is string && data.number.size() > 0 && data.number.size() <= 50 &&
+             data.date is string &&
+             data.content is string && data.content.size() > 0 && data.content.size() <= 100000 &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 800000));
+    }
+
+    function isValidPresenca(data) {
+      return data.keys().hasAll(['ataNumber', 'date']) &&
+             data.ataNumber is string && data.ataNumber.size() > 0 &&
+             data.date is string;
+    }
+
+    function isValidSettings(data) {
+      return (!('logoUrl' in data) || (data.logoUrl is string && data.logoUrl.size() <= 800000)) &&
+             (!('appName' in data) || (data.appName is string && data.appName.size() <= 100)) &&
+             (!('churchCnpj' in data) || (data.churchCnpj is string && data.churchCnpj.size() <= 20));
+    }
+
+    function isValidMemberPhoto(data) {
+      return data.keys().hasAll(['url', 'fileName', 'uploadedBy', 'createdAt']) &&
+             data.url is string && data.url.size() <= 800000 &&
+             data.fileName is string && data.fileName.size() <= 255 &&
+             data.uploadedBy is string && data.uploadedBy == request.auth.token.email;
+    }
+
+    function isValidMemberFunction(data) {
+      return data.keys().hasAll(['name']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             (!('createdAt' in data) || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function isValidRelationshipType(data) {
+      return data.keys().hasAll(['name']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    function isValidMinistryRole(data) {
+      return data.keys().hasAll(['name']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    // ===============================================================
+    // Rules Matching
+    // ===============================================================
+
+    match /test/connection {
+      allow read: if true;
+    }
+
+    match /members/{memberId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isEmailVerified() && isValidMember(incoming());
+      allow update: if isEmailVerified() && isValidMember(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && (isAdmin() || request.auth.uid == userId);
+      allow list: if isAdmin();
+      allow create: if isEmailVerified() && (request.auth.uid == userId || isAdmin()) && isValidUser(incoming());
+      allow update: if isAdmin() && isValidUser(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /ministries/{ministryId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isEmailVerified() && isValidMinistry(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /atas/{ataId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isEmailVerified() && isValidAta(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /presencas/{presencaId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isEmailVerified() && isValidPresenca(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidSettings(incoming());
+    }
+
+    match /memberPhotos/{photoId} {
+      allow get, list: if isSignedIn();
+      allow create: if isEmailVerified() && isValidMemberPhoto(incoming());
+      allow delete: if isEmailVerified() && (isAdmin() || existing().uploadedBy == request.auth.token.email);
+    }
+
+    match /memberFunctions/{functionId} {
+      allow get, list: if isSignedIn();
+      allow create: if isEmailVerified() && isValidMemberFunction(incoming());
+      allow update: if isAdmin() && isValidMemberFunction(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /relationshipTypes/{typeId} {
+      allow get, list: if isSignedIn();
+      allow create: if isEmailVerified() && isValidRelationshipType(incoming());
+      allow update: if isAdmin() && isValidRelationshipType(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /ministryRoles/{roleId} {
+      allow get, list: if isSignedIn();
+      allow create: if isEmailVerified() && isValidMinistryRole(incoming());
+      allow update: if isAdmin() && isValidMinistryRole(incoming());
+      allow delete: if isAdmin();
+    }
+  }
+}

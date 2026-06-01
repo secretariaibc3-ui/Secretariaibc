@@ -1,0 +1,210 @@
+{
+  "entities": {
+    "Member": {
+      "title": "Member",
+      "description": "A member of the church.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the member" },
+        "function": { "type": "string", "description": "Role or function in the church" },
+        "ministryIds": { "type": "array", "items": { "type": "string" }, "description": "IDs of the ministries the member belongs to" },
+        "ministries": { 
+          "type": "array", 
+          "items": { 
+            "type": "object",
+            "properties": {
+              "ministryId": { "type": "string" },
+              "role": { "type": "string" }
+            }
+          } 
+        },
+        "gender": { "type": "string", "enum": ["Homem", "Mulher"] },
+        "birthDate": { "type": "string", "format": "date", "description": "Birth date" },
+        "startDate": { "type": "string", "format": "date", "description": "Baptism or start date" },
+        "photoUrl": { "type": "string", "description": "URL of the member's photo" },
+        "isActive": { "type": "boolean", "description": "Whether the member is active" },
+        "isAbsent": { "type": "boolean", "description": "Whether the member is currently absent" },
+        "isAbsentDate": { "type": "string", "format": "date", "description": "Date when member was marked as absent" },
+        "exitDate": { "type": "string", "format": "date", "description": "Exit date if inactive" },
+        "exitReason": { "type": "string", "description": "Reason for leaving" },
+        "relationships": { 
+          "type": "array", 
+          "items": { 
+            "type": "object",
+            "properties": {
+              "memberId": { "type": "string" },
+              "type": { "type": "string" }
+            }
+          } 
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "function", "isActive"]
+    },
+    "AppSettings": {
+      "title": "App Settings",
+      "description": "Global application configuration.",
+      "type": "object",
+      "properties": {
+        "logoUrl": { "type": "string" },
+        "appName": { "type": "string" },
+        "churchCnpj": { "type": "string" }
+      }
+    },
+    "User": {
+      "title": "User",
+      "description": "A user of the application with access levels.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role"]
+    },
+    "Ministry": {
+      "title": "Ministry",
+      "description": "A ministry or department within the church.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the ministry" },
+        "color": { "type": "string", "description": "Hex color code for the ministry" },
+        "photoUrl": { "type": "string", "description": "URL of the ministry's cover photo" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "color"]
+    },
+    "Ata": {
+      "title": "Ata",
+      "description": "Meeting minutes of the church.",
+      "type": "object",
+      "properties": {
+        "number": { "type": "string", "description": "Minutes number" },
+        "date": { "type": "string", "format": "date", "description": "Date of the meeting" },
+        "content": { "type": "string", "description": "Content of the minutes" },
+        "photoUrl": { "type": "string", "description": "URL of an attached photo" },
+        "signer1Role": { "type": "string", "description": "Role of the first signer (Pastor or Vice)" },
+        "signer1Name": { "type": "string", "description": "Name of the first signer" },
+        "signer2Role": { "type": "string", "description": "Role of the second signer (Sec 1 or Sec 2)" },
+        "signer2Name": { "type": "string", "description": "Name of the second signer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["number", "date", "content"]
+    },
+    "Presenca": {
+      "title": "Presenca",
+      "description": "Attendance list for a meeting.",
+      "type": "object",
+      "properties": {
+        "ataNumber": { "type": "string", "description": "Number of the associated minutes" },
+        "date": { "type": "string", "format": "date", "description": "Date of the meeting" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ataNumber", "date"]
+    },
+    "MemberPhoto": {
+      "title": "Foto de Membro",
+      "description": "Uma foto enviada para a galeria de fotos de membros.",
+      "type": "object",
+      "properties": {
+        "url": { "type": "string", "description": "URL da imagem no Storage" },
+        "fileName": { "type": "string", "description": "Nome original do arquivo" },
+        "uploadedBy": { "type": "string", "description": "Email do usuário que fez o upload" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["url", "fileName", "uploadedBy", "createdAt"]
+    },
+    "DriveToken": {
+      "title": "Drive Token",
+      "description": "Stored Google Drive refresh tokens for persistent access.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "refreshToken": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "refreshToken"]
+    },
+    "RelationshipType": {
+      "title": "Relationship Type",
+      "description": "A type of family relationship.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name"]
+    },
+    "MinistryRole": {
+      "title": "Ministry Role",
+      "description": "A role within a ministry.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name"]
+    },
+    "MemberFunction": {
+      "title": "Member Function",
+      "description": "A function or role a member can have in the church.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name"]
+    }
+  },
+  "firestore": {
+    "/members/{memberId}": {
+      "schema": "Member",
+      "description": "Collection of church members."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Application users and their permissions."
+    },
+    "/ministries/{ministryId}": {
+      "schema": "Ministry",
+      "description": "Collection of church ministries."
+    },
+    "/atas/{ataId}": {
+      "schema": "Ata",
+      "description": "Collection of church meeting minutes."
+    },
+    "/presencas/{presencaId}": {
+      "schema": "Presenca",
+      "description": "Collection of attendance lists."
+    },
+    "/memberPhotos/{photoId}": {
+      "schema": "MemberPhoto",
+      "description": "Galeria de fotos de membros enviadas em lote."
+    },
+    "/settings/{settingId}": {
+      "schema": "AppSettings",
+      "description": "Application settings (logo, opacity, etc.)"
+    },
+    "/drive_tokens/{userId}": {
+      "schema": "DriveToken",
+      "description": "Stored Google Drive refresh tokens."
+    },
+    "/relationshipTypes/{typeId}": {
+      "schema": "RelationshipType",
+      "description": "Collection of relationship types."
+    },
+    "/ministryRoles/{roleId}": {
+      "schema": "MinistryRole",
+      "description": "Collection of roles within ministries."
+    },
+    "/memberFunctions/{functionId}": {
+      "schema": "MemberFunction",
+      "description": "Collection of member functions."
+    }
+  }
+}
