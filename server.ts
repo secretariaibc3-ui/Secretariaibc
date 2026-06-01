@@ -138,6 +138,7 @@ async function startServer() {
       short_name: userName,
       description: "Sistema de Gestão IBC",
       start_url: "/",
+      scope: "/",
       display: "standalone",
       background_color: "#ffffff",
       theme_color: themeColor,

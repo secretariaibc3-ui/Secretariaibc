@@ -1,26 +1,34 @@
-const CACHE_NAME = 'ibc-cache-v4';
+const CACHE_NAME = 'ibc-cache-v5';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/api/manifest'
 ];
 
-// Utility to check if a request is for a navigation or index.html
+// Utility to check if a request is for navigation or index.html
 const isIndexRequest = (request) => {
   const url = new URL(request.url);
-  return url.pathname === '/' || url.pathname === '/index.html' || request.mode === 'navigate';
+  return (
+    url.pathname === '/' || 
+    url.pathname === '/index.html' || 
+    url.pathname === '/api/manifest' ||
+    request.mode === 'navigate'
+  );
 };
 
+// Install Event
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // We still cache them but we will prioritize network for them
+      console.log('SW: Pre-caching critical assets');
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
+  self.skipWaiting();
 });
 
+// Activate Event
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -37,13 +45,25 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
+// Fetch Event
 self.addEventListener('fetch', (event) => {
-  // For navigation requests and index.html, use Network First
+  // Skip cross-origin requests or non-GET requests
+  if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  
+  // Don't cache Firestore/Firebase API requests
+  if (url.origin.includes('firestore.googleapis.com') || 
+      url.origin.includes('firebaseinstallations.googleapis.com') ||
+      url.origin.includes('identitytoolkit.googleapis.com')) {
+    return;
+  }
+
+  // Network First for index/manifest to ensure fresh content
   if (isIndexRequest(event.request)) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          // Update cache with latest version
           const resClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, resClone);
@@ -51,20 +71,30 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          // Fallback to cache if offline
           return caches.match(event.request);
         })
     );
     return;
   }
 
-  // For other assets (JS/CSS usually have hashes in filenames), use Cache First with Network Fallback
+  // Cache First with Network Fallback for static assets
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      if (response) return response;
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) return cachedResponse;
       
       return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+        // Only cache valid responses
+        // We allow caching cross-origin (opaque) responses for images from specific domains
+        const isFirebaseStorage = url.origin.includes('firebasestorage.googleapis.com');
+        
+        if (!networkResponse || networkResponse.status !== 200) {
+          if (!isFirebaseStorage || networkResponse.type !== 'opaque') {
+             return networkResponse;
+          }
+        }
+        
+        // Don't cache opaque responses unless they are from trusted domains like Firebase Storage
+        if (networkResponse.type === 'opaque' && !isFirebaseStorage) {
           return networkResponse;
         }
         
@@ -74,7 +104,21 @@ self.addEventListener('fetch', (event) => {
         });
         
         return networkResponse;
+      }).catch(() => {
+        // If fetch fails (offline), could return a fallback page if needed
       });
     })
   );
+});
+
+// Handle push notifications if implemented in future
+self.addEventListener('push', (event) => {
+  const data = event.data ? event.data.json() : {};
+  const title = data.title || 'Novo do Sistema IBC';
+  const options = {
+    body: data.body || 'Você tem uma nova atualização.',
+    icon: '/logo-secretariaibc.png',
+    badge: '/logo-secretariaibc.png'
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
 });
