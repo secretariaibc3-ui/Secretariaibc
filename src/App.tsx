@@ -64,6 +64,7 @@ import {
   GripVertical
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'motion/react';
+import SplashScreen from './components/SplashScreen';
 
 // Navigation configuration
 const TAB_ICONS: Record<string, any> = {
@@ -679,6 +680,45 @@ export default function App() {
     navOrder: DEFAULT_NAV_ITEMS.map(i => i.id)
   });
   const [sideNavItems, setSideNavItems] = useState(DEFAULT_NAV_ITEMS);
+  
+  // Dynamic PWA Update Effect
+  useEffect(() => {
+    const updateDynamicMetadata = () => {
+      const logoUrl = appSettings.logoUrl || 'https://firebasestorage.googleapis.com/v0/b/igreja-batista-coqueiral.appspot.com/o/assets%2Flogo_ibc.png?alt=media';
+      const appName = appSettings.appName || 'Secretaria IBC';
+      
+      // Update Manifest Link
+      const manifestLink = document.getElementById('pwa-manifest') as HTMLLinkElement;
+      if (manifestLink) {
+        manifestLink.href = `/api/manifest?icon=${encodeURIComponent(logoUrl)}&name=${encodeURIComponent(appName)}&v=${Date.now()}`;
+      }
+      
+      // Update Apple Icon
+      const appleIcon = document.getElementById('apple-icon') as HTMLLinkElement;
+      if (appleIcon) {
+        appleIcon.href = logoUrl;
+      }
+      
+      // Update Favicon
+      const favicon = document.getElementById('favicon') as HTMLLinkElement;
+      if (favicon) {
+        favicon.href = logoUrl;
+      }
+
+      // Update Windows Tile
+      const msTile = document.getElementById('ms-tile-image');
+      if (msTile) {
+        msTile.setAttribute('content', logoUrl);
+      }
+      
+      // Update App Title and Apple Status
+      document.title = appName;
+      const appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+      if (appleTitle) appleTitle.setAttribute('content', appName);
+    };
+
+    updateDynamicMetadata();
+  }, [appSettings.logoUrl, appSettings.appName]);
 
   useEffect(() => {
     if (isReorderingNav.current) return;
@@ -2724,29 +2764,21 @@ export default function App() {
       const img = new window.Image();
       img.onload = async () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 400;
-        const MAX_HEIGHT = 400;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
+        const size = 512; // Standard size for app icon
+        canvas.width = size;
+        canvas.height = size;
         const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
+        if (ctx) {
+          ctx.fillStyle = 'white'; // Background for transparent parts if needed, or could be transparent
+          ctx.fillRect(0, 0, size, size);
+          
+          const scale = Math.min(size / img.width, size / img.height);
+          const x = (size / 2) - (img.width / 2) * scale;
+          const y = (size / 2) - (img.height / 2) * scale;
+          ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+        }
         
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        const dataUrl = canvas.toDataURL('image/png', 0.9); // Use PNG for better icon quality
         try {
           const oldData = { ...appSettings };
           await setDoc(doc(db, 'settings', 'app'), { logoUrl: dataUrl }, { merge: true });
@@ -2832,15 +2864,7 @@ export default function App() {
   const currentLogo = appSettings.logoUrl || defaultLogo;
 
   if (loading) {
-    console.log("App is loading...");
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50 text-ibc-teal font-black">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-ibc-teal mb-4"></div>
-          <p className="text-xs uppercase tracking-widest text-ibc-teal">Carregando Sistema...</p>
-        </div>
-      </div>
-    );
+    return <SplashScreen />;
   }
 
   console.log("App render:", { hasUser: !!user, hasAppUser: !!appUser, activeTab });
@@ -4761,14 +4785,15 @@ export default function App() {
                         />
                       </div>
                       <div className="flex-1 space-y-4">
-                        <h4 className="text-sm font-bold text-gray-900">Logotipo da Igreja</h4>
+                        <h4 className="text-sm font-bold text-gray-900">Foto de Perfil do Aplicativo</h4>
                         <p className="text-xs text-gray-500 leading-relaxed">
-                          Este logotipo será exibido na tela de login e na barra lateral. 
-                          Recomendamos uma imagem quadrada com fundo transparente.
+                          Esta imagem será utilizada como <strong>ícone oficial do aplicativo (PWA)</strong> em celulares e computadores, 
+                          além de aparecer na tela de login e barra lateral. 
+                          O sistema ajustará automaticamente para o formato quadrado.
                         </p>
                         <div className="flex items-center gap-3">
                           <label className="bg-ibc-teal text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-ibc-teal/90 transition-all cursor-pointer shadow-lg shadow-ibc-teal/10">
-                            Anexar Logo Manualmente
+                            Alterar Foto do App
                             <input 
                               type="file" 
                               accept="image/png, image/jpeg" 

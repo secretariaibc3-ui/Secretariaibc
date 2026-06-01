@@ -112,6 +112,25 @@ async function startServer() {
   app.get('/api/manifest', (req, res) => {
     const iconUrl = req.query.icon as string || 'https://firebasestorage.googleapis.com/v0/b/igreja-batista-coqueiral.appspot.com/o/assets%2Flogo_ibc.png?alt=media';
     const userName = req.query.name as string || 'IBC App';
+    const themeColor = "#0d9488";
+
+    // Standard PWA icon sizes
+    const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+    
+    const icons = sizes.flatMap(size => [
+      {
+        src: iconUrl,
+        sizes: `${size}x${size}`,
+        type: "image/png",
+        purpose: "any"
+      },
+      {
+        src: iconUrl,
+        sizes: `${size}x${size}`,
+        type: "image/png",
+        purpose: "maskable"
+      }
+    ]);
 
     const manifest = {
       id: "/",
@@ -121,37 +140,30 @@ async function startServer() {
       start_url: "/",
       display: "standalone",
       background_color: "#ffffff",
-      theme_color: "#0d9488",
+      theme_color: themeColor,
       orientation: "portrait",
-      icons: [
+      icons: icons,
+      categories: ["business", "productivity"],
+      shortcuts: [
         {
-          src: iconUrl,
-          sizes: "192x192",
-          type: "image/png",
-          purpose: "any"
+          name: "Membros",
+          short_name: "Membros",
+          description: "Gerenciar membros",
+          url: "/?tab=members",
+          icons: [{ src: iconUrl, sizes: "192x192" }]
         },
         {
-          src: iconUrl,
-          sizes: "512x512",
-          type: "image/png",
-          purpose: "any"
-        },
-        {
-          src: iconUrl,
-          sizes: "192x192",
-          type: "image/png",
-          purpose: "maskable"
-        },
-        {
-          src: iconUrl,
-          sizes: "512x512",
-          type: "image/png",
-          purpose: "maskable"
+          name: "Financeiro",
+          short_name: "Financeiro",
+          description: "Relatórios financeiros",
+          url: "/?tab=reports",
+          icons: [{ src: iconUrl, sizes: "192x192" }]
         }
       ]
     };
 
     res.setHeader('Content-Type', 'application/manifest+json');
+    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate'); // Avoid manifest caching issues
     res.send(JSON.stringify(manifest));
   });
 
