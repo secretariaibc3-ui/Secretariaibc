@@ -27,6 +27,16 @@ service cloud.firestore {
       );
     }
 
+    function isFullAdmin() {
+      return isSignedIn() && (
+        request.auth.uid == "q2qRJ6sgAEevGST5Cc3xJ03ks2H2" ||
+        (request.auth.token.email != null && request.auth.token.email.lower() == "secretariaibc3@gmail.com") ||
+        (request.auth.token.email != null && request.auth.token.email.lower() == "secretaria1@gmail.com") ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isFullAdmin == true)
+      );
+    }
+
     function isValidId(id) {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
@@ -67,6 +77,7 @@ service cloud.firestore {
              data.email is string && data.email.size() <= 200 &&
              data.role in ['admin', 'user'] &&
              (!('status' in data) || data.status in ['pending', 'approved', 'blocked']) &&
+             (!('isFullAdmin' in data) || data.isFullAdmin is bool) &&
              (!('requestAt' in data) || data.requestAt is timestamp || data.requestAt == null) &&
              (!('approvedAt' in data) || data.approvedAt is timestamp || data.approvedAt == null) &&
              (!('rejectedAt' in data) || data.rejectedAt is timestamp || data.rejectedAt == null) &&
@@ -141,27 +152,27 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if isEmailVerified() && isValidMember(incoming());
       allow update: if isEmailVerified() && isValidMember(incoming());
-      allow delete: if isAdmin();
+      allow delete: if isFullAdmin();
     }
 
     match /users/{userId} {
-      allow get: if isSignedIn() && (isAdmin() || request.auth.uid == userId);
-      allow list: if isAdmin();
+      allow get: if isSignedIn() && (isFullAdmin() || request.auth.uid == userId);
+      allow list: if isFullAdmin();
       allow create: if isEmailVerified() && (
-        isAdmin() || 
+        isFullAdmin() || 
         (request.auth.uid == userId && incoming().role == 'user')
       ) && isValidUser(incoming());
       allow update: if isEmailVerified() && (
-        isAdmin() || 
+        isFullAdmin() || 
         (request.auth.uid == userId && incoming().status == 'pending' && incoming().role == existing().role && incoming().email == existing().email)
       ) && isValidUser(incoming());
-      allow delete: if isAdmin();
+      allow delete: if isFullAdmin();
     }
 
     match /ministries/{ministryId} {
       allow get, list: if isSignedIn();
       allow create, update: if isEmailVerified() && isValidMinistry(incoming());
-      allow delete: if isAdmin();
+      allow delete: if isFullAdmin();
     }
 
     match /atas/{ataId} {
@@ -178,7 +189,7 @@ service cloud.firestore {
 
     match /settings/{settingId} {
       allow read: if true;
-      allow write: if isAdmin() && isValidSettings(incoming());
+      allow write: if isFullAdmin() && isValidSettings(incoming());
     }
 
     match /memberPhotos/{photoId} {
@@ -190,22 +201,22 @@ service cloud.firestore {
     match /memberFunctions/{functionId} {
       allow get, list: if isSignedIn();
       allow create: if isEmailVerified() && isValidMemberFunction(incoming());
-      allow update: if isAdmin() && isValidMemberFunction(incoming());
-      allow delete: if isAdmin();
+      allow update: if isFullAdmin() && isValidMemberFunction(incoming());
+      allow delete: if isFullAdmin();
     }
 
     match /relationshipTypes/{typeId} {
       allow get, list: if isSignedIn();
       allow create: if isEmailVerified() && isValidRelationshipType(incoming());
-      allow update: if isAdmin() && isValidRelationshipType(incoming());
-      allow delete: if isAdmin();
+      allow update: if isFullAdmin() && isValidRelationshipType(incoming());
+      allow delete: if isFullAdmin();
     }
 
     match /ministryRoles/{roleId} {
       allow get, list: if isSignedIn();
       allow create: if isEmailVerified() && isValidMinistryRole(incoming());
-      allow update: if isAdmin() && isValidMinistryRole(incoming());
-      allow delete: if isAdmin();
+      allow update: if isFullAdmin() && isValidMinistryRole(incoming());
+      allow delete: if isFullAdmin();
     }
   }
 }

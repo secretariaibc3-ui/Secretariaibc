@@ -335,6 +335,7 @@ interface AppUser {
   email: string;
   role: 'admin' | 'user';
   status?: 'pending' | 'approved' | 'blocked';
+  isFullAdmin?: boolean;
   requestAt?: any;
   approvedAt?: any;
   rejectedAt?: any;
@@ -964,7 +965,6 @@ export default function App() {
     const saved = localStorage.getItem('ui-scale');
     return saved ? parseFloat(saved) : 1;
   });
-  const [isZoomControlsVisible, setIsZoomControlsVisible] = useState(false);
   const undoTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -1328,6 +1328,7 @@ export default function App() {
               const userData = snapshot.data();
               const defaultAdmins = ['secretariaibc3@gmail.com', 'secretaria1@gmail.com'];
               const isDefaultAdmin = firebaseUser.email && defaultAdmins.includes(firebaseUser.email);
+              const isFullAdmin = isDefaultAdmin || !!userData.isFullAdmin;
               
               // Migração: Se o usuário existe mas não tem status, aprova automaticamente se for admin ou default admin
               if (!userData.status) {
@@ -1335,17 +1336,17 @@ export default function App() {
                 const role = isDefaultAdmin ? 'admin' : userData.role;
                 
                 try {
-                  await updateDoc(doc(db, 'users', firebaseUser.uid), { status, role });
-                  setAppUser({ id: snapshot.id, ...userData, status, role } as AppUser);
+                  await updateDoc(doc(db, 'users', firebaseUser.uid), { status, role, isFullAdmin });
+                  setAppUser({ id: snapshot.id, ...userData, status, role, isFullAdmin } as AppUser);
                 } catch (e) {
                   console.error("Migration error:", e);
-                  setAppUser({ id: snapshot.id, ...userData, status: 'approved', role: 'admin' } as AppUser); // Fallback local
+                  setAppUser({ id: snapshot.id, ...userData, status: 'approved', role: 'admin', isFullAdmin: true } as AppUser); // Fallback local
                 }
-              } else if (isDefaultAdmin && (userData.role !== 'admin' || userData.status !== 'approved')) {
-                // Force admin stay approved
-                await updateDoc(doc(db, 'users', firebaseUser.uid), { status: 'approved', role: 'admin' });
+              } else if (isDefaultAdmin && (userData.role !== 'admin' || userData.status !== 'approved' || !userData.isFullAdmin)) {
+                // Force admin stay approved and full admin
+                await updateDoc(doc(db, 'users', firebaseUser.uid), { status: 'approved', role: 'admin', isFullAdmin: true });
               } else {
-                setAppUser({ id: snapshot.id, ...userData } as AppUser);
+                setAppUser({ id: snapshot.id, ...userData, isFullAdmin } as AppUser);
               }
               setLoading(false);
             } else {
@@ -1356,6 +1357,7 @@ export default function App() {
                   email: firebaseUser.email,
                   role: 'admin',
                   status: 'approved',
+                  isFullAdmin: true,
                   createdAt: serverTimestamp()
                 };
                 await setDoc(doc(db, 'users', firebaseUser.uid), newAdmin);
@@ -3638,7 +3640,7 @@ export default function App() {
           
           {activeTab === 'members' && (
             <div className="flex items-center space-x-2 sm:space-x-3 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
-              {selectedMemberIds.length > 0 && appUser?.role === 'admin' && (
+              {selectedMemberIds.length > 0 && appUser?.isFullAdmin && (
                 <>
                   <button 
                     onClick={() => handleBulkToggleAbsent(true)}
@@ -4015,7 +4017,7 @@ export default function App() {
                               )}
                             </>
                           )}
-                          {appUser?.role === 'admin' && (
+                          {appUser?.isFullAdmin && (
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -4104,7 +4106,7 @@ export default function App() {
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        {appUser?.role === 'admin' && (
+                        {appUser?.isFullAdmin && (
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleDeleteMinistry(m.id, m.name); }}
                             className="p-2 text-white hover:bg-red-500/40 rounded-xl transition-all backdrop-blur-md"
@@ -4244,7 +4246,7 @@ export default function App() {
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        {appUser?.role === 'admin' && (
+                        {appUser?.isFullAdmin && (
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleDeleteAta(ata.id, ata.number); }}
                             className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
@@ -4304,7 +4306,7 @@ export default function App() {
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        {appUser?.role === 'admin' && (
+                        {appUser?.isFullAdmin && (
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleDeletePresenca(presenca.id, presenca.ataNumber); }}
                             className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
@@ -5106,8 +5108,103 @@ export default function App() {
             </div>
           ) : (
             <div className="max-w-6xl mx-auto space-y-10">
+              {/* Scale Control Section */}
+              <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-ibc-teal/5 rounded-full translate-x-1/3 -translate-y-1/3 blur-2xl pointer-events-none group-hover:bg-ibc-teal/10 transition-all duration-700" />
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 rounded-2xl bg-ibc-teal/10 flex items-center justify-center text-ibc-teal transition-transform group-hover:scale-110">
+                      <Maximize2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-extrabold text-gray-900 tracking-tight">Tamanho da Interface</h3>
+                      <p className="text-sm text-gray-400 font-medium mt-1">Ajuste o zoom do aplicativo para melhor visualização profissional.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl border border-gray-100">
+                    <button 
+                      onClick={() => setUiScale(prev => Math.max(prev - 0.1, 0.7))}
+                      className="w-12 h-12 bg-white text-ibc-teal border border-ibc-teal/20 rounded-xl flex items-center justify-center hover:bg-ibc-teal/5 transition-all active:scale-95 shadow-sm"
+                      title="Diminuir Zoom"
+                    >
+                      <Minus className="w-5 h-5" />
+                    </button>
+                    
+                    <div className="flex flex-col items-center px-4 min-w-[80px]">
+                      <span className="text-lg font-black text-ibc-teal tracking-tighter">{Math.round(uiScale * 100)}%</span>
+                      <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Escala</span>
+                    </div>
+
+                    <button 
+                      onClick={() => setUiScale(prev => Math.min(prev + 0.1, 1.5))}
+                      className="w-12 h-12 bg-ibc-teal text-white rounded-xl flex items-center justify-center hover:bg-ibc-teal/90 transition-all active:scale-95 shadow-lg shadow-ibc-teal/20"
+                      title="Aumentar Zoom"
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+
+                    <div className="w-px h-8 bg-gray-200 mx-1" />
+
+                    <button 
+                      onClick={() => setUiScale(1)}
+                      className="px-4 h-12 bg-gray-100 text-gray-500 rounded-xl flex items-center justify-center hover:bg-gray-200 transition-all active:scale-95 text-xs font-black uppercase tracking-widest"
+                      title="Resetar para 100%"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              {/* Sharing Link Section */}
+              <section className="bg-blue-50/50 p-8 rounded-3xl border border-blue-100 shadow-sm relative overflow-hidden group">
+                <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl group-hover:bg-blue-500/10 transition-all duration-700"></div>
+                
+                <div className="relative z-10">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-xl bg-ibc-blue text-white flex items-center justify-center shadow-lg shadow-ibc-blue/20">
+                        <Share className="w-5 h-5" />
+                      </div>
+                      <h4 className="text-xl font-extrabold text-gray-900 tracking-tight">Compartilhar Aplicativo</h4>
+                    </div>
+                    <button 
+                      onClick={handleShareApp}
+                      className="w-full sm:w-auto bg-ibc-blue text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-ibc-blue/20 hover:bg-ibc-blue/90 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center"
+                    >
+                      <Share className="w-4 h-4 mr-2" />
+                      Compartilhar Link
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-500 font-medium leading-relaxed max-w-2xl">
+                      Divulgue o acesso à plataforma para outros membros da secretaria ou diretoria. 
+                      Este é o link oficial para acesso externo através de qualquer navegador.
+                    </p>
+                    
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-1 bg-white border border-blue-100 p-3 sm:p-4 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm text-gray-600 font-bold font-mono outline-none shadow-inner overflow-hidden whitespace-nowrap overflow-ellipsis">
+                        {publicAppLink}
+                      </div>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(publicAppLink);
+                          showAlert("Sucesso", "Link copiado para a área de transferência!");
+                        }}
+                        className="bg-white text-ibc-blue p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-blue-100 hover:bg-blue-50 transition-all shadow-sm active:scale-95 shrink-0"
+                        title="Copiar Link"
+                      >
+                        <Copy className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
               {/* PWA Install Section */}
-              {deferredPrompt && (
+              {deferredPrompt && appUser?.isFullAdmin && (
                 <section className="bg-gradient-to-br from-ibc-teal to-ibc-blue p-8 rounded-3xl shadow-xl shadow-ibc-teal/20 text-white relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none group-hover:bg-white/20 transition-all duration-700" />
                   <div className="relative z-10">
@@ -5132,7 +5229,7 @@ export default function App() {
               )}
 
               {/* Visual Settings Section */}
-              {appUser?.role === 'admin' && (
+              {appUser?.isFullAdmin && (
                 <section className="glass-card p-4 sm:p-8 rounded-[3rem] border border-white/40 shadow-sm">
                   <div className="flex items-center justify-between mb-6 sm:mb-8">
                     <div>
@@ -5247,30 +5344,33 @@ export default function App() {
                 </section>
               )}
 
-              <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-                <div className="flex items-center justify-between mb-8">
-                  <div>
-                    <h3 className="text-xl font-extrabold text-gray-900 tracking-tight">Backup de Dados</h3>
-                    <p className="text-sm text-gray-400 font-medium mt-1">Baixe uma cópia de todos os dados do sistema.</p>
+              {appUser?.isFullAdmin && (
+                <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h3 className="text-xl font-extrabold text-gray-900 tracking-tight">Backup de Dados</h3>
+                      <p className="text-sm text-gray-400 font-medium mt-1">Baixe uma cópia de todos os dados do sistema.</p>
+                    </div>
+                    <button 
+                      onClick={handleBackup}
+                      className="bg-ibc-orange text-white px-6 py-3 rounded-2xl font-bold hover:bg-ibc-orange/90 transition-all flex items-center shadow-lg shadow-ibc-orange/20 active:scale-95"
+                    >
+                      <Download className="w-5 h-5 mr-2" />
+                      Exportar JSON
+                    </button>
                   </div>
-                  <button 
-                    onClick={handleBackup}
-                    className="bg-ibc-orange text-white px-6 py-3 rounded-2xl font-bold hover:bg-ibc-orange/90 transition-all flex items-center shadow-lg shadow-ibc-orange/20 active:scale-95"
-                  >
-                    <Download className="w-5 h-5 mr-2" />
-                    Exportar JSON
-                  </button>
-                </div>
-                <div className="p-5 bg-orange-50/50 rounded-2xl border border-orange-100 flex items-start">
-                  <AlertCircle className="w-5 h-5 text-ibc-orange mr-4 mt-0.5" />
-                  <p className="text-sm text-orange-900 font-medium leading-relaxed">
-                    Recomendamos realizar o backup semanalmente para garantir a segurança das informações.
-                  </p>
-                </div>
-              </section>
+                  <div className="p-5 bg-orange-50/50 rounded-2xl border border-orange-100 flex items-start">
+                    <AlertCircle className="w-5 h-5 text-ibc-orange mr-4 mt-0.5" />
+                    <p className="text-sm text-orange-900 font-medium leading-relaxed">
+                      Recomendamos realizar o backup semanalmente para garantir a segurança das informações.
+                    </p>
+                  </div>
+                </section>
+              )}
 
               {/* User Management Section */}
-              <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+              {appUser?.isFullAdmin && (
+                <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
                 <div className="flex items-center justify-between mb-8">
                   <div>
                     <h3 className="text-xl font-extrabold text-gray-900 tracking-tight">Usuários do Sistema</h3>
@@ -5298,53 +5398,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Sharing Link Section */}
-                <div className="mb-10 p-4 sm:p-8 bg-blue-50/50 rounded-3xl border border-blue-100 relative overflow-hidden group">
-                  <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl group-hover:bg-blue-500/10 transition-all duration-700"></div>
-                  
-                  <div className="relative z-10">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-xl bg-ibc-blue text-white flex items-center justify-center shadow-lg shadow-ibc-blue/20">
-                          <Share className="w-5 h-5" />
-                        </div>
-                        <h4 className="text-xl font-extrabold text-gray-900 tracking-tight">Compartilhar Aplicativo</h4>
-                      </div>
-                      <button 
-                        onClick={handleShareApp}
-                        className="w-full sm:w-auto bg-ibc-blue text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-ibc-blue/20 hover:bg-ibc-blue/90 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center"
-                      >
-                        <Share className="w-4 h-4 mr-2" />
-                        Compartilhar Link
-                      </button>
-                    </div>
-
-                    <div className="space-y-4">
-                      <p className="text-sm text-gray-500 font-medium leading-relaxed max-w-2xl">
-                        Divulgue o acesso à plataforma para outros membros da secretaria ou diretoria. 
-                        Este é o link oficial para acesso externo através de qualquer navegador.
-                      </p>
-                      
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-1 bg-white border border-blue-100 p-3 sm:p-4 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm text-gray-600 font-bold font-mono outline-none shadow-inner overflow-hidden whitespace-nowrap overflow-ellipsis">
-                          {publicAppLink}
-                        </div>
-                        <button 
-                          onClick={() => {
-                            navigator.clipboard.writeText(publicAppLink);
-                            showAlert("Sucesso", "Link copiado para a área de transferência!");
-                          }}
-                          className="bg-white text-ibc-blue p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-blue-100 hover:bg-blue-50 transition-all shadow-sm active:scale-95 shrink-0"
-                          title="Copiar Link"
-                        >
-                          <Copy className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-10 p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
+                <div className="mt-10 p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Link de Acesso Atual (Ambiente de Desenvolvimento)</h4>
                   <div className="flex items-center space-x-3">
                     <input 
@@ -5364,9 +5418,9 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="overflow-hidden border border-gray-100 rounded-2xl">
-                  {/* Table for large screens, Cards for mobile */}
-                  <div className="hidden sm:block overflow-x-auto">
+                <div className="mt-10 overflow-hidden border border-gray-100 rounded-2xl">
+                {/* Table for large screens, Cards for mobile */}
+                <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full text-left">
                       <thead className="bg-gray-50/50">
                         <tr>
@@ -5575,62 +5629,12 @@ export default function App() {
                   </div>
                 </div>
               </section>
-            </div>
-          )}
+            )}
         </div>
-      </main>
+      )}
     </div>
-
-      {/* Floating Zoom Controls */}
-      <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
-        <AnimatePresence>
-          {isZoomControlsVisible && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.8, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: 10 }}
-              className="mb-3 bg-white/90 backdrop-blur-xl border border-ibc-teal/20 p-2 rounded-2xl shadow-2xl flex flex-col gap-2"
-            >
-              <button 
-                onClick={() => setUiScale(prev => Math.min(prev + 0.1, 1.5))}
-                className="w-10 h-10 bg-ibc-teal text-white rounded-xl flex items-center justify-center hover:bg-ibc-teal/90 transition-all active:scale-95 shadow-lg shadow-ibc-teal/20"
-                title="Aumentar Zoom"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-              <div className="flex flex-col items-center py-1">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{Math.round(uiScale * 100)}%</span>
-              </div>
-              <button 
-                onClick={() => setUiScale(prev => Math.max(prev - 0.1, 0.7))}
-                className="w-10 h-10 bg-white text-ibc-teal border border-ibc-teal/20 rounded-xl flex items-center justify-center hover:bg-ibc-teal/5 transition-all active:scale-95"
-                title="Diminuir Zoom"
-              >
-                <Minus className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={() => setUiScale(1)}
-                className="w-10 h-10 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-all active:scale-95 text-[10px] font-black"
-                title="Resetar"
-              >
-                100%
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        
-        <button 
-          onClick={() => setIsZoomControlsVisible(!isZoomControlsVisible)}
-          className={cn(
-            "w-12 h-12 rounded-2xl flex items-center justify-center shadow-2xl transition-all duration-300 active:scale-90",
-            isZoomControlsVisible 
-              ? "bg-ibc-teal text-white rotate-45" 
-              : "bg-white text-ibc-teal border border-ibc-teal/20 shadow-ibc-teal/10 rotate-0"
-          )}
-        >
-          {isZoomControlsVisible ? <X className="w-6 h-6" /> : <Maximize2 className="w-6 h-6" />}
-        </button>
-      </div>
+  </main>
+</div>
 
     {/* Modals */}
       {/* Share Modal */}
