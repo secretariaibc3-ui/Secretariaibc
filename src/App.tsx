@@ -3202,7 +3202,7 @@ export default function App() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6">
         <AnimatePresence>
-          {deferredPrompt && (
+          {!isStandalone && (
             <motion.div 
               initial={{ y: -100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -3221,7 +3221,7 @@ export default function App() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
-                    onClick={() => setDeferredPrompt(null)}
+                    onClick={() => setIsStandalone(true)} // Or just hide it another way
                     className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     <X className="w-4 h-4" />
@@ -3463,7 +3463,7 @@ export default function App() {
       />
 
       <AnimatePresence>
-        {deferredPrompt && (
+        {!isStandalone && (
           <motion.div 
             initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -3482,7 +3482,7 @@ export default function App() {
               </div>
               <div className="flex items-center gap-2">
                 <button 
-                  onClick={() => setDeferredPrompt(null)}
+                  onClick={() => setIsStandalone(true)}
                   className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <X className="w-4 h-4" />
@@ -5279,7 +5279,7 @@ export default function App() {
               </section>
 
               {/* PWA Install Section */}
-              {deferredPrompt && appUser?.isFullAdmin && (
+              {!isStandalone && (
                 <section className="bg-gradient-to-br from-ibc-teal to-ibc-blue p-8 rounded-3xl shadow-xl shadow-ibc-teal/20 text-white relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none group-hover:bg-white/20 transition-all duration-700" />
                   <div className="relative z-10">
