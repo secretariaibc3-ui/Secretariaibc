@@ -4143,7 +4143,7 @@ export default function App() {
             </div>
           ) : activeTab === 'ministries' ? (
             <div className="max-w-6xl mx-auto space-y-4 sm:space-y-10">
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+              <div className="grid grid-cols-2 gap-3 sm:gap-6">
                 <AnimatePresence mode="popLayout">
                   {ministries.map((m, idx) => (
                     <motion.div
@@ -4421,7 +4421,7 @@ export default function App() {
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
+                <div className="grid grid-cols-2 gap-2 sm:gap-6">
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
