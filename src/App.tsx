@@ -120,6 +120,25 @@ import { format } from 'date-fns';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+// --- Offine Cache Helpers ---
+const loadFromCache = <T,>(key: string, defaultValue: T): T => {
+  try {
+    const item = localStorage.getItem(`cache_${key}`);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch (error) {
+    console.error(`Error loading cache for ${key}:`, error);
+    return defaultValue;
+  }
+};
+
+const saveToCache = <T,>(key: string, data: T) => {
+  try {
+    localStorage.setItem(`cache_${key}`, JSON.stringify(data));
+  } catch (error) {
+    console.error(`Error saving cache for ${key}:`, error);
+  }
+};
+
   // --- Error Handling Pattern ---
   enum OperationType {
     CREATE = 'create',
@@ -143,8 +162,21 @@ import { twMerge } from 'tailwind-merge';
   }
 
   const handleFirestoreError = (error: unknown, operationType: OperationType, path: string | null) => {
+    // Cast to any to access potential code property
+    const err = error as any;
+    const errorStr = err instanceof Error ? err.message : String(err);
+    const errorCode = err.code || '';
+    
+    const isQuotaError = 
+      errorStr.includes('Quota limit exceeded') || 
+      errorStr.includes('resource-exhausted') || 
+      errorStr.toLowerCase().includes('quota') ||
+      errorStr.includes('quota-exceeded') ||
+      errorCode === 'resource-exhausted' ||
+      errorCode === 'quota-exceeded';
+
     const errInfo: FirestoreErrorInfo = {
-      error: error instanceof Error ? error.message : String(error),
+      error: errorStr,
       authInfo: {
         userId: auth.currentUser?.uid,
         email: auth.currentUser?.email,
@@ -154,8 +186,17 @@ import { twMerge } from 'tailwind-merge';
       operationType,
       path
     };
+    
+    if (isQuotaError) {
+      console.warn(`Firestore Quota Limit Hit (${operationType} @ ${path || 'unknown'}): Switching to local cache mode.`);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('firestore-quota-exceeded'));
+      }
+      return; // Gracefully return without crashing the app, relying on caches!
+    }
+
     console.error('Firestore Error Details:', JSON.stringify(errInfo, null, 2));
-    throw new Error(JSON.stringify(errInfo));
+    console.error('Unhandled Firestore Error:', errorStr);
   };
 
   // --- Storage Utils with Compression ---
@@ -621,16 +662,35 @@ export default function App() {
   // Debug marker for user
   const [showDebug, setShowDebug] = useState(true);
 
+  // Connection/Quota warning state
+  const [isQuotaExceeded, setIsQuotaExceeded] = useState(false);
+
+  // Register listener for custom quota event
+  useEffect(() => {
+    const handleQuota = () => {
+      setIsQuotaExceeded(true);
+    };
+    window.addEventListener('firestore-quota-exceeded', handleQuota);
+    return () => window.removeEventListener('firestore-quota-exceeded', handleQuota);
+  }, []);
+
   const [user, setUser] = useState<FirebaseUser | null>(null);
   
   const [appUser, setAppUser] = useState<AppUser | null>(null);
+
+  // Auto-cache appUser
+  useEffect(() => {
+    if (appUser) {
+      saveToCache('appUser', appUser);
+    }
+  }, [appUser]);
   const [activeTab, setActiveTab] = useState<'members' | 'ministries' | 'assembleia' | 'reports' | 'rh' | 'adm' | 'normativos'>('members');
   const [assembleiaSubTab, setAssembleiaSubTab] = useState<'assembleia' | 'reuniao'>('assembleia');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [memberFunctions, setMemberFunctions] = useState<MemberFunction[]>([]);
-  const [relationshipTypes, setRelationshipTypes] = useState<RelationshipType[]>([]);
+  const [members, setMembers] = useState<Member[]>(() => loadFromCache<Member[]>('members', []));
+  const [memberFunctions, setMemberFunctions] = useState<MemberFunction[]>(() => loadFromCache<MemberFunction[]>('memberFunctions', []));
+  const [relationshipTypes, setRelationshipTypes] = useState<RelationshipType[]>(() => loadFromCache<RelationshipType[]>('relationshipTypes', []));
   const [isMemberFunctionsCollapsed, setIsMemberFunctionsCollapsed] = useState(false);
   const [isRelationshipTypesCollapsed, setIsRelationshipTypesCollapsed] = useState(false);
   const [isRHFilterCollapsed, setIsRHFilterCollapsed] = useState(false);
@@ -794,16 +854,16 @@ export default function App() {
   };
 
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [ministries, setMinistries] = useState<Ministry[]>([]);
-  const [atas, setAtas] = useState<Ata[]>([]);
-  const [presencas, setPresencas] = useState<Presenca[]>([]);
-  const [users, setUsers] = useState<AppUser[]>([]);
-  const [appSettings, setAppSettings] = useState<any>({ 
+  const [ministries, setMinistries] = useState<Ministry[]>(() => loadFromCache<Ministry[]>('ministries', []));
+  const [atas, setAtas] = useState<Ata[]>(() => loadFromCache<Ata[]>('atas', []));
+  const [presencas, setPresencas] = useState<Presenca[]>(() => loadFromCache<Presenca[]>('presencas', []));
+  const [users, setUsers] = useState<AppUser[]>(() => loadFromCache<AppUser[]>('users', []));
+  const [appSettings, setAppSettings] = useState<any>(() => loadFromCache<any>('settings', { 
     logoUrl: '', 
     appName: 'IBC Coqueiral', 
     churchCnpj: '',
     navOrder: DEFAULT_NAV_ITEMS.map(i => i.id)
-  });
+  }));
   const [sideNavItems, setSideNavItems] = useState(DEFAULT_NAV_ITEMS);
   
   // Dynamic PWA Update Effect
@@ -936,7 +996,7 @@ export default function App() {
   const [tempRelationships, setTempRelationships] = useState<Relationship[]>([]);
   const [tempMinistryIds, setTempMinistryIds] = useState<string[]>([]);
   const [tempMemberMinistries, setTempMemberMinistries] = useState<MemberMinistry[]>([]);
-  const [ministryRoles, setMinistryRoles] = useState<MinistryRole[]>([]);
+  const [ministryRoles, setMinistryRoles] = useState<MinistryRole[]>(() => loadFromCache<MinistryRole[]>('ministryRoles', []));
   const [isAddingNewMinistryRole, setIsAddingNewMinistryRole] = useState(false);
   const [newMinistryRoleValue, setNewMinistryRoleValue] = useState("");
 
@@ -1261,7 +1321,11 @@ export default function App() {
         await getDocFromServer(doc(db, 'test', 'connection'));
         console.log("Firestore connection verified successfully.");
       } catch (error: any) {
-        console.error("Firestore connectivity check failed:", error);
+        handleFirestoreError(error, OperationType.GET, 'test/connection');
+        const errorStr = error instanceof Error ? error.message : String(error);
+        if (errorStr.includes('Quota limit exceeded') || errorStr.includes('resource-exhausted') || errorStr.toLowerCase().includes('quota') || errorStr.includes('quota-exceeded')) {
+          return;
+        }
         if (retries > 0) {
           console.log(`Retrying connection check... (${retries} attempts left)`);
           setTimeout(() => testConnection(retries - 1), 2000);
@@ -1291,7 +1355,8 @@ export default function App() {
             churchCnpj: data.churchCnpj || ''
           });
         }
-      }
+      },
+      (error) => handleFirestoreError(error, OperationType.GET, 'settings')
     );
 
     return () => unsubscribeSettings();
@@ -1360,7 +1425,11 @@ export default function App() {
                   isFullAdmin: true,
                   createdAt: serverTimestamp()
                 };
-                await setDoc(doc(db, 'users', firebaseUser.uid), newAdmin);
+                try {
+                  await setDoc(doc(db, 'users', firebaseUser.uid), newAdmin);
+                } catch (error) {
+                  handleFirestoreError(error, OperationType.CREATE, `users/${firebaseUser.uid}`);
+                }
                 setAppUser({ id: firebaseUser.uid, ...newAdmin } as AppUser);
                 setLoading(false);
               } else {
@@ -1375,7 +1444,23 @@ export default function App() {
               }
             }
           }, (error) => {
-            console.error("User doc listener error:", error);
+            handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
+            const errorStr = error instanceof Error ? error.message : String(error);
+            if (errorStr.includes('Quota limit exceeded') || errorStr.includes('resource-exhausted') || errorStr.toLowerCase().includes('quota')) {
+              const cachedAppUser = loadFromCache<AppUser | null>('appUser', null);
+              if (cachedAppUser) {
+                setAppUser(cachedAppUser);
+              } else if (firebaseUser.email) {
+                const defaultAdmins = ['secretariaibc3@gmail.com', 'secretaria1@gmail.com'];
+                const isDefaultAdmin = defaultAdmins.includes(firebaseUser.email);
+                setAppUser({
+                  id: firebaseUser.uid,
+                  email: firebaseUser.email,
+                  role: isDefaultAdmin ? 'admin' : 'user',
+                  status: 'approved'
+                } as AppUser);
+              }
+            }
             setLoading(false);
           });
         } else {
@@ -1383,7 +1468,7 @@ export default function App() {
           setLoading(false);
         }
       } catch (error) {
-        console.error("Auth status sync error:", error);
+        handleFirestoreError(error, OperationType.GET, 'auth-sync');
         setLoading(false);
       }
     });
@@ -1512,6 +1597,7 @@ export default function App() {
     const unsubscribeMembers = onSnapshot(q, (snapshot) => {
       const membersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Member));
       setMembers(membersData);
+      saveToCache('members', membersData);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'members'));
 
     let unsubscribeUsers = () => {};
@@ -1519,103 +1605,66 @@ export default function App() {
       unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
         const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppUser));
         setUsers(usersData);
+        saveToCache('users', usersData);
       }, (error) => handleFirestoreError(error, OperationType.LIST, 'users'));
     }
-
-    const unsubscribeFunctions = onSnapshot(collection(db, 'memberFunctions'), (snapshot) => {
-      const functionsData = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as MemberFunction));
-      setMemberFunctions(functionsData.sort((a, b) => a.name.localeCompare(b.name)));
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'memberFunctions'));
-
-    const unsubscribeAtas = onSnapshot(query(collection(db, 'atas'), orderBy('createdAt', 'desc')), (snapshot) => {
-      const atasData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ata));
-      setAtas(atasData);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'atas'));
-
-    const unsubscribePresencas = onSnapshot(query(collection(db, 'presencas'), orderBy('createdAt', 'desc')), (snapshot) => {
-      const presencasData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Presenca));
-      setPresencas(presencasData);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'presencas'));
     
-    const unsubscribeMinistryRoles = onSnapshot(collection(db, 'ministryRoles'), (snapshot) => {
-      const rolesData = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as MinistryRole));
-      if (rolesData.length === 0) {
-        setMinistryRoles([
-          { id: '1', name: 'Líder' },
-          { id: '2', name: 'Liderado' }
-        ]);
-      } else {
-        setMinistryRoles(rolesData.sort((a, b) => a.name.localeCompare(b.name)));
-      }
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'ministryRoles'));
+    const fetchData = async () => {
+      try {
+        const functionsSnapshot = await getDocs(collection(db, 'memberFunctions'));
+        const functionsData = functionsSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as MemberFunction)).sort((a,b) => a.name.localeCompare(b.name));
+        setMemberFunctions(functionsData);
+        saveToCache('memberFunctions', functionsData);
 
-    const unsubscribeRelationshipTypes = onSnapshot(collection(db, 'relationshipTypes'), (snapshot) => {
-      const typesData = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as RelationshipType));
-      if (typesData.length === 0) {
-        const defaults = ['Pai', 'Mãe', 'Filho(a)', 'Irmão', 'Irmã', 'Esposo', 'Esposa'];
-        const relationshipTypesData = defaults.map((name, index) => ({ id: (index + 1).toString(), name }));
-        setRelationshipTypes(relationshipTypesData);
+        const atasSnapshot = await getDocs(query(collection(db, 'atas'), orderBy('createdAt', 'desc')));
+        const atasData = atasSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ata));
+        setAtas(atasData);
+        saveToCache('atas', atasData);
+
+        const presencasSnapshot = await getDocs(query(collection(db, 'presencas'), orderBy('createdAt', 'desc')));
+        const presencasData = presencasSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Presenca));
+        setPresencas(presencasData);
+        saveToCache('presencas', presencasData);
+
+        const rolesSnapshot = await getDocs(collection(db, 'ministryRoles'));
+        const rolesData = rolesSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as MinistryRole));
+        const finalRoles = rolesData.length === 0 ? [{ id: '1', name: 'Líder' }, { id: '2', name: 'Liderado' }] : rolesData.sort((a,b) => a.name.localeCompare(b.name));
+        setMinistryRoles(finalRoles);
+        saveToCache('ministryRoles', finalRoles);
+
+        const relTypesSnapshot = await getDocs(collection(db, 'relationshipTypes'));
+        const relTypesData = relTypesSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as RelationshipType));
+        if (relTypesData.length === 0) {
+          console.log("Empty relationship types, needs seeding logic - keeping as is for now");
+        } else {
+          const sorted = relTypesData.sort((a, b) => a.name.localeCompare(b.name));
+          setRelationshipTypes(sorted);
+          saveToCache('relationshipTypes', sorted);
+        }
         
-        // Seed initial relationship types if empty
-        const seedInitialTypes = async () => {
-          const batch = writeBatch(db);
-          defaults.forEach(name => {
-            const docRef = doc(collection(db, 'relationshipTypes'));
-            batch.set(docRef, { name, createdAt: serverTimestamp() });
-          });
-          try {
-            await batch.commit();
-            console.log("Seeded initial relationship types");
-          } catch (error) {
-            console.error("Error seeding relationship types:", error);
-          }
-        };
-        seedInitialTypes();
-      } else {
-        setRelationshipTypes(typesData.sort((a, b) => a.name.localeCompare(b.name)));
-      }
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'relationshipTypes'));
+        const ministriesSnapshot = await getDocs(query(collection(db, 'ministries'), orderBy('name')));
+        const ministriesData = ministriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ministry));
+        setMinistries(ministriesData);
+        saveToCache('ministries', ministriesData);
 
-    const unsubscribeMinistries = onSnapshot(query(collection(db, 'ministries'), orderBy('name')), (snapshot) => {
-      const ministriesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ministry));
-      setMinistries(ministriesData);
-      
-      // Seed initial ministries if collection is empty
-      if (snapshot.empty && appUser?.role === 'admin') {
-        const initialMinistries = [
-          { name: "Pastoral", color: "#064a8f" },
-          { name: "Ministério Infantil Crescendo em Cristo", color: "#f88a67" },
-          { name: "Ministério da Tesouraria", color: "#2aafa2" },
-          { name: "Ministérios da Secretaria", color: "#2952a2" },
-          { name: "Ministério de Obras", color: "#333333" },
-          { name: "Ministério Mulheres Unidas pela Fé", color: "#703b5a" },
-          { name: "Ministérios Unijovem", color: "#004aad" },
-          { name: "Ministério de Homens", color: "#1a365d" },
-          { name: "Ministérios de Eventos", color: "#ffba00" },
-          { name: "Ministério ADM", color: "#4a5568" },
-        ];
-        initialMinistries.forEach(m => {
-          addDoc(collection(db, 'ministries'), { ...m, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
-        });
+      } catch (error) {
+        handleFirestoreError(error, OperationType.LIST, 'data-fetching');
       }
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'ministries'));
+    };
+    fetchData();
 
     const unsubscribeSettings = onSnapshot(doc(db, 'settings', 'app'), (doc) => {
       if (doc.exists()) {
-        setAppSettings(doc.data());
+        const settingsData = doc.data();
+        setAppSettings(settingsData);
+        saveToCache('settings', settingsData);
       }
-    });
+    }, (error) => handleFirestoreError(error, OperationType.GET, 'settings'));
 
     return () => {
       unsubscribeMembers();
       unsubscribeUsers();
-      unsubscribeAtas();
-      unsubscribeMinistries();
-      unsubscribePresencas();
       unsubscribeSettings();
-      unsubscribeFunctions();
-      unsubscribeMinistryRoles();
-      unsubscribeRelationshipTypes();
     };
   }, [user, appUser]);
 
@@ -3309,8 +3358,31 @@ export default function App() {
   }
 
   return (
-    <div className="relative h-screen overflow-hidden bg-gray-50 flex flex-col md:flex-row">
-      {/* Admin Quick Access Control Button */}
+    <div className="relative h-screen overflow-hidden bg-gray-50 flex flex-col">
+      {/* Quota Exceeded Sticky Banner */}
+      {isQuotaExceeded && (
+        <div className="bg-gradient-to-r from-amber-600 to-orange-600 text-white px-5 py-3 text-xs font-semibold flex items-center justify-between z-[9999] shadow-lg shrink-0 border-b border-amber-500/20">
+          <div className="flex items-center gap-3">
+            <span className="flex h-2 w-2 relative shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-300"></span>
+            </span>
+            <span className="leading-tight">
+              <strong>Modo de Leitura Offline / Limite de Cotas:</strong> Atingimos o limite diário gratuito de leituras Firebase (Quota Limit). O app continuará totalmente visível e responsivo com dados salvos em cache local!
+            </span>
+          </div>
+          <button 
+            onClick={() => setIsQuotaExceeded(false)}
+            className="ml-4 hover:bg-white/10 text-white font-bold h-6 w-6 rounded-full flex items-center justify-center transition-colors shrink-0"
+            title="Fechar aviso"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        {/* Admin Quick Access Control Button */}
       {appUser?.role === 'admin' && (
         <div className="fixed bottom-36 left-6 z-[60] flex flex-col items-start gap-4 pointer-events-none">
           <AnimatePresence>
@@ -4071,7 +4143,7 @@ export default function App() {
             </div>
           ) : activeTab === 'ministries' ? (
             <div className="max-w-6xl mx-auto space-y-4 sm:space-y-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                 <AnimatePresence mode="popLayout">
                   {ministries.map((m, idx) => (
                     <motion.div
@@ -4349,7 +4421,7 @@ export default function App() {
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6">
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -7628,6 +7700,7 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }

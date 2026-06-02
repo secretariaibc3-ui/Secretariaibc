@@ -1,0 +1,62 @@
+91:  collection, 
+93:  onSnapshot, 
+101:  getDoc,
+104:  getDocFromServer
+423:  collection: string;
+1281:      const { type, collection: colName, id, ids, data } = undoAction;
+1321:        await getDocFromServer(doc(db, 'test', 'connection'));
+1347:    const unsubscribeSettings = onSnapshot(
+1391:          unsubscribeUserDoc = onSnapshot(doc(db, 'users', firebaseUser.uid), async (snapshot) => {
+1596:    const q = query(collection(db, 'members'), orderBy('name'));
+1597:    const unsubscribeMembers = onSnapshot(q, (snapshot) => {
+1605:      unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+1614:        const functionsSnapshot = await getDocs(collection(db, 'memberFunctions'));
+1619:        const atasSnapshot = await getDocs(query(collection(db, 'atas'), orderBy('createdAt', 'desc')));
+1624:        const presencasSnapshot = await getDocs(query(collection(db, 'presencas'), orderBy('createdAt', 'desc')));
+1629:        const rolesSnapshot = await getDocs(collection(db, 'ministryRoles'));
+1635:        const relTypesSnapshot = await getDocs(collection(db, 'relationshipTypes'));
+1645:        const ministriesSnapshot = await getDocs(query(collection(db, 'ministries'), orderBy('name')));
+1656:    const unsubscribeSettings = onSnapshot(doc(db, 'settings', 'app'), (doc) => {
+1832:        const memberRef = doc(collection(db, 'members'));
+1855:            const bSnap = await getDoc(bRef);
+1871:            const funcRef = doc(collection(db, 'memberFunctions'));
+1880:             const roleRef = doc(collection(db, 'ministryRoles'));
+1891:          collection: 'members',
+1930:            collection: 'members',
+2026:        // Optimize relationship updates using shared logic to avoid multiple independent getDoc calls if possible
+2034:              const bSnap = await getDoc(bRef);
+2057:              const bSnap = await getDoc(bRef);
+2083:            const funcRef = doc(collection(db, 'memberFunctions'));
+2092:             const roleRef = doc(collection(db, 'ministryRoles'));
+2103:          collection: 'members',
+2144:        collection: 'members',
+2168:      const docRef = await addDoc(collection(db, 'memberFunctions'), {
+2175:        collection: 'memberFunctions',
+2302:        collection: 'memberFunctions',
+2329:            collection: 'memberFunctions',
+2361:      await addDoc(collection(db, 'relationshipTypes'), {
+2423:            collection: 'relationshipTypes',
+2450:        collection: 'members',
+2481:        collection: 'members',
+2537:        collection: 'users',
+2575:      const docRef = await addDoc(collection(db, 'ministries'), {
+2585:        collection: 'ministries',
+2621:        collection: 'ministries',
+2650:              collection: 'ministries',
+2682:      const docRef = await addDoc(collection(db, 'atas'), {
+2698:        collection: 'atas',
+2749:        collection: 'atas',
+2775:      const docRef = await addDoc(collection(db, 'presencas'), {
+2785:        collection: 'presencas',
+2821:        collection: 'presencas',
+2906:              collection: 'atas',
+2932:              collection: 'presencas',
+3039:            collection: 'settings',
+3080:        collection: 'settings',
+4108:                                        collection: 'members',
+5349:                                  collection: 'settings',
+5379:                                  collection: 'settings',
+5405:                                collection: 'settings',
+5583:                                        collection: 'users',
+5668:                                        collection: 'users',
+5697:                                collection: 'users',
