@@ -3899,7 +3899,7 @@ export default function App() {
                 {activeTab === 'members' && (
                   <div className="flex items-center ml-2 sm:ml-3">
                     <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-gray-300 mr-2 shadow-sm" />
-                    <span className="text-sm sm:text-lg font-bold text-ibc-teal tracking-tight">{members.length}</span>
+                    <span className="text-sm sm:text-lg font-bold text-ibc-teal tracking-tight">{members.filter(m => m.isActive !== false).length}</span>
                   </div>
                 )}
               </div>
