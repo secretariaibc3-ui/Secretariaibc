@@ -1698,7 +1698,7 @@ export default function App() {
     const fetchData = async () => {
       try {
         const functionsSnapshot = await getDocs(collection(db, 'memberFunctions'));
-        const functionsData = functionsSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as MemberFunction)).sort((a,b) => a.name.localeCompare(b.name));
+        const functionsData = functionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MemberFunction)).sort((a,b) => (a.name || '').localeCompare(b.name || ''));
         setMemberFunctions(functionsData);
         saveToCache('memberFunctions', functionsData);
 
@@ -1713,23 +1713,27 @@ export default function App() {
         saveToCache('presencas', presencasData);
 
         const rolesSnapshot = await getDocs(collection(db, 'ministryRoles'));
-        const rolesData = rolesSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as MinistryRole));
-        const finalRoles = rolesData.length === 0 ? [{ id: '1', name: 'Líder' }, { id: '2', name: 'Liderado' }] : rolesData.sort((a,b) => a.name.localeCompare(b.name));
+        const rolesData = rolesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MinistryRole));
+        const finalRoles = rolesData.length === 0 
+          ? [{ id: '1', name: 'Líder' }, { id: '2', name: 'Liderado' }] 
+          : rolesData.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
         setMinistryRoles(finalRoles);
         saveToCache('ministryRoles', finalRoles);
 
         const relTypesSnapshot = await getDocs(collection(db, 'relationshipTypes'));
-        const relTypesData = relTypesSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as RelationshipType));
+        const relTypesData = relTypesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RelationshipType));
         if (relTypesData.length === 0) {
           console.log("Empty relationship types, needs seeding logic - keeping as is for now");
         } else {
-          const sorted = relTypesData.sort((a, b) => a.name.localeCompare(b.name));
+          const sorted = relTypesData.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
           setRelationshipTypes(sorted);
           saveToCache('relationshipTypes', sorted);
         }
         
-        const ministriesSnapshot = await getDocs(query(collection(db, 'ministries'), orderBy('name')));
-        const ministriesData = ministriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ministry));
+        const ministriesSnapshot = await getDocs(collection(db, 'ministries'));
+        const ministriesData = ministriesSnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as Ministry))
+          .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         setMinistries(ministriesData);
         saveToCache('ministries', ministriesData);
 
