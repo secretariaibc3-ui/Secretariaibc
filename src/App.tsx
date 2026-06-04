@@ -796,6 +796,7 @@ export default function App() {
   const [expandedFunction, setExpandedFunction] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [showInstallBanner, setShowInstallBanner] = useState(!localStorage.getItem('pwa_install_dismissed'));
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -854,6 +855,7 @@ export default function App() {
     if (outcome === 'accepted') {
       setDeferredPrompt(null);
       setShowInstallModal(false);
+      setShowInstallBanner(false);
     }
   };
 
@@ -3245,7 +3247,7 @@ export default function App() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6">
         <AnimatePresence>
-          {!isStandalone && (
+          {!isStandalone && showInstallBanner && (
             <motion.div 
               initial={{ y: -100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -3506,7 +3508,7 @@ export default function App() {
       />
 
       <AnimatePresence>
-        {!isStandalone && (
+        {!isStandalone && showInstallBanner && (
           <motion.div 
             initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -4538,90 +4540,6 @@ export default function App() {
                   </AnimatePresence>
                 </section>
 
-                {/* Summary Cards */}
-                <div className="grid grid-cols-2 gap-2 sm:gap-6">
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="glass-card p-3 sm:p-6 rounded-[2.5rem] border border-white/40 shadow-sm"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-ibc-teal/10 flex items-center justify-center text-ibc-teal">
-                        <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </div>
-                      <span className="text-[7px] sm:text-[10px] font-black text-ibc-teal uppercase tracking-widest bg-ibc-teal/5 px-2 py-1 rounded-lg">Ativos</span>
-                    </div>
-                    <div className="text-xl sm:text-3xl font-black text-gray-900 leading-tight">{reportData.active}</div>
-                    <div className="mt-2 h-1 sm:h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-ibc-teal rounded-full" 
-                        style={{ width: `${(reportData.active / reportData.total) * 100}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-[7px] sm:text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-widest">{Math.round((reportData.active / reportData.total) * 100)}% ativos</p>
-                  </motion.div>
-
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.1 }}
-                    className="glass-card p-4 sm:p-6 rounded-[2.5rem] border border-white/40 shadow-sm"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-orange-50 flex items-center justify-center text-orange-500">
-                        <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </div>
-                      <span className="text-[7px] sm:text-[10px] font-black text-orange-500 uppercase tracking-widest bg-orange-50 px-2 py-1 rounded-lg">Ausentes</span>
-                    </div>
-                    <div className="text-xl sm:text-3xl font-black text-gray-900 leading-tight">{reportData.absent}</div>
-                    <div className="mt-2 h-1 sm:h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-orange-500 rounded-full" 
-                        style={{ width: `${(reportData.absent / reportData.total) * 100}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-[7px] sm:text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-widest">{Math.round((reportData.absent / reportData.total) * 100)}% ausentes</p>
-                  </motion.div>
-
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="glass-card p-4 sm:p-6 rounded-[2.5rem] border border-white/40 shadow-sm"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-red-50 flex items-center justify-center text-red-500">
-                        <UserMinus className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </div>
-                      <span className="text-[7px] sm:text-[10px] font-black text-red-500 uppercase tracking-widest bg-red-50 px-2 py-1 rounded-lg">Inativos</span>
-                    </div>
-                    <div className="text-xl sm:text-3xl font-black text-gray-900 leading-tight">{reportData.inactive}</div>
-                    <div className="mt-2 h-1 sm:h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-red-500 rounded-full" 
-                        style={{ width: `${(reportData.inactive / reportData.total) * 100}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-[7px] sm:text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-widest">{Math.round((reportData.inactive / reportData.total) * 100)}% inativos</p>
-                  </motion.div>
-
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="glass-card p-4 sm:p-6 rounded-[2.5rem] border border-white/40 shadow-sm"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                       <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-ibc-blue/10 flex items-center justify-center text-ibc-blue">
-                        <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </div>
-                      <span className="text-[7px] sm:text-[10px] font-black text-ibc-blue uppercase tracking-widest bg-ibc-blue/5 px-2 py-1 rounded-lg">Total</span>
-                    </div>
-                    <div className="text-xl sm:text-3xl font-black text-gray-900 leading-tight">{reportData.total}</div>
-                    <p className="text-[7px] sm:text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-widest">Base de dados total</p>
-                  </motion.div>
-                </div>
-
                 {/* Charts Area */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
                   {/* Functions Bar Chart */}
@@ -5416,7 +5334,7 @@ export default function App() {
               </section>
 
               {/* PWA Install Section */}
-              {!isStandalone && (
+              {!isStandalone && showInstallBanner && (
                 <section className="bg-gradient-to-br from-ibc-teal to-ibc-blue p-8 rounded-3xl shadow-xl shadow-ibc-teal/20 text-white relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none group-hover:bg-white/20 transition-all duration-700" />
                   <div className="relative z-10">
@@ -7825,6 +7743,7 @@ export default function App() {
                 <button 
                   onClick={() => {
                     setShowInstallModal(false);
+                    setShowInstallBanner(false);
                     localStorage.setItem('pwa_install_dismissed', 'true');
                     localStorage.setItem('pwa_install_dismissed_time', Date.now().toString());
                   }}
