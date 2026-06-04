@@ -792,6 +792,8 @@ export default function App() {
   };
 
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [expandedFunction, setExpandedFunction] = useState<string | null>(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -1554,16 +1556,24 @@ export default function App() {
     const total = members.length;
     
     // Group by function
-    const functionGroups: Record<string, number> = {};
+    const functionsDetails: Record<string, { members: Member[], count: number, percentage: string }> = {};
     members.forEach(m => {
       const func = m.function || 'Não Definida';
-      functionGroups[func] = (functionGroups[func] || 0) + 1;
+      if (!functionsDetails[func]) {
+        functionsDetails[func] = { members: [], count: 0, percentage: '0' };
+      }
+      functionsDetails[func].members.push(m);
+      functionsDetails[func].count++;
+    });
+    
+    Object.keys(functionsDetails).forEach(func => {
+        const count = functionsDetails[func].count;
+        functionsDetails[func].percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0';
     });
 
-    const functionChartData = Object.entries(functionGroups)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 8); 
+    const functionChartData = Object.entries(functionsDetails)
+      .map(([name, data]) => ({ name, value: data.count }))
+      .sort((a, b) => b.value - a.value);
 
     // Active vs Absent vs Inactive
     const statusChartData = [
@@ -1585,7 +1595,8 @@ export default function App() {
       functionChartData,
       statusChartData,
       activePercentage,
-      COLORS
+      COLORS,
+      functionsDetails
     };
   }, [members]);
 
@@ -2982,26 +2993,47 @@ export default function App() {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    let newsMonth = 0, newsYear = 0;
+    const stats: Record<string, { members: Member[], label: string, id: string }> = {
+      absentsMonth: { members: [], label: 'Ausentes (Mês)', id: 'absentsMonth' },
+      returnsMonth: { members: [], label: 'Voltaram (Mês)', id: 'returnsMonth' },
+      inactivesMonth: { members: [], label: 'Inativos (Mês)', id: 'inactivesMonth' },
+      newsMonth: { members: [], label: 'Novos (Mês)', id: 'newsMonth' },
+      absentsYear: { members: [], label: 'Ausentes (Ano)', id: 'absentsYear' },
+      returnsYear: { members: [], label: 'Voltaram (Ano)', id: 'returnsYear' },
+      inactivesYear: { members: [], label: 'Inativos (Ano)', id: 'inactivesYear' },
+      newsYear: { members: [], label: 'Novos (Ano)', id: 'newsYear' }
+    };
 
     members.forEach(m => {
       const created = m.createdAt?.seconds ? new Date(m.createdAt.seconds * 1000) : null;
       
       if (created) {
-        if (created.getMonth() === currentMonth && created.getFullYear() === currentYear) {
-          newsMonth++;
-        }
         if (created.getFullYear() === currentYear) {
-          newsYear++;
+          stats.newsYear.members.push(m);
+          if (created.getMonth() === currentMonth) {
+            stats.newsMonth.members.push(m);
+          }
         }
+      }
+      
+      const isActive = m.isActive !== false;
+      if (m.isAbsent) {
+        stats.absentsYear.members.push(m);
+        if (created && created.getMonth() === currentMonth && created.getFullYear() === currentYear) {
+           stats.absentsMonth.members.push(m);
+        }
+      }
+
+      if (!isActive) {
+          stats.inactivesYear.members.push(m);
+          if (created && created.getMonth() === currentMonth && created.getFullYear() === currentYear) {
+             stats.inactivesMonth.members.push(m);
+          }
       }
     });
 
-    return { 
-      absentsMonth: absentMembersCount, returnsMonth: 0, inactivesMonth: inactiveMembersCount, newsMonth, 
-      absentsYear: absentMembersCount, returnsYear: 0, inactivesYear: inactiveMembersCount, newsYear 
-    };
-  }, [members, activeMembersCount, absentMembersCount, inactiveMembersCount]);
+    return stats;
+  }, [members]);
 
   const filteredMembers = useMemo(() => {
     const normalizedQuery = normalizeString(searchQuery);
@@ -4451,22 +4483,53 @@ export default function App() {
                 <section className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 mt-6">
                   <h4 className="text-lg font-black text-gray-900 mb-6">Estatísticas de Movimentação de Membros</h4>
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[
-                      { label: 'Ausentes (Mês)', value: memberStats.absentsMonth },
-                      { label: 'Voltaram (Mês)', value: memberStats.returnsMonth },
-                      { label: 'Inativos (Mês)', value: memberStats.inactivesMonth },
-                      { label: 'Novos (Mês)', value: memberStats.newsMonth },
-                      { label: 'Ausentes (Ano)', value: memberStats.absentsYear },
-                      { label: 'Voltaram (Ano)', value: memberStats.returnsYear },
-                      { label: 'Inativos (Ano)', value: memberStats.inactivesYear },
-                      { label: 'Novos (Ano)', value: memberStats.newsYear },
-                    ].map((stat, i) => (
-                      <div key={i} className="bg-gray-50 p-4 rounded-2xl">
+                    {Object.values(memberStats).map((stat) => (
+                      <button 
+                        key={stat.id}
+                        onClick={() => setExpandedCard(expandedCard === stat.id ? null : stat.id)}
+                        className={`bg-gray-50 p-4 rounded-2xl text-left transition-all ${expandedCard === stat.id ? 'ring-2 ring-ibc-teal' : ''}`}
+                      >
                         <div className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{stat.label}</div>
-                        <div className="text-xl sm:text-2xl font-black text-gray-900">{stat.value}</div>
-                      </div>
+                        <div className="text-xl sm:text-2xl font-black text-gray-900">{stat.members.length}</div>
+                      </button>
                     ))}
                   </div>
+
+                  {/* Expanded Member List */}
+                  <AnimatePresence>
+                    {expandedCard && memberStats[expandedCard] && memberStats[expandedCard].members.length > 0 && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-6 border-t pt-6"
+                      >
+                        <h5 className="font-bold text-gray-700 mb-4">{memberStats[expandedCard].label}</h5>
+                        <div className="space-y-3">
+                          {memberStats[expandedCard].members.map((m) => (
+                            <div key={m.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                                <div className="flex items-center space-x-3 overflow-hidden">
+                                  <div className="w-10 h-10 rounded-xl bg-white overflow-hidden shrink-0 border border-gray-100 shadow-sm flex items-center justify-center text-xs font-bold text-gray-400">
+                                    {m.photoUrl ? (
+                                      <img src={m.photoUrl} className="w-full h-full object-cover" alt={m.name} referrerPolicy="no-referrer" />
+                                    ) : (
+                                       m.name.charAt(0)
+                                    )}
+                                  </div>
+                                  <div>
+                                    <div className="font-bold text-gray-900 text-sm">{m.name}</div>
+                                    <div className="text-[10px] text-gray-500">{m.congregation || 'Sem congregação'}</div>
+                                  </div>
+                                </div>
+                                <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase ${m.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                  {m.isActive ? 'Ativo' : 'Inativo'}
+                                </span>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </section>
 
                 {/* Summary Cards */}
@@ -4563,27 +4626,47 @@ export default function App() {
                       </div>
                       <h4 className="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-widest">Membros por Função</h4>
                     </div>
-                    <div className="h-64 sm:h-80 w-full min-w-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={reportData.functionChartData} layout="vertical" margin={{ left: 0, right: 30, top: 0, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#F3F4F6" />
-                          <XAxis type="number" hide />
-                          <YAxis 
-                            dataKey="name" 
-                            type="category" 
-                            width={80} 
-                            axisLine={false} 
-                            tickLine={false} 
-                            tick={{ fontSize: 9, fontWeight: 700, fill: '#6B7280' }} 
-                            interval={0}
-                          />
-                          <Tooltip 
-                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                            cursor={{ fill: '#F9FAFB' }}
-                          />
-                          <Bar dataKey="value" fill="#00A896" radius={[0, 8, 8, 0]} barSize={20} />
-                        </BarChart>
-                      </ResponsiveContainer>
+                    <div className="space-y-2">
+                       {Object.entries(reportData.functionsDetails).map(([name, data]) => (
+                         <div key={name}>
+                             <button
+                               onClick={() => setExpandedFunction(expandedFunction === name ? null : name)}
+                               className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100 hover:bg-gray-100 transition-all font-black text-sm text-gray-900"
+                             >
+                               <span>{name}</span>
+                               <span>{data.count} ({data.percentage}%)</span>
+                             </button>
+                             <AnimatePresence>
+                               {expandedFunction === name && (
+                                 <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="overflow-hidden"
+                                 >
+                                    <div className="p-3 space-y-2">
+                                       {data.members.map(m => (
+                                          <div key={m.id} className="flex items-center justify-between p-2 bg-white rounded-xl shadow-sm border border-gray-100">
+                                            <div className="flex items-center space-x-2">
+                                              <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-400">
+                                                {m.photoUrl ? <img src={m.photoUrl} className="w-full h-full object-cover rounded-lg" alt={m.name} /> : m.name.charAt(0)}
+                                              </div>
+                                              <div>
+                                                <div className="font-bold text-xs text-gray-900">{m.name}</div>
+                                                <div className="text-[10px] text-gray-400">{m.congregation || 'Sem congregação'}</div>
+                                              </div>
+                                            </div>
+                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${m.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                              {m.isActive ? 'Ativo' : 'Inativo'}
+                                            </span>
+                                          </div>
+                                       ))}
+                                    </div>
+                                 </motion.div>
+                               )}
+                             </AnimatePresence>
+                         </div>
+                       ))}
                     </div>
                   </div>
 
