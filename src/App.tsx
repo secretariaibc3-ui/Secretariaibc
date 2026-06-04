@@ -2972,9 +2972,36 @@ export default function App() {
     doc.save(`ata-${ata.number}.pdf`);
   };
 
+  // Stat Calculations
   const activeMembersCount = useMemo(() => members.filter(m => m.isActive !== false && !m.isAbsent).length, [members]);
   const absentMembersCount = useMemo(() => members.filter(m => m.isActive !== false && m.isAbsent).length, [members]);
   const inactiveMembersCount = useMemo(() => members.filter(m => m.isActive === false).length, [members]);
+  
+  const memberStats = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    let newsMonth = 0, newsYear = 0;
+
+    members.forEach(m => {
+      const created = m.createdAt?.seconds ? new Date(m.createdAt.seconds * 1000) : null;
+      
+      if (created) {
+        if (created.getMonth() === currentMonth && created.getFullYear() === currentYear) {
+          newsMonth++;
+        }
+        if (created.getFullYear() === currentYear) {
+          newsYear++;
+        }
+      }
+    });
+
+    return { 
+      absentsMonth: absentMembersCount, returnsMonth: 0, inactivesMonth: inactiveMembersCount, newsMonth, 
+      absentsYear: absentMembersCount, returnsYear: 0, inactivesYear: inactiveMembersCount, newsYear 
+    };
+  }, [members, activeMembersCount, absentMembersCount, inactiveMembersCount]);
 
   const filteredMembers = useMemo(() => {
     const normalizedQuery = normalizeString(searchQuery);
@@ -4419,6 +4446,28 @@ export default function App() {
                     </div>
                   </div>
                 </div>
+
+                {/* Estatísticas de Movimentação de Membros */}
+                <section className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 mt-6">
+                  <h4 className="text-lg font-black text-gray-900 mb-6">Estatísticas de Movimentação de Membros</h4>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                      { label: 'Ausentes (Mês)', value: memberStats.absentsMonth },
+                      { label: 'Voltaram (Mês)', value: memberStats.returnsMonth },
+                      { label: 'Inativos (Mês)', value: memberStats.inactivesMonth },
+                      { label: 'Novos (Mês)', value: memberStats.newsMonth },
+                      { label: 'Ausentes (Ano)', value: memberStats.absentsYear },
+                      { label: 'Voltaram (Ano)', value: memberStats.returnsYear },
+                      { label: 'Inativos (Ano)', value: memberStats.inactivesYear },
+                      { label: 'Novos (Ano)', value: memberStats.newsYear },
+                    ].map((stat, i) => (
+                      <div key={i} className="bg-gray-50 p-4 rounded-2xl">
+                        <div className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{stat.label}</div>
+                        <div className="text-xl sm:text-2xl font-black text-gray-900">{stat.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-2 gap-2 sm:gap-6">
