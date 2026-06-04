@@ -4659,7 +4659,6 @@ export default function App() {
                                               </div>
                                               <div>
                                                 <div className="font-bold text-xs text-gray-900">{m.name}</div>
-                                                <div className="text-[10px] text-gray-400">{m.congregation || 'Sem congregação'}</div>
                                               </div>
                                             </div>
                                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${m.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
