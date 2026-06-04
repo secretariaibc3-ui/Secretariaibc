@@ -4731,15 +4731,14 @@ export default function App() {
                   {/* Fullscreen Member List Modal */}
                   <AnimatePresence>
                     {expandedCard && memberStats.categories[expandedCard] && (
-                      <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-10 pointer-events-auto"
-                      >
+                      <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-10 pointer-events-auto">
                         {/* Backdrop */}
-                        <div 
-                          className="absolute inset-0 bg-gray-900/40 backdrop-blur-md"
+                        <motion.div 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute inset-0 bg-gray-900/40 backdrop-blur-md cursor-pointer"
                           onClick={() => setExpandedCard(null)}
                         />
                         
@@ -4748,7 +4747,13 @@ export default function App() {
                           initial={{ y: 50, opacity: 0, scale: 0.95 }}
                           animate={{ y: 0, opacity: 1, scale: 1 }}
                           exit={{ y: 50, opacity: 0, scale: 0.95 }}
-                          className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] bg-white sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col"
+                          transition={{ 
+                            type: "spring", 
+                            stiffness: 400, 
+                            damping: 32,
+                            mass: 0.8
+                          }}
+                          className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] bg-white sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col z-10"
                         >
                           {/* Header */}
                           <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 shrink-0 bg-white/80 backdrop-blur-sm sticky top-0 z-20">
@@ -4829,7 +4834,7 @@ export default function App() {
                           {/* Mobile Bottom Padding (safe area) */}
                           <div className="h-safe-bottom sm:hidden shrink-0" />
                         </motion.div>
-                      </motion.div>
+                      </div>
                     )}
                   </AnimatePresence>
                 </section>
@@ -4906,14 +4911,13 @@ export default function App() {
                 {/* Member by Function Fullscreen Modal */}
                 <AnimatePresence>
                   {expandedFunction && reportData.functionsDetails[expandedFunction] && (
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-10 pointer-events-auto"
-                    >
-                      <div 
-                        className="absolute inset-0 bg-gray-900/40 backdrop-blur-md"
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-10 pointer-events-auto">
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute inset-0 bg-gray-900/40 backdrop-blur-md cursor-pointer"
                         onClick={() => setExpandedFunction(null)}
                       />
                       
@@ -4921,7 +4925,13 @@ export default function App() {
                         initial={{ y: 50, opacity: 0, scale: 0.95 }}
                         animate={{ y: 0, opacity: 1, scale: 1 }}
                         exit={{ y: 50, opacity: 0, scale: 0.95 }}
-                        className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] bg-white sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col"
+                        transition={{ 
+                          type: "spring", 
+                          stiffness: 400, 
+                          damping: 32,
+                          mass: 0.8
+                        }}
+                        className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] bg-white sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col z-10"
                       >
                         <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 shrink-0 bg-white/80 backdrop-blur-sm sticky top-0 z-20">
                           <div className="flex items-center space-x-4">
@@ -4985,7 +4995,7 @@ export default function App() {
                         
                         <div className="h-safe-bottom sm:hidden shrink-0" />
                       </motion.div>
-                    </motion.div>
+                    </div>
                   )}
                 </AnimatePresence>
 
