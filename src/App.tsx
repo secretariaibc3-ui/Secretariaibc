@@ -29,6 +29,7 @@ import {
   LogOut, 
   Trash2, 
   UserMinus,
+  UserCheck,
   CheckCircle,
   Check,
   AlertCircle,
@@ -2993,32 +2994,102 @@ export default function App() {
   const inactiveMembersCount = useMemo(() => members.filter(m => m.isActive === false).length, [members]);
   
   const memberStats = useMemo(() => {
-    const stats: Record<string, { members: Member[], prevMembers?: Member[], label: string, id: string }> = {
-      absents: { members: [], prevMembers: [], label: 'Ausentes', id: 'absents' },
-      returns: { members: [], prevMembers: [], label: 'Voltaram', id: 'returns' },
-      inactives: { members: [], prevMembers: [], label: 'Inativos', id: 'inactives' },
-      news: { members: [], prevMembers: [], label: 'Novos Cadastros', id: 'news' }
+    const categories: Record<string, { members: Member[], prevMembers: Member[], label: string, id: string, color: string, icon: any, tag: string }> = {
+      absents: { members: [], prevMembers: [], label: 'Ausentes', id: 'absents', color: '#F97316', icon: Clock, tag: 'Ausentes' },
+      returns: { members: [], prevMembers: [], label: 'Voltaram', id: 'returns', color: '#10B981', icon: RefreshCcw, tag: 'Retornos' },
+      inactives: { members: [], prevMembers: [], label: 'Inativos', id: 'inactives', color: '#EF4444', icon: UserMinus, tag: 'Inativos' },
+      news: { members: [], prevMembers: [], label: 'Novos Cadastros', id: 'news', color: '#3B82F6', icon: UserPlus, tag: 'Novos' }
     };
 
-    const current = new Date(selectedYear, selectedMonth);
-    const prevMonth = new Date(selectedYear, selectedMonth - 1);
-    const prevYear = new Date(selectedYear - 1, selectedMonth);
+    const currentStart = selectedMonth === -1 
+      ? new Date(selectedYear, 0, 1)
+      : new Date(selectedYear, selectedMonth, 1);
+    const currentEnd = selectedMonth === -1
+      ? new Date(selectedYear, 11, 31)
+      : new Date(selectedYear, selectedMonth + 1, 0);
+    
+    const prevStart = selectedMonth === -1
+      ? new Date(selectedYear - 1, 0, 1)
+      : new Date(selectedYear, selectedMonth - 1, 1);
+    const prevEnd = selectedMonth === -1
+      ? new Date(selectedYear - 1, 11, 31)
+      : new Date(selectedYear, selectedMonth, 0);
+
+    const checkInPeriod = (date: Date | null, start: Date, end: Date) => {
+      if (!date) return false;
+      return date >= start && date <= end;
+    };
 
     members.forEach(m => {
       const created = m.createdAt?.seconds ? new Date(m.createdAt.seconds * 1000) : null;
-      
-      // Monthly check
-      if (created && created.getMonth() === current.getMonth() && created.getFullYear() === current.getFullYear()) stats.news.members.push(m);
-      if (created && created.getMonth() === prevMonth.getMonth() && created.getFullYear() === prevMonth.getFullYear()) stats.news.prevMembers!.push(m);
+      const updated = m.updatedAt?.seconds ? new Date(m.updatedAt.seconds * 1000) : null;
 
-      // Status check (simplified for now, assumes status change dates are not tracked, should be improved)
-      const isActive = m.isActive !== false;
-      if (m.isAbsent) stats.absents.members.push(m);
-      if (!isActive) stats.inactives.members.push(m);
-      // 'Returns' is tricky without historical data, will leave empty or implement placeholder logic if possible.
+      // News: Based on createdAt
+      if (checkInPeriod(created, currentStart, currentEnd)) categories.news.members.push(m);
+      if (checkInPeriod(created, prevStart, prevEnd)) categories.news.prevMembers.push(m);
+
+      // Others: Based on updatedAt as proxy for status change if currently in that state
+      if (m.isAbsent && m.isActive !== false) {
+        if (checkInPeriod(updated, currentStart, currentEnd)) categories.absents.members.push(m);
+        if (checkInPeriod(updated, prevStart, prevEnd)) categories.absents.prevMembers.push(m);
+      }
+      
+      if (m.isActive === false) {
+        if (checkInPeriod(updated, currentStart, currentEnd)) categories.inactives.members.push(m);
+        if (checkInPeriod(updated, prevStart, prevEnd)) categories.inactives.prevMembers.push(m);
+      }
+
+      // Returns: Active (not absent) but updated in period (Heuristic)
+      if (m.isActive !== false && !m.isAbsent) {
+        if (checkInPeriod(updated, currentStart, currentEnd)) categories.returns.members.push(m);
+        if (checkInPeriod(updated, prevStart, prevEnd)) categories.returns.prevMembers.push(m);
+      }
     });
 
-    return stats;
+    // Evolution data for chart
+    const chartData = [];
+    const monthsToFetch = selectedMonth === -1 ? 12 : 6;
+    const startOffset = selectedMonth === -1 ? 0 : selectedMonth - 5;
+    const yearForChart = selectedYear;
+
+    for (let i = 0; i < monthsToFetch; i++) {
+      const monthIdx = selectedMonth === -1 ? i : startOffset + i;
+      const d = new Date(yearForChart, monthIdx, 1);
+      const start = d;
+      const end = new Date(yearForChart, monthIdx + 1, 0);
+      const name = d.toLocaleString('pt-BR', { month: 'short' });
+      
+      const counts = {
+        name,
+        novos: 0,
+        ausentes: 0,
+        inativos: 0,
+        voltou: 0
+      };
+
+      members.forEach(m => {
+        const created = m.createdAt?.seconds ? new Date(m.createdAt.seconds * 1000) : null;
+        const updated = m.updatedAt?.seconds ? new Date(m.updatedAt.seconds * 1000) : null;
+
+        if (checkInPeriod(created, start, end)) counts.novos++;
+        if (m.isAbsent && m.isActive !== false && checkInPeriod(updated, start, end)) counts.ausentes++;
+        if (m.isActive === false && checkInPeriod(updated, start, end)) counts.inactives++;
+        if (m.isActive !== false && !m.isAbsent && checkInPeriod(updated, start, end)) counts.voltou++;
+      });
+      chartData.push(counts);
+    }
+
+    // Smart Summary
+    let summary = "Neste período analisado, o sistema registrou movimentações consistentes. ";
+    const newsDiff = categories.news.members.length - categories.news.prevMembers.length;
+    if (newsDiff > 0) summary += `Houve um aumento de ${newsDiff} novos cadastros em relação ao mês anterior. `;
+    else if (newsDiff < 0) summary += `Houve uma redução de ${Math.abs(newsDiff)} cadastros em relação ao mês anterior. `;
+    
+    const absDiff = categories.absents.members.length - categories.absents.prevMembers.length;
+    if (absDiff > 0) summary += `O número de ausentes cresceu em ${absDiff}. `;
+    else if (absDiff < 0) summary += `Houve uma redução positiva de ${Math.abs(absDiff)} nos membros ausentes. `;
+
+    return { categories, chartData, summary };
   }, [members, selectedMonth, selectedYear]);
 
   const filteredMembers = useMemo(() => {
@@ -4471,6 +4542,7 @@ export default function App() {
                     <h4 className="text-lg font-black text-gray-900">Estatísticas de Movimentação</h4>
                     <div className="flex items-center gap-2">
                         <select className="bg-gray-50 border-none rounded-xl px-3 py-2 text-xs font-bold text-gray-600" value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))}>
+                          <option value={-1}>Ano Inteiro</option>
                           {Array.from({length: 12}, (_, i) => <option key={i} value={i}>{new Date(0, i).toLocaleString('pt-BR', {month: 'long'})}</option>)}
                         </select>
                         <select className="bg-gray-50 border-none rounded-xl px-3 py-2 text-xs font-bold text-gray-600" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))}>
@@ -4479,59 +4551,131 @@ export default function App() {
                     </div>
                   </div>
                   
-                  <div className="text-sm text-gray-600 mb-6 font-medium">
-                     Em comparação ao período anterior, as estatísticas indicam variações nos registros.
+                  <div className="text-sm text-gray-500 mb-8 bg-gray-50 p-4 rounded-2xl border border-dashed border-gray-200">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 rounded-lg bg-ibc-teal/10 flex items-center justify-center shrink-0">
+                        <TrendingUp className="w-4 h-4 text-ibc-teal" />
+                      </div>
+                      <p className="font-medium leading-relaxed italic">{memberStats.summary}</p>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    {Object.values(memberStats).map((stat) => (
-                      <button 
-                        key={stat.id}
-                        onClick={() => setExpandedCard(expandedCard === stat.id ? null : stat.id)}
-                        className={`bg-gray-50 p-4 rounded-2xl text-left transition-all ${expandedCard === stat.id ? 'ring-2 ring-ibc-teal' : ''}`}
-                      >
-                        <div className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{stat.label}</div>
-                        <div className="text-xl sm:text-2xl font-black text-gray-900">{stat.members.length}</div>
-                        <div className="text-[10px] font-bold text-gray-500 mt-1">
-                          {stat.members.length > (stat.prevMembers?.length || 0) ? '▲' : '▼'} {Math.abs(stat.members.length - (stat.prevMembers?.length || 0))} registros
-                        </div>
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    {Object.values(memberStats.categories).map((category) => {
+                      const Icon = category.icon;
+                      const percentage = members.length > 0 ? Math.round((category.members.length / members.length) * 100) : 0;
+                      const isGrowing = category.members.length >= (category.prevMembers?.length || 0);
+                      const diff = Math.abs(category.members.length - (category.prevMembers?.length || 0));
+                      const percentDiff = category.prevMembers.length > 0 
+                        ? ((diff / category.prevMembers.length) * 100).toFixed(1) 
+                        : '100';
+                      
+                      return (
+                        <button 
+                          key={category.id}
+                          onClick={() => setExpandedCard(expandedCard === category.id ? null : category.id)}
+                          className={`glass-card p-4 sm:p-6 rounded-[2.5rem] border border-white/40 shadow-sm text-left transition-all hover:scale-[1.02] active:scale-95 ${
+                            expandedCard === category.id ? 'ring-2 ring-ibc-teal shadow-lg' : ''
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center" style={{ backgroundColor: `${category.color}15`, color: category.color }}>
+                              <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </div>
+                            <span className="text-[7px] sm:text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg" style={{ backgroundColor: `${category.color}10`, color: category.color }}>
+                              {category.tag}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-baseline space-x-2">
+                             <div className="text-xl sm:text-3xl font-black text-gray-900 leading-tight">
+                               {category.members.length}
+                             </div>
+                             <div className={`flex items-center text-[9px] sm:text-[11px] font-black ${isGrowing ? (category.id === 'absents' || category.id === 'inactives' ? 'text-red-500' : 'text-green-500') : (category.id === 'absents' || category.id === 'inactives' ? 'text-green-500' : 'text-red-500')}`}>
+                                {isGrowing ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                {percentDiff}%
+                             </div>
+                          </div>
+                          
+                          <div className="mt-3 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${percentage}%` }}
+                              className="h-full rounded-full" 
+                              style={{ backgroundColor: category.color }}
+                            />
+                          </div>
+
+                          <div className="mt-3">
+                            <p className="text-[8px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">
+                              {percentage}% da base total
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
 
-                  <div className="h-48">
-                    {/* Placeholder for Recharts - simplified for brevity, needs actual data structure from memberStats */}
+                  <div className="mb-8">
+                    <h5 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Evolução Mensal</h5>
+                    <div className="h-48 sm:h-64 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={memberStats.chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                          <XAxis 
+                            dataKey="name" 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fontSize: 10, fontWeight: 700, fill: '#9CA3AF' }} 
+                          />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#9CA3AF' }} />
+                          <Tooltip 
+                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                            cursor={{ fill: 'transparent' }}
+                          />
+                          <Bar dataKey="novos" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="ausentes" fill="#F97316" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="inactives" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="voltou" fill="#10B981" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
 
                   {/* Expanded Member List */}
                   <AnimatePresence>
-                    {expandedCard && memberStats[expandedCard] && memberStats[expandedCard].members.length > 0 && (
+                    {expandedCard && memberStats.categories[expandedCard] && memberStats.categories[expandedCard].members.length > 0 && (
                       <motion.div 
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="mt-6 border-t pt-6"
+                        className="mt-6 border-t border-dashed pt-6"
                       >
-                        <h5 className="font-bold text-gray-700 mb-4">{memberStats[expandedCard].label}</h5>
-                        <div className="space-y-3">
-                          {memberStats[expandedCard].members.map((m) => (
-                            <div key={m.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100">
-                                <div className="flex items-center space-x-3 overflow-hidden">
-                                  <div className="w-10 h-10 rounded-xl bg-white overflow-hidden shrink-0 border border-gray-100 shadow-sm flex items-center justify-center text-xs font-bold text-gray-400">
-                                    {m.photoUrl ? (
-                                      <img src={m.photoUrl} className="w-full h-full object-cover" alt={m.name} referrerPolicy="no-referrer" />
-                                    ) : (
-                                       m.name.charAt(0)
-                                    )}
-                                  </div>
-                                  <div>
-                                    <div className="font-bold text-gray-900 text-sm">{m.name}</div>
-                                    <div className="text-[10px] text-gray-500">{m.congregation || 'Sem congregação'}</div>
+                        <div className="flex items-center justify-between mb-6">
+                            <h5 className="font-black text-gray-900 flex items-center">
+                                <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: memberStats.categories[expandedCard].color }}></span>
+                                {memberStats.categories[expandedCard].label} ({memberStats.categories[expandedCard].members.length})
+                            </h5>
+                            <button onClick={() => setExpandedCard(null)} className="text-gray-400 hover:text-gray-600">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {memberStats.categories[expandedCard].members.map((m) => (
+                            <div key={m.id} className="flex items-center space-x-3 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-ibc-teal/50 transition-colors group">
+                                <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden shrink-0 border border-gray-100 flex items-center justify-center text-sm font-bold text-gray-400">
+                                  {m.photoUrl ? (
+                                    <img src={m.photoUrl} className="w-full h-full object-cover" alt={m.name} referrerPolicy="no-referrer" />
+                                  ) : (
+                                     m.name.charAt(0)
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="font-bold text-gray-900 text-sm truncate group-hover:text-ibc-teal transition-colors">{m.name}</div>
+                                  <div className="text-[10px] text-gray-500 font-medium">
+                                    {(m.function || 'Membro')}
                                   </div>
                                 </div>
-                                <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase ${m.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                  {m.isActive ? 'Ativo' : 'Inativo'}
-                                </span>
                             </div>
                           ))}
                         </div>
@@ -4627,58 +4771,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Absent Members List Section */}
-                <div className="bg-white p-4 sm:p-8 rounded-3xl border border-gray-100 shadow-sm">
-                  <div className="flex items-center justify-between mb-4 sm:mb-8">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
-                        <Clock className="w-4 h-4 text-orange-500" />
-                      </div>
-                      <h4 className="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-widest">Membros Ausentes</h4>
-                    </div>
-                    <span className="px-2 py-1 bg-orange-50 text-orange-600 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
-                      {reportData.absent} ausentes
-                    </span>
-                  </div>
 
-                  {reportData.absentMembersList.length > 0 ? (
-                    <div className="space-y-3">
-                      {reportData.absentMembersList.map((m) => (
-                        <div key={m.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100 group transition-all">
-                          <div className="flex items-center space-x-3 overflow-hidden">
-                            <div className="w-10 h-10 rounded-xl bg-white overflow-hidden shrink-0 border border-gray-100 shadow-sm">
-                              {m.photoUrl ? (
-                                <img src={m.photoUrl} className="w-full h-full object-contain" alt={m.name} referrerPolicy="no-referrer" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400">
-                                  {m.name.charAt(0)}
-                                </div>
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-bold text-gray-900 truncate">{m.name}</p>
-                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">{m.function}</p>
-                            </div>
-                          </div>
-                          <button 
-                            onClick={() => {
-                              setSelectedMember(m);
-                              setIsViewMemberModalOpen(true);
-                            }}
-                            className="bg-white p-2 rounded-xl text-ibc-teal hover:bg-ibc-teal hover:text-white transition-all shadow-sm border border-gray-100 shrink-0"
-                          >
-                            <ChevronRight className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-10 bg-gray-50/50 rounded-2xl border border-gray-100 border-dashed">
-                      <CheckCircle className="w-8 h-8 text-ibc-teal/20 mx-auto mb-3" />
-                      <p className="text-sm text-gray-400 font-medium">Nenhum membro marcado como ausente no momento.</p>
-                    </div>
-                  )}
-                </div>
               </section>
             </div>
           ) : activeTab === 'rh' ? (
