@@ -52,6 +52,7 @@ import {
   Heart,
   Facebook,
   MessageSquare,
+  Info,
   LayoutGrid,
   Maximize2,
   FileText,
@@ -100,6 +101,7 @@ import {
   deleteField,
   serverTimestamp,
   getDoc,
+  getDocs,
   setDoc,
   writeBatch,
   getDocFromServer
@@ -350,6 +352,7 @@ interface MinistryRole {
 interface MemberFunction {
   id: string;
   name: string;
+  description?: string;
 }
 
 interface Member {
@@ -700,6 +703,7 @@ export default function App() {
   
   const [isEditFunctionModalOpen, setIsEditFunctionModalOpen] = useState(false);
   const [isAddFunctionModalOpen, setIsAddFunctionModalOpen] = useState(false);
+  const [isViewFunctionDetailsModalOpen, setIsViewFunctionDetailsModalOpen] = useState(false);
   const [isEditRelationshipTypeModalOpen, setIsEditRelationshipTypeModalOpen] = useState(false);
   const [isAddRelationshipTypeModalOpen, setIsAddRelationshipTypeModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -740,6 +744,7 @@ export default function App() {
     setIsDeactivateModalOpen(false);
     setIsEditFunctionModalOpen(false);
     setIsAddFunctionModalOpen(false);
+    setIsViewFunctionDetailsModalOpen(false);
     setIsEditRelationshipTypeModalOpen(false);
     setIsAddRelationshipTypeModalOpen(false);
     setIsExportModalOpen(false);
@@ -1539,7 +1544,7 @@ export default function App() {
     const summaryY = memberStats.summary ? 55 + (doc.splitTextToSize(memberStats.summary, pageWidth - 20).length * 5) + 5 : 55;
 
     // Movement Statistics Table
-    const movementRows = Object.values(memberStats.categories).map(cat => {
+    const movementRows = Object.values(memberStats.categories).map((cat: any) => {
       const currentCount = cat.members.length;
       const prevCount = cat.prevMembers.length;
       const diff = currentCount - prevCount;
@@ -1576,7 +1581,7 @@ export default function App() {
 
     const functionRows = Object.entries(reportData.functionsDetails)
       .sort(([nameA], [nameB]) => nameA.localeCompare(nameB))
-      .map(([name, data]) => [
+      .map(([name, data]: [string, any]) => [
         name,
         data.count,
         `${data.percentage}%`
@@ -2242,6 +2247,7 @@ export default function App() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
+    const description = formData.get('description') as string;
     
     if (!name || !name.trim()) return;
 
@@ -2249,6 +2255,7 @@ export default function App() {
       setIsSaving(true);
       const docRef = await addDoc(collection(db, 'memberFunctions'), {
         name: name.trim(),
+        description: description?.trim() || "",
         createdAt: serverTimestamp()
       });
 
@@ -2256,7 +2263,7 @@ export default function App() {
         type: 'add',
         collection: 'memberFunctions',
         id: docRef.id,
-        data: { name: name.trim() },
+        data: { name: name.trim(), description: description?.trim() || "" },
         message: `Função ${name} adicionada.`
       });
 
@@ -2368,14 +2375,20 @@ export default function App() {
     if (!selectedFunction) return;
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
+    const description = formData.get('description') as string;
     
     if (!name || !name.trim()) return;
 
     try {
       setIsSaving(true);
-      const oldData = { id: selectedFunction.id, name: selectedFunction.name };
+      const oldData = { 
+        id: selectedFunction.id, 
+        name: selectedFunction.name, 
+        description: selectedFunction.description || "" 
+      };
       await updateDoc(doc(db, 'memberFunctions', selectedFunction.id), {
         name: name.trim(),
+        description: description?.trim() || "",
         updatedAt: serverTimestamp()
       });
 
@@ -4627,7 +4640,7 @@ export default function App() {
                   </div>
 
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    {Object.values(memberStats.categories).map((category) => {
+                    {Object.values(memberStats.categories).map((category: any) => {
                       const Icon = category.icon;
                       const percentage = members.length > 0 ? Math.round((category.members.length / members.length) * 100) : 0;
                       const isGrowing = category.members.length >= (category.prevMembers?.length || 0);
@@ -4827,7 +4840,7 @@ export default function App() {
                     <div className="space-y-2">
                        {Object.entries(reportData.functionsDetails)
                          .sort(([nameA], [nameB]) => nameA.localeCompare(nameB))
-                         .map(([name, data]) => (
+                         .map(([name, data]: [string, any]) => (
                          <div key={name}>
                              <button
                                onClick={() => setExpandedFunction(name)}
@@ -4847,93 +4860,6 @@ export default function App() {
                          </div>
                        ))}
                     </div>
-
-                    {/* Member by Function Fullscreen Modal */}
-                    <AnimatePresence>
-                      {expandedFunction && reportData.functionsDetails[expandedFunction] && (
-                        <motion.div 
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-10 pointer-events-auto"
-                        >
-                          <div 
-                            className="absolute inset-0 bg-gray-900/40 backdrop-blur-md"
-                            onClick={() => setExpandedFunction(null)}
-                          />
-                          
-                          <motion.div 
-                            initial={{ y: 50, opacity: 0, scale: 0.95 }}
-                            animate={{ y: 0, opacity: 1, scale: 1 }}
-                            exit={{ y: 50, opacity: 0, scale: 0.95 }}
-                            className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] bg-white sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col"
-                          >
-                            <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 shrink-0 bg-white/80 backdrop-blur-sm sticky top-0 z-20">
-                              <div className="flex items-center space-x-4">
-                                <div className="w-12 h-12 rounded-2xl bg-ibc-teal/10 text-ibc-teal flex items-center justify-center shadow-lg">
-                                  <Users className="w-6 h-6" />
-                                </div>
-                                <div>
-                                  <h5 className="text-xl sm:text-2xl font-black text-gray-900 leading-none">
-                                    {expandedFunction}
-                                  </h5>
-                                  <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mt-1.5">
-                                    {reportData.functionsDetails[expandedFunction].count} membros ativos • 
-                                    <span className="ml-1.5 text-ibc-teal">
-                                      {reportData.functionsDetails[expandedFunction].percentage}% do quadro total
-                                    </span>
-                                  </p>
-                                </div>
-                              </div>
-                              <button 
-                                onClick={() => setExpandedFunction(null)} 
-                                className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl flex items-center justify-center transition-all active:scale-90"
-                              >
-                                <X className="w-5 h-5 sm:w-6 sm:h-6" />
-                              </button>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto p-6 sm:p-10 custom-scrollbar overscroll-contain">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-10">
-                                {reportData.functionsDetails[expandedFunction].members.map((m, idx) => (
-                                  <motion.div 
-                                    key={m.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: idx * 0.03 }}
-                                    className="flex items-center space-x-4 p-4 bg-white rounded-3xl border border-gray-100 shadow-sm hover:border-ibc-teal/50 hover:shadow-xl hover:shadow-gray-100 transition-all group"
-                                  >
-                                      <div className="w-14 h-14 rounded-2xl bg-gray-50 overflow-hidden shrink-0 border border-gray-100 flex items-center justify-center text-lg font-bold text-gray-400 group-hover:scale-105 transition-transform">
-                                        {m.photoUrl ? (
-                                          <img src={m.photoUrl} className="w-full h-full object-cover" alt={m.name} referrerPolicy="no-referrer" />
-                                        ) : (
-                                          m.name.charAt(0)
-                                        )}
-                                      </div>
-                                      <div className="min-w-0 flex-1">
-                                        <div className="font-black text-gray-900 text-sm sm:text-base truncate group-hover:text-ibc-teal transition-colors tracking-tight">
-                                          {m.name}
-                                        </div>
-                                        <div className="flex items-center justify-between mt-1">
-                                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                                            {m.function}
-                                          </span>
-                                          <span className="text-[9px] font-black uppercase text-green-500 bg-green-50 px-1.5 py-0.5 rounded-lg">
-                                            Ativo
-                                          </span>
-                                        </div>
-                                      </div>
-                                  </motion.div>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            <div className="h-safe-bottom sm:hidden shrink-0" />
-                          </motion.div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
                   </div>
 
                   {/* Status Pie Chart */}
@@ -4969,6 +4895,92 @@ export default function App() {
                     </div>
                   </div>
                 </div>
+
+                {/* Member by Function Fullscreen Modal */}
+                <AnimatePresence>
+                  {expandedFunction && reportData.functionsDetails[expandedFunction] && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-10 pointer-events-auto"
+                    >
+                      <div 
+                        className="absolute inset-0 bg-gray-900/40 backdrop-blur-md"
+                        onClick={() => setExpandedFunction(null)}
+                      />
+                      
+                      <motion.div 
+                        initial={{ y: 50, opacity: 0, scale: 0.95 }}
+                        animate={{ y: 0, opacity: 1, scale: 1 }}
+                        exit={{ y: 50, opacity: 0, scale: 0.95 }}
+                        className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] bg-white sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col"
+                      >
+                        <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 shrink-0 bg-white/80 backdrop-blur-sm sticky top-0 z-20">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 rounded-2xl bg-ibc-teal/10 text-ibc-teal flex items-center justify-center shadow-lg">
+                              <Users className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h5 className="text-xl sm:text-2xl font-black text-gray-900 leading-none">
+                                {expandedFunction}
+                              </h5>
+                              <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mt-1.5 flex items-center">
+                                {reportData.functionsDetails[expandedFunction].count} membros ativos • 
+                                <span className="ml-1.5 text-ibc-teal font-black">
+                                  {reportData.functionsDetails[expandedFunction].percentage}% do quadro total
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => setExpandedFunction(null)} 
+                            className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl flex items-center justify-center transition-all active:scale-90"
+                          >
+                            <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                          </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6 sm:p-10 custom-scrollbar overscroll-contain">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-10">
+                            {reportData.functionsDetails[expandedFunction].members.map((m: any, idx: number) => (
+                              <motion.div 
+                                key={m.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.03 }}
+                                className="flex items-center space-x-4 p-4 bg-white rounded-3xl border border-gray-100 shadow-sm hover:border-ibc-teal/50 hover:shadow-xl hover:shadow-gray-100 transition-all group"
+                              >
+                                  <div className="w-14 h-14 rounded-2xl bg-gray-50 overflow-hidden shrink-0 border border-gray-100 flex items-center justify-center text-lg font-bold text-gray-400 group-hover:scale-105 transition-transform">
+                                    {m.photoUrl ? (
+                                      <img src={m.photoUrl} className="w-full h-full object-cover" alt={m.name} referrerPolicy="no-referrer" />
+                                    ) : (
+                                      m.name.charAt(0)
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="font-black text-gray-900 text-sm sm:text-base truncate group-hover:text-ibc-teal transition-colors tracking-tight">
+                                      {m.name}
+                                    </div>
+                                    <div className="flex items-center justify-between mt-1">
+                                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                        {m.function}
+                                      </span>
+                                      <span className="text-[9px] font-black uppercase text-green-500 bg-green-50 px-1.5 py-0.5 rounded-lg">
+                                        Ativo
+                                      </span>
+                                    </div>
+                                  </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div className="h-safe-bottom sm:hidden shrink-0" />
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
 
               </section>
@@ -5166,55 +5178,63 @@ export default function App() {
               </section>
 
               {/* Member Functions Management Section moved from ADM to RH */}
-              <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-                <div 
-                  onClick={() => setIsMemberFunctionsCollapsed(!isMemberFunctionsCollapsed)}
-                  className="flex items-center justify-between p-4 sm:p-8 cursor-pointer hover:bg-gray-50 transition-colors"
-                >
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight flex items-center">
-                      Funções de Membros
-                      {isMemberFunctionsCollapsed ? (
-                        <ChevronDown className="w-5 h-5 ml-2 text-gray-400" />
-                      ) : (
-                        <ChevronUp className="w-5 h-5 ml-2 text-gray-400" />
+              {appUser?.role === 'admin' ? (
+                <>
+                  <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div 
+                      onClick={() => setIsMemberFunctionsCollapsed(!isMemberFunctionsCollapsed)}
+                      className="flex items-center justify-between p-4 sm:p-8 cursor-pointer hover:bg-gray-50 transition-colors"
+                    >
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight flex items-center">
+                          Funções de Membros
+                          {isMemberFunctionsCollapsed ? (
+                            <ChevronDown className="w-5 h-5 ml-2 text-gray-400" />
+                          ) : (
+                            <ChevronUp className="w-5 h-5 ml-2 text-gray-400" />
+                          )}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-gray-400 font-medium mt-1">Gerencie as funções disponíveis para cadastro de membros.</p>
+                      </div>
+                      {!isMemberFunctionsCollapsed && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsAddFunctionModalOpen(true);
+                          }}
+                          className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 sm:px-6 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest flex items-center hover:bg-ibc-teal/20 transition-all shadow-sm active:scale-95"
+                        >
+                          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                          Nova Função
+                        </button>
                       )}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-gray-400 font-medium mt-1">Gerencie as funções disponíveis para cadastro de membros.</p>
-                  </div>
-                  {!isMemberFunctionsCollapsed && appUser?.role === 'admin' && (
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsAddFunctionModalOpen(true);
-                      }}
-                      className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 sm:px-6 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest flex items-center hover:bg-ibc-teal/20 transition-all shadow-sm active:scale-95"
-                    >
-                      <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-                      Nova Função
-                    </button>
-                  )}
-                </div>
+                    </div>
 
-                <AnimatePresence>
-                  {!isMemberFunctionsCollapsed && (
-                    <motion.div 
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                    >
-                      <div className="px-4 sm:px-8 pb-4 sm:pb-8">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {memberFunctions.map((f) => {
-                            const count = members.filter(m => m.function === f.name && m.isActive !== false).length;
-                            return (
-                              <div key={f.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-ibc-teal/30 transition-all group">
-                                <div className="flex flex-col min-w-0">
-                                  <span className="text-sm font-bold text-gray-700 truncate">{f.name}</span>
-                                  <span className="text-[10px] font-black text-ibc-teal/50 uppercase tracking-widest mt-0.5">{count} {count === 1 ? 'Membro' : 'Membros'}</span>
-                                </div>
-                                {appUser?.role === 'admin' && (
+                    <AnimatePresence>
+                      {!isMemberFunctionsCollapsed && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3, ease: "easeInOut" }}
+                        >
+                          <div className="px-4 sm:px-8 pb-4 sm:pb-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {memberFunctions.map((f) => (
+                                <div key={f.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-ibc-teal/30 transition-all group">
+                                  <div className="flex items-center min-w-0 mr-2">
+                                    <span className="text-sm font-bold text-gray-700 truncate">{f.name}</span>
+                                    <button 
+                                      onClick={() => {
+                                        setSelectedFunction(f);
+                                        setIsViewFunctionDetailsModalOpen(true);
+                                      }}
+                                      className="ml-2 p-1 text-gray-400 hover:text-ibc-teal transition-colors"
+                                      title="Ver Detalhes"
+                                    >
+                                      <Info className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
                                   <div className="flex items-center space-x-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button 
                                       onClick={() => {
@@ -5234,67 +5254,59 @@ export default function App() {
                                       <Trash2 className="w-4 h-4" />
                                     </button>
                                   </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </section>
-
-              {/* Relationship Types Management Section */}
-              <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-                <div 
-                  onClick={() => setIsRelationshipTypesCollapsed(!isRelationshipTypesCollapsed)}
-                  className="flex items-center justify-between p-4 sm:p-8 cursor-pointer hover:bg-gray-50 transition-colors"
-                >
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight flex items-center">
-                      Parentesco / Família
-                      {isRelationshipTypesCollapsed ? (
-                        <ChevronDown className="w-5 h-5 ml-2 text-gray-400" />
-                      ) : (
-                        <ChevronUp className="w-5 h-5 ml-2 text-gray-400" />
-                      )}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-gray-400 font-medium mt-1">Gerencie os graus de parentesco disponíveis para cadastro de membros.</p>
-                  </div>
-                  {!isRelationshipTypesCollapsed && appUser?.role === 'admin' && (
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsAddRelationshipTypeModalOpen(true);
-                      }}
-                      className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 sm:px-6 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest flex items-center hover:bg-ibc-teal/20 transition-all shadow-sm active:scale-95"
-                    >
-                      <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-                      Novo Grau
-                    </button>
-                  )}
-                </div>
-
-                <AnimatePresence>
-                  {!isRelationshipTypesCollapsed && (
-                    <motion.div 
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                    >
-                      <div className="px-4 sm:px-8 pb-4 sm:pb-8">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {relationshipTypes.map((rt) => {
-                            const count = members.filter(m => m.relationships?.some(rel => rel.type === rt.name)).length;
-                            return (
-                              <div key={rt.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-ibc-teal/30 transition-all group">
-                                <div className="flex flex-col min-w-0">
-                                  <span className="text-sm font-bold text-gray-700 truncate">{rt.name}</span>
-                                  <span className="text-[10px] font-black text-ibc-teal/50 uppercase tracking-widest mt-0.5">{count} {count === 1 ? 'Membro' : 'Membros'} com este vínculo</span>
                                 </div>
-                                {appUser?.role === 'admin' && (
+                              ))}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </section>
+
+                  {/* Relationship Types Management Section */}
+                  <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div 
+                      onClick={() => setIsRelationshipTypesCollapsed(!isRelationshipTypesCollapsed)}
+                      className="flex items-center justify-between p-4 sm:p-8 cursor-pointer hover:bg-gray-50 transition-colors"
+                    >
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight flex items-center">
+                          Parentesco / Família
+                          {isRelationshipTypesCollapsed ? (
+                            <ChevronDown className="w-5 h-5 ml-2 text-gray-400" />
+                          ) : (
+                            <ChevronUp className="w-5 h-5 ml-2 text-gray-400" />
+                          )}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-gray-400 font-medium mt-1">Gerencie os graus de parentesco disponíveis para cadastro de membros.</p>
+                      </div>
+                      {!isRelationshipTypesCollapsed && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsAddRelationshipTypeModalOpen(true);
+                          }}
+                          className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 sm:px-6 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest flex items-center hover:bg-ibc-teal/20 transition-all shadow-sm active:scale-95"
+                        >
+                          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                          Novo Grau
+                        </button>
+                      )}
+                    </div>
+
+                    <AnimatePresence>
+                      {!isRelationshipTypesCollapsed && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3, ease: "easeInOut" }}
+                        >
+                          <div className="px-4 sm:px-8 pb-4 sm:pb-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {relationshipTypes.map((rt) => (
+                                <div key={rt.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-ibc-teal/30 transition-all group">
+                                  <span className="text-sm font-bold text-gray-700 truncate mr-2">{rt.name}</span>
                                   <div className="flex items-center space-x-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button 
                                       onClick={() => {
@@ -5314,16 +5326,22 @@ export default function App() {
                                       <Trash2 className="w-4 h-4" />
                                     </button>
                                   </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </section>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </section>
+                </>
+              ) : (
+                <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                   <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                   <h3 className="text-lg font-bold text-gray-900">Acesso Restrito</h3>
+                   <p className="text-gray-500 max-w-sm mx-auto mt-2">Esta área é destinada apenas para administradores do sistema.</p>
+                </div>
+              )}
             </div>
           ) : activeTab === 'normativos' ? (
             <div className="max-w-6xl mx-auto space-y-6 sm:space-y-10">
@@ -7747,6 +7765,15 @@ export default function App() {
               className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" 
             />
           </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Descrição da Função</label>
+            <textarea 
+              name="description" 
+              placeholder="Descreva as responsabilidades e finalidade desta função..."
+              rows={4}
+              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-none text-sm" 
+            />
+          </div>
           <button 
             type="submit" 
             disabled={isSaving}
@@ -7775,6 +7802,16 @@ export default function App() {
               className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" 
             />
           </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Descrição da Função</label>
+            <textarea 
+              name="description" 
+              defaultValue={selectedFunction?.description}
+              placeholder="Descreva as responsabilidades e finalidade desta função..."
+              rows={4}
+              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-none text-sm" 
+            />
+          </div>
           <button 
             type="submit" 
             disabled={isSaving}
@@ -7785,6 +7822,38 @@ export default function App() {
             ) : "Salvar Alterações"}
           </button>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={isViewFunctionDetailsModalOpen}
+        onClose={() => setIsViewFunctionDetailsModalOpen(false)}
+        title="Detalhes da Função"
+      >
+        <div className="space-y-6">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-ibc-teal/10 rounded-2xl flex items-center justify-center text-ibc-teal">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-xl font-black text-gray-900">{selectedFunction?.name}</h4>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Função de Membro</p>
+            </div>
+          </div>
+          
+          <div className="pt-4 border-t border-gray-100">
+            <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Descrição da Função</h5>
+            <div className="p-5 bg-gray-50 rounded-3xl border border-gray-100 italic text-gray-600 leading-relaxed min-h-[120px]">
+              {selectedFunction?.description || "Descrição não informada"}
+            </div>
+          </div>
+
+          <button
+            onClick={() => setIsViewFunctionDetailsModalOpen(false)}
+            className="w-full bg-gray-100 text-gray-600 py-3 rounded-2xl font-bold mt-4 hover:bg-gray-200 transition-all"
+          >
+            Fechar
+          </button>
+        </div>
       </Modal>
 
       <Modal 
