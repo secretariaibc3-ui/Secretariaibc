@@ -1493,12 +1493,14 @@ export default function App() {
     
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    
+    const periodLabel = selectedMonth === -1 
+      ? `Ano Completo de ${selectedYear}`
+      : `${new Date(0, selectedMonth).toLocaleString('pt-BR', { month: 'long' })} / ${selectedYear}`;
+
     // Header
     if (appSettings.logoUrl) {
       try {
-        // Simple way to handle images in jsPDF
-        doc.addImage(appSettings.logoUrl, 'JPEG', 10, 10, 30, 30);
+        doc.addImage(appSettings.logoUrl, 'JPEG', 10, 10, 25, 25);
       } catch (e) {
         console.error("PDF Logo error:", e);
       }
@@ -1507,47 +1509,109 @@ export default function App() {
     doc.setFontSize(18);
     doc.setTextColor(6, 74, 143); // ibc-blue
     doc.setFont('helvetica', 'bold');
-    doc.text(appSettings.appName, 45, 20);
+    doc.text(appSettings.appName, 40, 20);
     
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.setFont('helvetica', 'normal');
-    doc.text(`CNPJ: ${appSettings.churchCnpj || 'Não informado'}`, 45, 28);
-    doc.text(`Relatório de Membresia - Extraído em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 45, 34);
+    const cnpjText = `CNPJ: ${appSettings.churchCnpj || 'Não informado'}`;
+    const dateText = `Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`;
+    doc.text(cnpjText, 40, 26);
+    doc.text(dateText, 40, 31);
     
-    doc.setLineWidth(0.5);
-    doc.setDrawColor(230);
-    doc.line(10, 45, pageWidth - 10, 45);
+    doc.setFontSize(14);
+    doc.setTextColor(31, 41, 55); // gray-800
+    doc.text(`Relatório de Movimentação - ${periodLabel}`, 10, 45);
 
-    // Summary Table
-    autoTable(doc, {
-      startY: 55,
-      head: [['Categoria', 'Quantidade', 'Percentual']],
-      body: [
-        ['Membros Ativos', reportData.active, `${Math.round((reportData.active / reportData.total) * 100)}%`],
-        ['Membros Ausentes', reportData.absent, `${Math.round((reportData.absent / reportData.total) * 100)}%`],
-        ['Membros Negativados', reportData.inactive, `${Math.round((reportData.inactive / reportData.total) * 100)}%`],
-        ['Total de Registros', reportData.total, '100%']
-      ],
-      theme: 'striped',
-      headStyles: { fillColor: [6, 74, 143], textColor: [255, 255, 255] },
+    doc.setLineWidth(0.5);
+    doc.setDrawColor(243, 244, 246);
+    doc.line(10, 48, pageWidth - 10, 48);
+
+    // Smart Summary
+    if (memberStats.summary) {
+      doc.setFontSize(10);
+      doc.setTextColor(75, 85, 99); // gray-600
+      doc.setFont('helvetica', 'italic');
+      const summaryLines = doc.splitTextToSize(memberStats.summary, pageWidth - 20);
+      doc.text(summaryLines, 10, 55);
+    }
+    
+    const summaryY = memberStats.summary ? 55 + (doc.splitTextToSize(memberStats.summary, pageWidth - 20).length * 5) + 5 : 55;
+
+    // Movement Statistics Table
+    const movementRows = Object.values(memberStats.categories).map(cat => {
+      const currentCount = cat.members.length;
+      const prevCount = cat.prevMembers.length;
+      const diff = currentCount - prevCount;
+      const percentageOfTotal = members.length > 0 ? `${Math.round((currentCount / members.length) * 100)}%` : '0%';
+      const variation = prevCount > 0 
+        ? `${diff > 0 ? '+' : ''}${((diff / prevCount) * 100).toFixed(1)}%` 
+        : (currentCount > 0 ? '+100%' : '0%');
+      const trend = diff > 0 ? 'Crescimento' : (diff < 0 ? 'Redução' : 'Estável');
+      
+      return [cat.label, currentCount, percentageOfTotal, variation, trend];
     });
 
-    // Absent Members Table
-    if (reportData.absentMembersList.length > 0) {
-      doc.setFontSize(14);
-      doc.setTextColor(0);
-      doc.text("Membros Ausentes", 10, (doc as any).lastAutoTable.finalY + 15);
-      
-      autoTable(doc, {
-        startY: (doc as any).lastAutoTable.finalY + 20,
-        head: [['Nome', 'Função', 'Desde']],
-        body: reportData.absentMembersList.map(m => [m.name, m.function, safeFormatDate(m.startDate)]),
-        headStyles: { fillColor: [249, 115, 22] }, // orange-500
-      });
+    autoTable(doc, {
+      startY: summaryY,
+      head: [['Indicador', 'Quantidade', '% Total', 'Variação', 'Tendência']],
+      body: movementRows,
+      theme: 'grid',
+      headStyles: { fillColor: [6, 74, 143], fontStyle: 'bold' },
+      styles: { fontSize: 9 },
+      columnStyles: {
+        1: { halign: 'center' },
+        2: { halign: 'center' },
+        3: { halign: 'center' },
+        4: { halign: 'center' }
+      }
+    });
+
+    // Members by Function Table
+    doc.setFontSize(14);
+    doc.setTextColor(31, 41, 55);
+    doc.setFont('helvetica', 'bold');
+    const functionY = (doc as any).lastAutoTable.finalY + 15;
+    doc.text("Membros por Função", 10, functionY);
+
+    const functionRows = Object.entries(reportData.functionsDetails)
+      .sort(([nameA], [nameB]) => nameA.localeCompare(nameB))
+      .map(([name, data]) => [
+        name,
+        data.count,
+        `${data.percentage}%`
+      ]);
+
+    autoTable(doc, {
+      startY: functionY + 5,
+      head: [['Função', 'Quantidade', 'Percentual']],
+      body: functionRows,
+      theme: 'striped',
+      headStyles: { fillColor: [0, 168, 150], fontStyle: 'bold' }, // ibc-teal
+      styles: { fontSize: 9 },
+      columnStyles: {
+        1: { halign: 'center' },
+        2: { halign: 'center' }
+      },
+      foot: [['Total de Membros Ativos', members.filter(m => m.isActive !== false).length, '100%']],
+      footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: 'bold' }
+    });
+
+    // Footer
+    const pageCount = (doc.internal as any).getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(
+        `Página ${i} de ${pageCount} - Sistema de Gestão ${appSettings.appName}`,
+        pageWidth / 2,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: 'center' }
+      );
     }
 
-    doc.save(`relatorio-membresia-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    doc.save(`relatorio-movimentacao-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
   const reportData = useMemo(() => {
@@ -1560,9 +1624,11 @@ export default function App() {
     const inactive = inactiveMembers.length;
     const total = members.length;
     
-    // Group by function
+    const totalActiveForFunctions = members.filter(m => m.isActive !== false).length;
+    
+    // Group by function (excluding Inactive members)
     const functionsDetails: Record<string, { members: Member[], count: number, percentage: string }> = {};
-    members.forEach(m => {
+    members.filter(m => m.isActive !== false).forEach(m => {
       const func = m.function || 'Não Definida';
       if (!functionsDetails[func]) {
         functionsDetails[func] = { members: [], count: 0, percentage: '0' };
@@ -1573,7 +1639,7 @@ export default function App() {
     
     Object.keys(functionsDetails).forEach(func => {
         const count = functionsDetails[func].count;
-        functionsDetails[func].percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0';
+        functionsDetails[func].percentage = totalActiveForFunctions > 0 ? ((count / totalActiveForFunctions) * 100).toFixed(1) : '0';
     });
 
     const functionChartData = Object.entries(functionsDetails)
@@ -4695,7 +4761,9 @@ export default function App() {
                       <h4 className="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-widest">Membros por Função</h4>
                     </div>
                     <div className="space-y-2">
-                       {Object.entries(reportData.functionsDetails).map(([name, data]) => (
+                       {Object.entries(reportData.functionsDetails)
+                         .sort(([nameA], [nameB]) => nameA.localeCompare(nameB))
+                         .map(([name, data]) => (
                          <div key={name}>
                              <button
                                onClick={() => setExpandedFunction(expandedFunction === name ? null : name)}
