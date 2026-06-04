@@ -52,7 +52,6 @@ import {
   Heart,
   Facebook,
   MessageSquare,
-  Info,
   LayoutGrid,
   Maximize2,
   FileText,
@@ -351,7 +350,6 @@ interface MinistryRole {
 interface MemberFunction {
   id: string;
   name: string;
-  description?: string;
 }
 
 interface Member {
@@ -702,7 +700,6 @@ export default function App() {
   
   const [isEditFunctionModalOpen, setIsEditFunctionModalOpen] = useState(false);
   const [isAddFunctionModalOpen, setIsAddFunctionModalOpen] = useState(false);
-  const [isViewFunctionDetailsModalOpen, setIsViewFunctionDetailsModalOpen] = useState(false);
   const [isEditRelationshipTypeModalOpen, setIsEditRelationshipTypeModalOpen] = useState(false);
   const [isAddRelationshipTypeModalOpen, setIsAddRelationshipTypeModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -743,7 +740,6 @@ export default function App() {
     setIsDeactivateModalOpen(false);
     setIsEditFunctionModalOpen(false);
     setIsAddFunctionModalOpen(false);
-    setIsViewFunctionDetailsModalOpen(false);
     setIsEditRelationshipTypeModalOpen(false);
     setIsAddRelationshipTypeModalOpen(false);
     setIsExportModalOpen(false);
@@ -1698,7 +1694,7 @@ export default function App() {
     const fetchData = async () => {
       try {
         const functionsSnapshot = await getDocs(collection(db, 'memberFunctions'));
-        const functionsData = functionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MemberFunction)).sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+        const functionsData = functionsSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as MemberFunction)).sort((a,b) => a.name.localeCompare(b.name));
         setMemberFunctions(functionsData);
         saveToCache('memberFunctions', functionsData);
 
@@ -1713,27 +1709,23 @@ export default function App() {
         saveToCache('presencas', presencasData);
 
         const rolesSnapshot = await getDocs(collection(db, 'ministryRoles'));
-        const rolesData = rolesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MinistryRole));
-        const finalRoles = rolesData.length === 0 
-          ? [{ id: '1', name: 'Líder' }, { id: '2', name: 'Liderado' }] 
-          : rolesData.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+        const rolesData = rolesSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as MinistryRole));
+        const finalRoles = rolesData.length === 0 ? [{ id: '1', name: 'Líder' }, { id: '2', name: 'Liderado' }] : rolesData.sort((a,b) => a.name.localeCompare(b.name));
         setMinistryRoles(finalRoles);
         saveToCache('ministryRoles', finalRoles);
 
         const relTypesSnapshot = await getDocs(collection(db, 'relationshipTypes'));
-        const relTypesData = relTypesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RelationshipType));
+        const relTypesData = relTypesSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as RelationshipType));
         if (relTypesData.length === 0) {
           console.log("Empty relationship types, needs seeding logic - keeping as is for now");
         } else {
-          const sorted = relTypesData.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+          const sorted = relTypesData.sort((a, b) => a.name.localeCompare(b.name));
           setRelationshipTypes(sorted);
           saveToCache('relationshipTypes', sorted);
         }
         
-        const ministriesSnapshot = await getDocs(collection(db, 'ministries'));
-        const ministriesData = ministriesSnapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() } as Ministry))
-          .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        const ministriesSnapshot = await getDocs(query(collection(db, 'ministries'), orderBy('name')));
+        const ministriesData = ministriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ministry));
         setMinistries(ministriesData);
         saveToCache('ministries', ministriesData);
 
@@ -2250,7 +2242,6 @@ export default function App() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
-    const description = formData.get('description') as string;
     
     if (!name || !name.trim()) return;
 
@@ -2258,7 +2249,6 @@ export default function App() {
       setIsSaving(true);
       const docRef = await addDoc(collection(db, 'memberFunctions'), {
         name: name.trim(),
-        description: description?.trim() || "",
         createdAt: serverTimestamp()
       });
 
@@ -2266,7 +2256,7 @@ export default function App() {
         type: 'add',
         collection: 'memberFunctions',
         id: docRef.id,
-        data: { name: name.trim(), description: description?.trim() || "" },
+        data: { name: name.trim() },
         message: `Função ${name} adicionada.`
       });
 
@@ -2378,20 +2368,14 @@ export default function App() {
     if (!selectedFunction) return;
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
-    const description = formData.get('description') as string;
     
     if (!name || !name.trim()) return;
 
     try {
       setIsSaving(true);
-      const oldData = { 
-        id: selectedFunction.id, 
-        name: selectedFunction.name, 
-        description: selectedFunction.description || "" 
-      };
+      const oldData = { id: selectedFunction.id, name: selectedFunction.name };
       await updateDoc(doc(db, 'memberFunctions', selectedFunction.id), {
         name: name.trim(),
-        description: description?.trim() || "",
         updatedAt: serverTimestamp()
       });
 
@@ -5226,19 +5210,7 @@ export default function App() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                               {memberFunctions.map((f) => (
                                 <div key={f.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-ibc-teal/30 transition-all group">
-                                  <div className="flex items-center min-w-0 mr-2">
-                                    <span className="text-sm font-bold text-gray-700 truncate">{f.name}</span>
-                                    <button 
-                                      onClick={() => {
-                                        setSelectedFunction(f);
-                                        setIsViewFunctionDetailsModalOpen(true);
-                                      }}
-                                      className="ml-2 p-1 text-gray-400 hover:text-ibc-teal transition-colors"
-                                      title="Ver Detalhes"
-                                    >
-                                      <Info className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
+                                  <span className="text-sm font-bold text-gray-700 truncate mr-2">{f.name}</span>
                                   <div className="flex items-center space-x-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button 
                                       onClick={() => {
@@ -7769,15 +7741,6 @@ export default function App() {
               className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" 
             />
           </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Descrição da Função</label>
-            <textarea 
-              name="description" 
-              placeholder="Descreva as responsabilidades e finalidade desta função..."
-              rows={4}
-              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-none text-sm" 
-            />
-          </div>
           <button 
             type="submit" 
             disabled={isSaving}
@@ -7806,16 +7769,6 @@ export default function App() {
               className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" 
             />
           </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Descrição da Função</label>
-            <textarea 
-              name="description" 
-              defaultValue={selectedFunction?.description}
-              placeholder="Descreva as responsabilidades e finalidade desta função..."
-              rows={4}
-              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-none text-sm" 
-            />
-          </div>
           <button 
             type="submit" 
             disabled={isSaving}
@@ -7826,38 +7779,6 @@ export default function App() {
             ) : "Salvar Alterações"}
           </button>
         </form>
-      </Modal>
-
-      <Modal
-        isOpen={isViewFunctionDetailsModalOpen}
-        onClose={() => setIsViewFunctionDetailsModalOpen(false)}
-        title="Detalhes da Função"
-      >
-        <div className="space-y-6">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-ibc-teal/10 rounded-2xl flex items-center justify-center text-ibc-teal">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="text-xl font-black text-gray-900">{selectedFunction?.name}</h4>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Função de Membro</p>
-            </div>
-          </div>
-          
-          <div className="pt-4 border-t border-gray-100">
-            <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Descrição da Função</h5>
-            <div className="p-5 bg-gray-50 rounded-3xl border border-gray-100 italic text-gray-600 leading-relaxed min-h-[120px]">
-              {selectedFunction?.description || "Descrição não informada"}
-            </div>
-          </div>
-
-          <button
-            onClick={() => setIsViewFunctionDetailsModalOpen(false)}
-            className="w-full bg-gray-100 text-gray-600 py-3 rounded-2xl font-bold mt-4 hover:bg-gray-200 transition-all"
-          >
-            Fechar
-          </button>
-        </div>
       </Modal>
 
       <Modal 
