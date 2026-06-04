@@ -4830,43 +4830,110 @@ export default function App() {
                          .map(([name, data]) => (
                          <div key={name}>
                              <button
-                               onClick={() => setExpandedFunction(expandedFunction === name ? null : name)}
-                               className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100 hover:bg-gray-100 transition-all font-black text-sm text-gray-900"
+                               onClick={() => setExpandedFunction(name)}
+                               className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100 hover:border-ibc-teal/50 transition-all group"
                              >
-                               <span>{name}</span>
-                               <span>{data.count} ({data.percentage}%)</span>
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-ibc-teal shadow-sm text-xs font-bold">
+                                    {data.count}
+                                  </div>
+                                  <span className="text-xs font-black text-gray-700 uppercase tracking-widest">{name}</span>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                  <span className="text-[10px] font-black text-gray-400">{data.percentage}%</span>
+                                  <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-ibc-teal transition-colors" />
+                                </div>
                              </button>
-                             <AnimatePresence>
-                               {expandedFunction === name && (
-                                 <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="overflow-hidden"
-                                 >
-                                    <div className="p-3 space-y-2">
-                                       {data.members.map(m => (
-                                          <div key={m.id} className="flex items-center justify-between p-2 bg-white rounded-xl shadow-sm border border-gray-100">
-                                            <div className="flex items-center space-x-2">
-                                              <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-400">
-                                                {m.photoUrl ? <img src={m.photoUrl} className="w-full h-full object-cover rounded-lg" alt={m.name} /> : m.name.charAt(0)}
-                                              </div>
-                                              <div>
-                                                <div className="font-bold text-xs text-gray-900">{m.name}</div>
-                                              </div>
-                                            </div>
-                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${m.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                              {m.isActive ? 'Ativo' : 'Inativo'}
-                                            </span>
-                                          </div>
-                                       ))}
-                                    </div>
-                                 </motion.div>
-                               )}
-                             </AnimatePresence>
                          </div>
                        ))}
                     </div>
+
+                    {/* Member by Function Fullscreen Modal */}
+                    <AnimatePresence>
+                      {expandedFunction && reportData.functionsDetails[expandedFunction] && (
+                        <motion.div 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-10 pointer-events-auto"
+                        >
+                          <div 
+                            className="absolute inset-0 bg-gray-900/40 backdrop-blur-md"
+                            onClick={() => setExpandedFunction(null)}
+                          />
+                          
+                          <motion.div 
+                            initial={{ y: 50, opacity: 0, scale: 0.95 }}
+                            animate={{ y: 0, opacity: 1, scale: 1 }}
+                            exit={{ y: 50, opacity: 0, scale: 0.95 }}
+                            className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] bg-white sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col"
+                          >
+                            <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 shrink-0 bg-white/80 backdrop-blur-sm sticky top-0 z-20">
+                              <div className="flex items-center space-x-4">
+                                <div className="w-12 h-12 rounded-2xl bg-ibc-teal/10 text-ibc-teal flex items-center justify-center shadow-lg">
+                                  <Users className="w-6 h-6" />
+                                </div>
+                                <div>
+                                  <h5 className="text-xl sm:text-2xl font-black text-gray-900 leading-none">
+                                    {expandedFunction}
+                                  </h5>
+                                  <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mt-1.5">
+                                    {reportData.functionsDetails[expandedFunction].count} membros ativos • 
+                                    <span className="ml-1.5 text-ibc-teal">
+                                      {reportData.functionsDetails[expandedFunction].percentage}% do quadro total
+                                    </span>
+                                  </p>
+                                </div>
+                              </div>
+                              <button 
+                                onClick={() => setExpandedFunction(null)} 
+                                className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl flex items-center justify-center transition-all active:scale-90"
+                              >
+                                <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                              </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-6 sm:p-10 custom-scrollbar overscroll-contain">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-10">
+                                {reportData.functionsDetails[expandedFunction].members.map((m, idx) => (
+                                  <motion.div 
+                                    key={m.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.03 }}
+                                    className="flex items-center space-x-4 p-4 bg-white rounded-3xl border border-gray-100 shadow-sm hover:border-ibc-teal/50 hover:shadow-xl hover:shadow-gray-100 transition-all group"
+                                  >
+                                      <div className="w-14 h-14 rounded-2xl bg-gray-50 overflow-hidden shrink-0 border border-gray-100 flex items-center justify-center text-lg font-bold text-gray-400 group-hover:scale-105 transition-transform">
+                                        {m.photoUrl ? (
+                                          <img src={m.photoUrl} className="w-full h-full object-cover" alt={m.name} referrerPolicy="no-referrer" />
+                                        ) : (
+                                          m.name.charAt(0)
+                                        )}
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="font-black text-gray-900 text-sm sm:text-base truncate group-hover:text-ibc-teal transition-colors tracking-tight">
+                                          {m.name}
+                                        </div>
+                                        <div className="flex items-center justify-between mt-1">
+                                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                            {m.function}
+                                          </span>
+                                          <span className="text-[9px] font-black uppercase text-green-500 bg-green-50 px-1.5 py-0.5 rounded-lg">
+                                            Ativo
+                                          </span>
+                                        </div>
+                                      </div>
+                                  </motion.div>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="h-safe-bottom sm:hidden shrink-0" />
+                          </motion.div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
                   </div>
 
                   {/* Status Pie Chart */}
