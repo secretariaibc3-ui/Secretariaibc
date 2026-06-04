@@ -725,6 +725,7 @@ export default function App() {
     { id: 'email', label: 'E-mail' },
   ];
   const [selectedFunction, setSelectedFunction] = useState<MemberFunction | null>(null);
+  const [expandedFunctionIds, setExpandedFunctionIds] = useState<Record<string, boolean>>({});
   const [selectedRelationshipType, setSelectedRelationshipType] = useState<RelationshipType | null>(null);
   const [isAddingNewFunction, setIsAddingNewFunction] = useState(false);
   const [newFunctionValue, setNewFunctionValue] = useState("");
@@ -1687,6 +1688,16 @@ export default function App() {
       saveToCache('members', membersData);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'members'));
 
+    const unsubscribeFunctions = onSnapshot(collection(db, 'memberFunctions'), (snapshot) => {
+      const functionsData = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        name: doc.data().name, 
+        description: doc.data().description || "" 
+      } as MemberFunction)).sort((a,b) => a.name.localeCompare(b.name));
+      setMemberFunctions(functionsData);
+      saveToCache('memberFunctions', functionsData);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'memberFunctions'));
+
     let unsubscribeUsers = () => {};
     if (appUser?.role === 'admin') {
       unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -1698,11 +1709,6 @@ export default function App() {
     
     const fetchData = async () => {
       try {
-        const functionsSnapshot = await getDocs(collection(db, 'memberFunctions'));
-        const functionsData = functionsSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as MemberFunction)).sort((a,b) => a.name.localeCompare(b.name));
-        setMemberFunctions(functionsData);
-        saveToCache('memberFunctions', functionsData);
-
         const atasSnapshot = await getDocs(query(collection(db, 'atas'), orderBy('createdAt', 'desc')));
         const atasData = atasSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ata));
         setAtas(atasData);
@@ -1750,6 +1756,7 @@ export default function App() {
 
     return () => {
       unsubscribeMembers();
+      unsubscribeFunctions();
       unsubscribeUsers();
       unsubscribeSettings();
     };
@@ -5220,42 +5227,71 @@ export default function App() {
                         >
                           <div className="px-4 sm:px-8 pb-4 sm:pb-8">
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {memberFunctions.map((f) => (
-                                <div key={f.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-ibc-teal/30 transition-all group">
-                                  <div className="flex items-center min-w-0 mr-2">
-                                    <span className="text-sm font-bold text-gray-700 truncate">{f.name}</span>
-                                    <button 
-                                      onClick={() => {
-                                        setSelectedFunction(f);
-                                        setIsViewFunctionDetailsModalOpen(true);
-                                      }}
-                                      className="ml-2 p-1 text-gray-400 hover:text-ibc-teal transition-colors"
-                                      title="Ver Detalhes"
-                                    >
-                                      <Info className="w-3.5 h-3.5" />
-                                    </button>
+                              {memberFunctions.map((f) => {
+                                const isExpanded = !!expandedFunctionIds[f.id];
+                                return (
+                                  <div 
+                                    key={f.id} 
+                                    onClick={() => setExpandedFunctionIds(prev => ({ ...prev, [f.id]: !prev[f.id] }))}
+                                    className={`p-4 rounded-2xl border transition-all cursor-pointer select-none flex flex-col justify-between group ${
+                                      isExpanded 
+                                        ? 'border-ibc-teal bg-ibc-teal/[0.02] shadow-sm shadow-ibc-teal/5' 
+                                        : 'bg-gray-50 border-gray-100 hover:border-ibc-teal/30 hover:bg-gray-50/80'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center min-w-0 mr-2">
+                                        <span className={`text-sm font-bold truncate transition-colors ${isExpanded ? 'text-ibc-teal font-extrabold' : 'text-gray-700'}`}>
+                                          {f.name}
+                                        </span>
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedFunction(f);
+                                            setIsViewFunctionDetailsModalOpen(true);
+                                          }}
+                                          className="ml-2 p-1 text-gray-400 hover:text-ibc-teal transition-colors"
+                                          title="Ver Detalhes"
+                                        >
+                                          <Info className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                      <div className="flex items-center space-x-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedFunction(f);
+                                            setIsEditFunctionModalOpen(true);
+                                          }}
+                                          className="p-2 text-gray-400 hover:text-ibc-teal hover:bg-ibc-teal/5 rounded-xl transition-all"
+                                          title="Editar"
+                                        >
+                                          <Edit2 className="w-4 h-4" />
+                                        </button>
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteFunction(f);
+                                          }}
+                                          className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                          title="Excluir"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                    
+                                    {isExpanded && (
+                                      <div className="mt-3 text-xs text-gray-500 leading-relaxed border-t border-dashed border-gray-100 pt-3">
+                                        <p className="font-bold text-[10px] text-gray-400 uppercase tracking-wider mb-1">Descrição / Finalidade</p>
+                                        <div className="bg-white p-3 rounded-xl border border-gray-100 italic text-gray-600">
+                                          {f.description || "Nenhuma descrição informada para esta função."}
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="flex items-center space-x-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button 
-                                      onClick={() => {
-                                        setSelectedFunction(f);
-                                        setIsEditFunctionModalOpen(true);
-                                      }}
-                                      className="p-2 text-gray-400 hover:text-ibc-teal hover:bg-ibc-teal/5 rounded-xl transition-all"
-                                      title="Editar"
-                                    >
-                                      <Edit2 className="w-4 h-4" />
-                                    </button>
-                                    <button 
-                                      onClick={() => handleDeleteFunction(f)}
-                                      className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                                      title="Excluir"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           </div>
                         </motion.div>

@@ -123,6 +123,7 @@ service cloud.firestore {
     function isValidMemberFunction(data) {
       return data.keys().hasAll(['name']) &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 2000)) &&
              (!('createdAt' in data) || data.createdAt is timestamp) &&
              (!('updatedAt' in data) || data.updatedAt is timestamp);
     }
