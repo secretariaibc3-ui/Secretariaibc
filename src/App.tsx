@@ -3130,7 +3130,7 @@ export default function App() {
         novos: 0,
         ausentes: 0,
         inativos: 0,
-        voltou: 0
+        voltaram: 0
       };
 
       members.forEach(m => {
@@ -3139,8 +3139,8 @@ export default function App() {
 
         if (checkInPeriod(created, start, end)) counts.novos++;
         if (m.isAbsent && m.isActive !== false && checkInPeriod(updated, start, end)) counts.ausentes++;
-        if (m.isActive === false && checkInPeriod(updated, start, end)) counts.inactives++;
-        if (m.isActive !== false && !m.isAbsent && checkInPeriod(updated, start, end)) counts.voltou++;
+        if (m.isActive === false && checkInPeriod(updated, start, end)) counts.inativos++;
+        if (m.isActive !== false && !m.isAbsent && checkInPeriod(updated, start, end)) counts.voltaram++;
       });
       chartData.push(counts);
     }
@@ -4699,52 +4699,116 @@ export default function App() {
                             contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                             cursor={{ fill: 'transparent' }}
                           />
-                          <Bar dataKey="novos" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="ausentes" fill="#F97316" radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="inactives" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="voltou" fill="#10B981" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="novos" name="novos" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="ausentes" name="ausentes" fill="#F97316" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="inativos" name="inativos" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="voltaram" name="voltaram" fill="#10B981" radius={[4, 4, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
 
-                  {/* Expanded Member List */}
+                  {/* Fullscreen Member List Modal */}
                   <AnimatePresence>
-                    {expandedCard && memberStats.categories[expandedCard] && memberStats.categories[expandedCard].members.length > 0 && (
+                    {expandedCard && memberStats.categories[expandedCard] && (
                       <motion.div 
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-6 border-t border-dashed pt-6"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-10 pointer-events-auto"
                       >
-                        <div className="flex items-center justify-between mb-6">
-                            <h5 className="font-black text-gray-900 flex items-center">
-                                <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: memberStats.categories[expandedCard].color }}></span>
-                                {memberStats.categories[expandedCard].label} ({memberStats.categories[expandedCard].members.length})
-                            </h5>
-                            <button onClick={() => setExpandedCard(null)} className="text-gray-400 hover:text-gray-600">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {memberStats.categories[expandedCard].members.map((m) => (
-                            <div key={m.id} className="flex items-center space-x-3 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-ibc-teal/50 transition-colors group">
-                                <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden shrink-0 border border-gray-100 flex items-center justify-center text-sm font-bold text-gray-400">
-                                  {m.photoUrl ? (
-                                    <img src={m.photoUrl} className="w-full h-full object-cover" alt={m.name} referrerPolicy="no-referrer" />
-                                  ) : (
-                                     m.name.charAt(0)
-                                  )}
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="font-bold text-gray-900 text-sm truncate group-hover:text-ibc-teal transition-colors">{m.name}</div>
-                                  <div className="text-[10px] text-gray-500 font-medium">
-                                    {(m.function || 'Membro')}
-                                  </div>
-                                </div>
+                        {/* Backdrop */}
+                        <div 
+                          className="absolute inset-0 bg-gray-900/40 backdrop-blur-md"
+                          onClick={() => setExpandedCard(null)}
+                        />
+                        
+                        {/* Modal Container */}
+                        <motion.div 
+                          initial={{ y: 50, opacity: 0, scale: 0.95 }}
+                          animate={{ y: 0, opacity: 1, scale: 1 }}
+                          exit={{ y: 50, opacity: 0, scale: 0.95 }}
+                          className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] bg-white sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col"
+                        >
+                          {/* Header */}
+                          <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 shrink-0 bg-white/80 backdrop-blur-sm sticky top-0 z-20">
+                            <div className="flex items-center space-x-4">
+                              <div 
+                                className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" 
+                                style={{ backgroundColor: `${memberStats.categories[expandedCard].color}15`, color: memberStats.categories[expandedCard].color }}
+                              >
+                                {(() => {
+                                  const Icon = memberStats.categories[expandedCard].icon;
+                                  return <Icon className="w-6 h-6" />;
+                                })()}
+                              </div>
+                              <div>
+                                <h5 className="text-xl sm:text-2xl font-black text-gray-900 flex items-center leading-none">
+                                  {memberStats.categories[expandedCard].label}
+                                </h5>
+                                <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mt-1.5 flex items-center">
+                                  {memberStats.categories[expandedCard].members.length} registros • 
+                                  <span className="ml-1.5">
+                                    {selectedMonth === -1 
+                                      ? `Ano de ${selectedYear}`
+                                      : `${new Date(0, selectedMonth).toLocaleString('pt-BR', { month: 'long' })} / ${selectedYear}`
+                                    }
+                                  </span>
+                                </p>
+                              </div>
                             </div>
-                          ))}
-                        </div>
+                            <button 
+                              onClick={() => setExpandedCard(null)} 
+                              className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl flex items-center justify-center transition-all active:scale-90"
+                            >
+                              <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                            </button>
+                          </div>
+
+                          {/* Member List Content */}
+                          <div className="flex-1 overflow-y-auto p-6 sm:p-10 custom-scrollbar overscroll-contain">
+                            {memberStats.categories[expandedCard].members.length > 0 ? (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-10">
+                                {memberStats.categories[expandedCard].members.map((m, idx) => (
+                                  <motion.div 
+                                    key={m.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.03 }}
+                                    className="flex items-center space-x-4 p-4 bg-white rounded-3xl border border-gray-100 shadow-sm hover:border-ibc-teal/50 hover:shadow-xl hover:shadow-gray-100 transition-all group"
+                                  >
+                                      <div className="w-14 h-14 rounded-2xl bg-gray-50 overflow-hidden shrink-0 border border-gray-100 flex items-center justify-center text-lg font-bold text-gray-400 group-hover:scale-105 transition-transform">
+                                        {m.photoUrl ? (
+                                          <img src={m.photoUrl} className="w-full h-full object-cover" alt={m.name} referrerPolicy="no-referrer" />
+                                        ) : (
+                                          m.name.charAt(0)
+                                        )}
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="font-black text-gray-900 text-sm sm:text-base truncate group-hover:text-ibc-teal transition-colors tracking-tight">
+                                          {m.name}
+                                        </div>
+                                        <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                                          {(m.function || 'Membro')}
+                                        </div>
+                                      </div>
+                                  </motion.div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="h-full flex flex-col items-center justify-center text-center p-10">
+                                <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center text-gray-200 mb-4">
+                                  <X className="w-10 h-10" />
+                                </div>
+                                <h6 className="text-lg font-bold text-gray-900">Nenhum registro encontrado</h6>
+                                <p className="text-sm text-gray-400 mt-1 max-w-xs">Não existem membros nesta categoria para o período selecionado.</p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Mobile Bottom Padding (safe area) */}
+                          <div className="h-safe-bottom sm:hidden shrink-0" />
+                        </motion.div>
                       </motion.div>
                     )}
                   </AnimatePresence>
