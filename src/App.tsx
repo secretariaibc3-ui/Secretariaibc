@@ -811,6 +811,54 @@ export default function App() {
       .trim();
   };
 
+  const handleMaskedInput = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    maskFn: (val: string) => string
+  ) => {
+    const input = e.target;
+    const rawValue = input.value;
+    const selectionStart = input.selectionStart;
+
+    if (selectionStart === null) {
+      input.value = maskFn(rawValue);
+      return;
+    }
+
+    // Count core characters (digits and + symbol) before the cursor in the unformatted input
+    let coreCharsBeforeCursor = 0;
+    for (let i = 0; i < selectionStart; i++) {
+      if (/[0-9+]/.test(rawValue[i])) {
+        coreCharsBeforeCursor++;
+      }
+    }
+
+    const formattedValue = maskFn(rawValue);
+    input.value = formattedValue;
+
+    // Find the position in the formatted value that has exactly coreCharsBeforeCursor core characters before it
+    let targetSelectionStart = 0;
+    let coreCharsFound = 0;
+    while (targetSelectionStart < formattedValue.length && coreCharsFound < coreCharsBeforeCursor) {
+      if (/[0-9+]/.test(formattedValue[targetSelectionStart])) {
+        coreCharsFound++;
+      }
+      targetSelectionStart++;
+    }
+
+    // Set selection synchronously
+    input.setSelectionRange(targetSelectionStart, targetSelectionStart);
+
+    // Safeguard to execute asynchronously in the next macrotask as some browsers
+    // override selection during default key/input event processing.
+    setTimeout(() => {
+      try {
+        input.setSelectionRange(targetSelectionStart, targetSelectionStart);
+      } catch (err) {
+        // Ignored
+      }
+    }, 0);
+  };
+
   const formatPhone = (val: string) => {
     const numeric = val.replace(/[^\d+]/g, '');
     if (numeric.startsWith('+')) {
@@ -7175,11 +7223,7 @@ export default function App() {
                       name="celular" 
                       type="text" 
                       placeholder="(99) 99999-9999" 
-                      onChange={(e) => {
-                        const start = e.target.selectionStart;
-                        e.target.value = formatPhone(e.target.value);
-                        e.target.setSelectionRange(start, start);
-                      }}
+                      onChange={(e) => handleMaskedInput(e, formatPhone)}
                       className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
                     />
                   </div>
@@ -7195,9 +7239,7 @@ export default function App() {
                         type="text" 
                         placeholder="50000-000" 
                         onChange={(e) => {
-                          const start = e.target.selectionStart;
-                          e.target.value = formatCEP(e.target.value);
-                          e.target.setSelectionRange(start, start);
+                          handleMaskedInput(e, formatCEP);
                           handleCEPLookup(e.target.value, false);
                         }}
                         className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
@@ -7576,11 +7618,7 @@ export default function App() {
                         type="text" 
                         defaultValue={selectedMember?.celular || ''} 
                         placeholder="(99) 99999-9999" 
-                        onChange={(e) => {
-                          const start = e.target.selectionStart;
-                          e.target.value = formatPhone(e.target.value);
-                          e.target.setSelectionRange(start, start);
-                        }}
+                        onChange={(e) => handleMaskedInput(e, formatPhone)}
                         className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
                       />
                     </div>
@@ -7597,9 +7635,7 @@ export default function App() {
                           defaultValue={selectedMember?.cep || ''} 
                           placeholder="50000-000" 
                           onChange={(e) => {
-                            const start = e.target.selectionStart;
-                            e.target.value = formatCEP(e.target.value);
-                            e.target.setSelectionRange(start, start);
+                            handleMaskedInput(e, formatCEP);
                             handleCEPLookup(e.target.value, true);
                           }}
                           className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
