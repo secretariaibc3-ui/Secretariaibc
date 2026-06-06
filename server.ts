@@ -117,20 +117,17 @@ async function startServer() {
     // Standard PWA icon sizes
     const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
     
-    const icons = sizes.flatMap(size => [
-      {
-        src: iconUrl,
+    const icons = sizes.map(size => {
+      const src = (iconUrl === '/logo-secretariaibc.png' && [144, 192, 512].includes(size)) 
+        ? `/icon-${size}.png` 
+        : iconUrl;
+      return {
+        src: src,
         sizes: `${size}x${size}`,
         type: "image/png",
         purpose: "any"
-      },
-      {
-        src: iconUrl,
-        sizes: `${size}x${size}`,
-        type: "image/png",
-        purpose: "maskable"
-      }
-    ]);
+      };
+    });
 
     const manifest = {
       id: "/",
@@ -140,7 +137,7 @@ async function startServer() {
       start_url: "/",
       scope: "/",
       display: "standalone",
-      background_color: "#ffffff",
+      background_color: "#0d9488",
       theme_color: themeColor,
       orientation: "portrait",
       icons: icons,
