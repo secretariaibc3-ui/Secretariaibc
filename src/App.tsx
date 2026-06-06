@@ -1193,11 +1193,7 @@ export default function App() {
       const logoUrl = appSettings.logoUrl || '/logo-secretariaibc.png';
       const appName = appSettings.appName || 'Secretaria IBC';
       
-      // Update Manifest Link
-      const manifestLink = document.getElementById('pwa-manifest') as HTMLLinkElement;
-      if (manifestLink) {
-        manifestLink.href = `/api/manifest?icon=${encodeURIComponent(logoUrl)}&name=${encodeURIComponent(appName)}&v=${Date.now()}`;
-      }
+      // Keep manifest link stable at /manifest.json for reliable PWA install prompt triggers
       
       // Update Apple Icon
       const appleIcon = document.getElementById('apple-icon') as HTMLLinkElement;
@@ -1246,16 +1242,7 @@ export default function App() {
     const displayName = user?.displayName || 'IBC';
     const profilePhoto = user?.photoURL || appSettings.logoUrl || '/logo-secretariaibc.png';
     
-    // Update the manifest link dynamically
-    const manifestLink = document.getElementById('pwa-manifest') as HTMLLinkElement;
-    if (manifestLink) {
-      // Create a URL with query parameters for the dynamic manifest
-      const params = new URLSearchParams({
-        icon: profilePhoto,
-        name: displayName
-      });
-      manifestLink.href = `/api/manifest?${params.toString()}`;
-    }
+    // Keep manifest link stable at /manifest.json for reliable PWA install prompt triggers
 
     // Update Apple Touch Icon (iOS)
     let appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
@@ -8878,7 +8865,7 @@ export default function App() {
                       </p>
                     </div>
                   </div>
-                ) : (
+                ) : deferredPrompt ? (
                   <div className="space-y-4">
                      <button 
                       onClick={handleInstallClick}
@@ -8888,8 +8875,23 @@ export default function App() {
                       Instalar Agora
                     </button>
                     <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-loose">
-                       {deferredPrompt ? 'Clique acima para instalação rápida' : 'Use o menu do navegador e selecione "Instalar Aplicativo"'}
+                      Clique acima para instalação rápida
                     </p>
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    <div className="flex items-start gap-4">
+                      <div className="w-8 h-8 rounded-2xl bg-ibc-teal/10 flex items-center justify-center text-ibc-teal text-sm font-black shrink-0">1</div>
+                      <p className="text-sm text-gray-650 font-medium leading-relaxed">
+                        Toque no ícone de menu <span className="inline-flex items-center px-1.5 py-0.5 bg-gray-100 rounded-lg text-gray-900 border border-gray-200 font-black">⋮</span> (três pontinhos) no canto superior direito do Chrome.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-8 h-8 rounded-2xl bg-ibc-teal/10 flex items-center justify-center text-ibc-teal text-sm font-black shrink-0">2</div>
+                      <p className="text-sm text-gray-655 font-medium leading-relaxed">
+                        Selecione a opção <span className="inline-flex items-center px-1.5 py-0.5 bg-gray-100 rounded-lg text-gray-900 border border-gray-200 font-black">Instalar aplicativo</span> ou <span className="inline-flex items-center px-1.5 py-0.5 bg-gray-100 rounded-lg text-gray-900 border border-gray-200 font-black">Adicionar à tela inicial</span>.
+                      </p>
+                    </div>
                   </div>
                 )}
                 
