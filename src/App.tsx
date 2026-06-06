@@ -1239,6 +1239,7 @@ export default function App() {
   const [isGalleryPickerOpen, setIsGalleryPickerOpen] = useState(false);
   const [galleryPickerType, setGalleryPickerType] = useState<'member-add' | 'member-edit'>('member-add');
   const [searchQuery, setSearchQuery] = useState('');
+  const [ministrySearchQuery, setMinistrySearchQuery] = useState('');
   const [loginMethod, setLoginMethod] = useState<'email' | 'google'>('email');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -4686,7 +4687,7 @@ export default function App() {
                           {m.name}
                         </h3>
                         <p className="text-[8px] sm:text-[10px] text-white/80 font-black uppercase tracking-widest mt-1 drop-shadow-sm">
-                          {members.filter(mem => (mem.ministryIds?.includes(m.id)) || (mem.ministryId === m.id)).length} Participantes
+                          {members.filter(mem => mem.isActive !== false && ((mem.ministryIds?.includes(m.id)) || (mem.ministryId === m.id))).length} Participantes
                         </p>
                       </div>
 
@@ -6904,7 +6905,7 @@ export default function App() {
       {/* Ministry Members Modal */}
       <Modal 
         isOpen={isMinistryMembersModalOpen} 
-        onClose={() => { setIsMinistryMembersModalOpen(false); setSelectedMinistry(null); }} 
+        onClose={() => { setIsMinistryMembersModalOpen(false); setSelectedMinistry(null); setMinistrySearchQuery(''); }} 
         title={selectedMinistry?.name || 'Participantes'}
       >
         <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
@@ -6917,30 +6918,72 @@ export default function App() {
           </div>
 
           <div>
-            <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Participantes</h5>
-            {members.filter(m => (m.ministryIds?.includes(selectedMinistry?.id || '')) || (m.ministryId === selectedMinistry?.id)).length > 0 ? (
-              <div className="space-y-2">
-                {members.filter(m => (m.ministryIds?.includes(selectedMinistry?.id || '')) || (m.ministryId === selectedMinistry?.id)).map((member) => (
-                  <div key={member.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-2xl border border-gray-100">
-                    <div className="w-10 h-10 rounded-xl bg-ibc-blue flex items-center justify-center text-white font-bold overflow-hidden">
-                      {member.photoUrl ? (
-                        <img src={member.photoUrl} alt={member.name} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                      ) : (
-                        member.name.charAt(0)
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">{member.name}</p>
-                      <p className="text-[10px] text-ibc-teal font-bold uppercase tracking-widest">{member.function}</p>
-                    </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+              <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Participantes</h5>
+              <div className="relative flex items-center bg-gray-50 border border-gray-100 rounded-xl px-2 py-1 select-none">
+                <Search className="w-3.5 h-3.5 text-gray-400 mr-1 shrink-0" />
+                <input 
+                  type="text" 
+                  placeholder="Buscar participante..." 
+                  value={ministrySearchQuery}
+                  onChange={(e) => setMinistrySearchQuery(e.target.value)}
+                  className="bg-transparent text-xs font-bold outline-none text-gray-700 w-36 placeholder:text-gray-300"
+                />
+                {ministrySearchQuery && (
+                  <button onClick={() => setMinistrySearchQuery('')} className="text-gray-400 hover:text-red-500 ml-1">
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {(() => {
+              const activeMinistryMembers = members.filter(m => 
+                m.isActive !== false && 
+                ((m.ministryIds?.includes(selectedMinistry?.id || '')) || (m.ministryId === selectedMinistry?.id))
+              );
+              
+              const filteredMinistryMembers = activeMinistryMembers.filter(m => 
+                normalizeString(m.name || '').includes(normalizeString(ministrySearchQuery)) ||
+                normalizeString(m.function || '').includes(normalizeString(ministrySearchQuery))
+              );
+
+              if (activeMinistryMembers.length === 0) {
+                return (
+                  <div className="text-center py-10">
+                    <p className="text-sm text-gray-400 font-medium">Nenhum participante ativo neste ministério.</p>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-10">
-                <p className="text-sm text-gray-400 font-medium">Nenhum participante vinculado a este ministério.</p>
-              </div>
-            )}
+                );
+              }
+
+              if (filteredMinistryMembers.length === 0) {
+                return (
+                  <div className="text-center py-10">
+                    <p className="text-sm text-gray-400 font-medium">Nenhum participante coincide com a busca.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-2">
+                  {filteredMinistryMembers.map((member) => (
+                    <div key={member.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                      <div className="w-10 h-10 rounded-xl bg-ibc-blue flex items-center justify-center text-white font-bold overflow-hidden animate-fade-in">
+                        {member.photoUrl ? (
+                          <img src={member.photoUrl} alt={member.name} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                        ) : (
+                          member.name.charAt(0)
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">{member.name}</p>
+                        <p className="text-[10px] text-ibc-teal font-bold uppercase tracking-widest">{member.function}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </Modal>
@@ -7673,100 +7716,106 @@ export default function App() {
 
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Ministérios</label>
-                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-4 shadow-inner">
-                    {tempMemberMinistries.map((mm, idx) => {
-                      const ministry = ministries.find(m => m.id === mm.ministryId);
-                      return (
-                        <div key={idx} className="flex items-center justify-between p-2 bg-white rounded-xl border border-gray-100 shadow-sm">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-[10px] font-black bg-ibc-teal/10 text-ibc-teal px-2 py-0.5 rounded-lg uppercase">{mm.role}</span>
-                            <span className="text-xs font-bold text-gray-700">{ministry?.name || "Ministério Removido"}</span>
+                  {selectedMember && selectedMember.isActive === false ? (
+                    <div className="bg-red-50 p-4 rounded-2xl border border-red-100 text-red-700 text-xs font-bold leading-relaxed">
+                      Membros negativados/inativos não são elegíveis para inclusão em ministérios.
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-4 shadow-inner">
+                      {tempMemberMinistries.map((mm, idx) => {
+                        const ministry = ministries.find(m => m.id === mm.ministryId);
+                        return (
+                          <div key={idx} className="flex items-center justify-between p-2 bg-white rounded-xl border border-gray-100 shadow-sm">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-[10px] font-black bg-ibc-teal/10 text-ibc-teal px-2 py-0.5 rounded-lg uppercase">{mm.role}</span>
+                              <span className="text-xs font-bold text-gray-700">{ministry?.name || "Ministério Removido"}</span>
+                            </div>
+                            <button 
+                              type="button"
+                              onClick={() => setTempMemberMinistries(tempMemberMinistries.filter((_, i) => i !== idx))}
+                              className="text-red-400 hover:text-red-600 p-1"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
                           </div>
-                          <button 
-                            type="button"
-                            onClick={() => setTempMemberMinistries(tempMemberMinistries.filter((_, i) => i !== idx))}
-                            className="text-red-400 hover:text-red-600 p-1"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      );
-                    })}
-                    
-                    <div className="flex gap-2">
-                      <select 
-                        id="ministry-selection-edit"
-                        className="flex-1 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs shadow-sm"
-                      >
-                        <option value="">Selecionar Ministério...</option>
-                        {ministries.filter(m => !tempMemberMinistries.some(mm => mm.ministryId === m.id)).map(m => (
-                          <option key={m.id} value={m.id}>{m.name}</option>
-                        ))}
-                      </select>
+                        );
+                      })}
                       
-                      {isAddingNewMinistryRole ? (
-                        <div className="w-1/3 flex gap-1">
-                          <input 
-                            id="ministry-role-input-edit"
-                            type="text" 
-                            value={newMinistryRoleValue}
-                            onChange={(e) => setNewMinistryRoleValue(e.target.value)}
-                            className="flex-1 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm" 
-                            placeholder="Nova função..."
-                            autoFocus
-                          />
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              setIsAddingNewMinistryRole(false);
-                              setNewMinistryRoleValue("");
-                            }}
-                            className="p-1 text-gray-400 hover:text-gray-600"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ) : (
+                      <div className="flex gap-2">
                         <select 
-                          id="ministry-role-selection-edit"
-                          onChange={(e) => {
-                            if (e.target.value === "ADD_NEW") {
-                              setIsAddingNewMinistryRole(true);
-                              setNewMinistryRoleValue("");
+                          id="ministry-selection-edit"
+                          className="flex-1 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs shadow-sm"
+                        >
+                          <option value="">Selecionar Ministério...</option>
+                          {ministries.filter(m => !tempMemberMinistries.some(mm => mm.ministryId === m.id)).map(m => (
+                            <option key={m.id} value={m.id}>{m.name}</option>
+                          ))}
+                        </select>
+                        
+                        {isAddingNewMinistryRole ? (
+                          <div className="w-1/3 flex gap-1">
+                            <input 
+                              id="ministry-role-input-edit"
+                              type="text" 
+                              value={newMinistryRoleValue}
+                              onChange={(e) => setNewMinistryRoleValue(e.target.value)}
+                              className="flex-1 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm" 
+                              placeholder="Nova função..."
+                              autoFocus
+                            />
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                setIsAddingNewMinistryRole(false);
+                                setNewMinistryRoleValue("");
+                              }}
+                              className="p-1 text-gray-400 hover:text-gray-600"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <select 
+                            id="ministry-role-selection-edit"
+                            onChange={(e) => {
+                              if (e.target.value === "ADD_NEW") {
+                                setIsAddingNewMinistryRole(true);
+                                setNewMinistryRoleValue("");
+                              }
+                            }}
+                            className="w-1/3 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm"
+                          >
+                            <option value="">Função...</option>
+                            {ministryRoles.map(r => (
+                              <option key={r.id} value={r.name}>{r.name}</option>
+                            ))}
+                            <option value="ADD_NEW">+ Nova Função...</option>
+                          </select>
+                        )}
+
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            const ministryId = (document.getElementById('ministry-selection-edit') as HTMLSelectElement).value;
+                            const role = isAddingNewMinistryRole 
+                              ? newMinistryRoleValue 
+                              : (document.getElementById('ministry-role-selection-edit') as HTMLSelectElement).value;
+                            
+                            if (ministryId && role && role !== "ADD_NEW") {
+                              setTempMemberMinistries([...tempMemberMinistries, { ministryId, role }]);
+                              if (isAddingNewMinistryRole) {
+                                 setNewMinistryRoleValue("");
+                                 setIsAddingNewMinistryRole(false);
+                              }
                             }
                           }}
-                          className="w-1/3 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm"
+                          className="bg-ibc-teal text-white p-2 rounded-xl shadow-md active:scale-95 transition-transform"
                         >
-                          <option value="">Função...</option>
-                          {ministryRoles.map(r => (
-                            <option key={r.id} value={r.name}>{r.name}</option>
-                          ))}
-                          <option value="ADD_NEW">+ Nova Função...</option>
-                        </select>
-                      )}
-
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          const ministryId = (document.getElementById('ministry-selection-edit') as HTMLSelectElement).value;
-                          const role = isAddingNewMinistryRole 
-                            ? newMinistryRoleValue 
-                            : (document.getElementById('ministry-role-selection-edit') as HTMLSelectElement).value;
-                          
-                          if (ministryId && role && role !== "ADD_NEW") {
-                            setTempMemberMinistries([...tempMemberMinistries, { ministryId, role }]);
-                            if (isAddingNewMinistryRole) {
-                               setNewMinistryRoleValue("");
-                               setIsAddingNewMinistryRole(false);
-                            }
-                          }
-                        }}
-                        className="bg-ibc-teal text-white p-2 rounded-xl shadow-md active:scale-95 transition-transform"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 <div className="space-y-4">
