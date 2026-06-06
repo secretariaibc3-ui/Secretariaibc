@@ -1190,7 +1190,7 @@ export default function App() {
   // Dynamic PWA Update Effect
   useEffect(() => {
     const updateDynamicMetadata = () => {
-      const logoUrl = appSettings.logoUrl || '/logo-secretariaibc.png';
+      const logoUrl = appSettings.logoUrl || '/icon-192.png';
       const appName = appSettings.appName || 'Secretaria IBC';
       
       // Keep manifest link stable at /manifest.json for reliable PWA install prompt triggers
@@ -1240,7 +1240,7 @@ export default function App() {
   useEffect(() => {
     // Current user name and photo
     const displayName = user?.displayName || 'IBC';
-    const profilePhoto = user?.photoURL || appSettings.logoUrl || '/logo-secretariaibc.png';
+    const profilePhoto = user?.photoURL || appSettings.logoUrl || '/icon-192.png';
     
     // Keep manifest link stable at /manifest.json for reliable PWA install prompt triggers
 
