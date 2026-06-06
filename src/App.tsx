@@ -903,6 +903,11 @@ export default function App() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
+  // Service Worker and Update States
+  const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
+  const [showUpdateBanner, setShowUpdateBanner] = useState(false);
+  const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
+  
   const [isStandalone, setIsStandalone] = useState(() => {
     if (typeof window !== 'undefined') {
       return !!(
@@ -1034,6 +1039,90 @@ export default function App() {
       setDeferredPrompt(null);
       setShowInstallModal(false);
       setShowInstallBanner(false);
+    }
+  };
+
+  // --- Service Worker Registration & PWA Update Handler ---
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    let refreshing = false;
+
+    // Register our service worker manually since we want to handle update prompts
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => {
+        setSwRegistration(reg);
+        console.log('SW registered successfully:', reg);
+
+        // 1. Check if there's already an active but waiting service worker on load
+        if (reg.waiting) {
+          setWaitingWorker(reg.waiting);
+          setShowUpdateBanner(true);
+        }
+
+        // 2. Listen for future service worker updates
+        reg.onupdatefound = () => {
+          const installing = reg.installing;
+          if (!installing) return;
+
+          installing.onstatechange = () => {
+            if (installing.state === 'installed') {
+              // Only if we already had a running controller, meaning this is a real update
+              if (navigator.serviceWorker.controller) {
+                setWaitingWorker(installing);
+                setShowUpdateBanner(true);
+              }
+            }
+          };
+        };
+      })
+      .catch((error) => {
+        console.error('SW registration failed:', error);
+      });
+
+    // 3. Listen to controller changes to reload when update is activated
+    const handleControllerChange = () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+
+    return () => {
+      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+    };
+  }, []);
+
+  // --- Check for updates on load, app focus or periodically ---
+  useEffect(() => {
+    if (!swRegistration) return;
+
+    // Initial check for updates
+    swRegistration.update().catch(err => console.debug("Failed SW update:", err));
+
+    // Periodically check for updates (every 5 minutes)
+    const intervalId = setInterval(() => {
+      swRegistration.update().catch(err => console.debug("Failed SW update:", err));
+    }, 1000 * 60 * 5);
+
+    // Check for updates when window/tab returns to focus
+    const handleFocus = () => {
+      swRegistration.update().catch(err => console.debug("Failed SW update:", err));
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [swRegistration]);
+
+  const handleUpdateNow = async () => {
+    if (waitingWorker) {
+      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+    } else {
+      window.location.reload();
     }
   };
 
@@ -1869,6 +1958,20 @@ export default function App() {
       saveToCache('memberFunctions', functionsData);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'memberFunctions'));
 
+    const unsubscribeMinistries = onSnapshot(collection(db, 'ministries'), (snapshot) => {
+      const ministriesData = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        name: doc.data().name, 
+        color: doc.data().color, 
+        description: doc.data().description || "",
+        photoUrl: doc.data().photoUrl || "",
+        createdAt: doc.data().createdAt,
+        updatedAt: doc.data().updatedAt
+      } as Ministry)).sort((a,b) => a.name.localeCompare(b.name));
+      setMinistries(ministriesData);
+      saveToCache('ministries', ministriesData);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'ministries'));
+
     let unsubscribeUsers = () => {};
     if (appUser?.role === 'admin') {
       unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -1905,11 +2008,6 @@ export default function App() {
           setRelationshipTypes(sorted);
           saveToCache('relationshipTypes', sorted);
         }
-        
-        const ministriesSnapshot = await getDocs(query(collection(db, 'ministries'), orderBy('name')));
-        const ministriesData = ministriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ministry));
-        setMinistries(ministriesData);
-        saveToCache('ministries', ministriesData);
 
       } catch (error) {
         handleFirestoreError(error, OperationType.LIST, 'data-fetching');
@@ -1928,6 +2026,7 @@ export default function App() {
     return () => {
       unsubscribeMembers();
       unsubscribeFunctions();
+      unsubscribeMinistries();
       unsubscribeUsers();
       unsubscribeSettings();
     };
@@ -8601,6 +8700,47 @@ export default function App() {
                 transition={{ duration: 6, ease: "linear" }}
                 className="absolute bottom-0 left-0 h-1 bg-ibc-teal"
               />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* PWA Update Notification Banner */}
+      <AnimatePresence>
+        {showUpdateBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.95 }}
+            className="fixed bottom-6 right-6 z-[350] w-[calc(100%-3rem)] sm:max-w-md bg-white border border-ibc-teal/20 p-5 rounded-[2.5rem] shadow-2xl backdrop-blur-xl"
+          >
+            <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
+              <div className="flex items-center sm:items-start space-x-4">
+                <div className="w-12 h-12 bg-ibc-teal/10 rounded-2xl flex items-center justify-center shrink-0">
+                  <RefreshCcw className="w-6 h-6 text-ibc-teal" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-gray-900 leading-tight">Nova atualização disponível!</h3>
+                  <p className="text-xs text-gray-500 font-medium leading-relaxed mt-1">
+                    Uma nova versão do aplicativo está pronta. Deseja atualizar agora para acessar os novos recursos?
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 mt-5">
+              <button
+                onClick={() => setShowUpdateBanner(false)}
+                className="w-full py-3 bg-gray-50 hover:bg-gray-100 text-gray-500 rounded-2xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all text-center"
+              >
+                Depois
+              </button>
+              <button
+                onClick={handleUpdateNow}
+                className="w-full py-3 bg-ibc-teal hover:bg-ibc-teal/90 text-white rounded-2xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-ibc-teal/10 text-center animate-pulse"
+              >
+                Atualizar Agora
+              </button>
             </div>
           </motion.div>
         )}
