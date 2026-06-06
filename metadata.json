@@ -1,5 +1,6 @@
 {
   "name": "Secretaria IBC",
   "description": "Sistema completo de gestão de membros e administração para a secretaria da Igreja Batista Coqueiral - Coqueiral/Recife.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

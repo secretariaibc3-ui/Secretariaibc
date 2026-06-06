@@ -68,6 +68,15 @@ service cloud.firestore {
              (!('relationships' in data) || data.relationships is list) &&
              (!('exitDate' in data) || data.exitDate is string) &&
              (!('exitReason' in data) || data.exitReason is string) &&
+             (!('celular' in data) || (data.celular is string && data.celular.size() <= 50)) &&
+             (!('cep' in data) || (data.cep is string && data.cep.size() <= 20)) &&
+             (!('logradouro' in data) || (data.logradouro is string && data.logradouro.size() <= 300)) &&
+             (!('numero' in data) || (data.numero is string && data.numero.size() <= 50)) &&
+             (!('complemento' in data) || (data.complemento is string && data.complemento.size() <= 205)) &&
+             (!('bairro' in data) || (data.bairro is string && data.bairro.size() <= 200)) &&
+             (!('cidade' in data) || (data.cidade is string && data.cidade.size() <= 200)) &&
+             (!('estado' in data) || (data.estado is string && data.estado.size() <= 100)) &&
+             (!('pais' in data) || (data.pais is string && data.pais.size() <= 100)) &&
              (!('createdAt' in data) || data.createdAt is timestamp) &&
              (!('updatedAt' in data) || data.updatedAt is timestamp);
     }

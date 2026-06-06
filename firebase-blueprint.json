@@ -37,6 +37,15 @@
             }
           } 
         },
+        "celular": { "type": "string", "description": "Cell phone number" },
+        "cep": { "type": "string", "description": "CEP / Postal Code" },
+        "logradouro": { "type": "string", "description": "Street or road name" },
+        "numero": { "type": "string", "description": "House/building number" },
+        "complemento": { "type": "string", "description": "Address complement (e.g. apartment, suite)" },
+        "bairro": { "type": "string", "description": "Neighborhood" },
+        "cidade": { "type": "string", "description": "City" },
+        "estado": { "type": "string", "description": "State" },
+        "pais": { "type": "string", "description": "Country" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },

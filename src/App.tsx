@@ -52,6 +52,9 @@ import {
   Heart,
   Facebook,
   MessageSquare,
+  Phone,
+  PhoneCall,
+  MapPin,
   Info,
   LayoutGrid,
   Maximize2,
@@ -371,6 +374,15 @@ interface Member {
   isAbsent?: boolean;
   exitDate?: string;
   exitReason?: string;
+  celular?: string;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
   createdAt: any;
   updatedAt: any;
 }
@@ -796,6 +808,92 @@ export default function App() {
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .trim();
+  };
+
+  const formatPhone = (val: string) => {
+    const numeric = val.replace(/[^\d+]/g, '');
+    if (numeric.startsWith('+')) {
+      return numeric;
+    }
+    const digits = numeric.replace(/\D/g, '');
+    if (digits.length <= 2) {
+      return digits;
+    }
+    if (digits.length <= 6) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    }
+    if (digits.length <= 10) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    }
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+  };
+
+  const formatCEP = (val: string) => {
+    const digits = val.replace(/\D/g, '');
+    if (digits.length <= 5) {
+      return digits;
+    }
+    return `${digits.slice(0, 5)}-${digits.slice(5, 8)}`;
+  };
+
+  const getRawPhoneNumber = (phone: string) => {
+    return phone.replace(/\D/g, '');
+  };
+
+  const getWhatsAppNumber = (phone: string) => {
+    let raw = getRawPhoneNumber(phone);
+    if (raw.length === 0) return '';
+    if (raw.length <= 11 && !raw.startsWith('55')) {
+      raw = '55' + raw;
+    }
+    return raw;
+  };
+
+  const getMapsUrl = (member: Member) => {
+    const parts = [
+      member.logradouro,
+      member.numero,
+      member.bairro,
+      member.cidade,
+      member.estado,
+      member.cep,
+      member.pais || "Brasil"
+    ].filter(Boolean);
+    const fullAddress = parts.join(", ");
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+  };
+
+  const hasAddress = (member: Member) => {
+    return !!(member.logradouro || member.numero || member.cep || member.bairro || member.cidade);
+  };
+
+  const handleCEPLookup = async (cepValue: string, isEdit: boolean) => {
+    const rawCep = cepValue.replace(/\D/g, '');
+    if (rawCep.length === 8) {
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${rawCep}/json/`);
+        const data = await res.json();
+        if (!data.erro) {
+          const formSelector = isEdit ? 'form[onSubmit*="handleEditMember"]' : 'form[onSubmit*="handleAddMember"]';
+          const formObj = document.querySelector(formSelector) as HTMLFormElement;
+          if (formObj) {
+            const logradouroInput = formObj.querySelector('input[name="logradouro"]') as HTMLInputElement;
+            const bairroInput = formObj.querySelector('input[name="bairro"]') as HTMLInputElement;
+            const cidadeInput = formObj.querySelector('input[name="cidade"]') as HTMLInputElement;
+            const estadoInput = formObj.querySelector('input[name="estado"]') as HTMLInputElement;
+            const paisInput = formObj.querySelector('input[name="pais"]') as HTMLInputElement;
+            
+            if (logradouroInput) logradouroInput.value = data.logradouro || '';
+            if (bairroInput) bairroInput.value = data.bairro || '';
+            if (cidadeInput) cidadeInput.value = data.localidade || '';
+            if (estadoInput) estadoInput.value = data.uf || '';
+            if (paisInput) paisInput.value = 'Brasil';
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao buscar CEP:", err);
+      }
+    }
   };
 
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -1892,6 +1990,15 @@ export default function App() {
     const gender = formData.get('gender') as 'Homem' | 'Mulher';
     const birthDate = formData.get('birthDate') as string || '';
     const startDate = formData.get('startDate') as string || '';
+    const celular = formData.get('celular') as string || '';
+    const cep = formData.get('cep') as string || '';
+    const logradouro = formData.get('logradouro') as string || '';
+    const numero = formData.get('numero') as string || '';
+    const complemento = formData.get('complemento') as string || '';
+    const bairro = formData.get('bairro') as string || '';
+    const cidade = formData.get('cidade') as string || '';
+    const estado = formData.get('estado') as string || '';
+    const pais = formData.get('pais') as string || '';
     const photoEntry = formData.get('photo');
     const photoFile = (photoEntry instanceof File && photoEntry.size > 0) ? photoEntry : null;
 
@@ -1937,6 +2044,15 @@ export default function App() {
           startDate,
           photoUrl,
           isActive: true,
+          celular,
+          cep,
+          logradouro,
+          numero,
+          complemento,
+          bairro,
+          cidade,
+          estado,
+          pais,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
@@ -2061,6 +2177,15 @@ export default function App() {
     const gender = formData.get('gender') as 'Homem' | 'Mulher';
     const birthDate = formData.get('birthDate') as string || '';
     const startDate = formData.get('startDate') as string || '';
+    const celular = formData.get('celular') as string || '';
+    const cep = formData.get('cep') as string || '';
+    const logradouro = formData.get('logradouro') as string || '';
+    const numero = formData.get('numero') as string || '';
+    const complemento = formData.get('complemento') as string || '';
+    const bairro = formData.get('bairro') as string || '';
+    const cidade = formData.get('cidade') as string || '';
+    const estado = formData.get('estado') as string || '';
+    const pais = formData.get('pais') as string || '';
     const photoEntry = formData.get('photo');
     const photoFile = (photoEntry instanceof File && photoEntry.size > 0) ? photoEntry : null;
 
@@ -2083,6 +2208,15 @@ export default function App() {
           startDate: selectedMember.startDate,
           photoUrl: selectedMember.photoUrl,
           isActive: selectedMember.isActive,
+          celular: selectedMember.celular || '',
+          cep: selectedMember.cep || '',
+          logradouro: selectedMember.logradouro || '',
+          numero: selectedMember.numero || '',
+          complemento: selectedMember.complemento || '',
+          bairro: selectedMember.bairro || '',
+          cidade: selectedMember.cidade || '',
+          estado: selectedMember.estado || '',
+          pais: selectedMember.pais || '',
           updatedAt: serverTimestamp()
         };
 
@@ -2107,6 +2241,15 @@ export default function App() {
           startDate,
           photoUrl,
           isActive: selectedMember.isActive !== undefined ? selectedMember.isActive : true,
+          celular,
+          cep,
+          logradouro,
+          numero,
+          complemento,
+          bairro,
+          cidade,
+          estado,
+          pais,
           updatedAt: serverTimestamp()
         };
 
@@ -6774,6 +6917,109 @@ export default function App() {
                   <label className="block text-sm font-bold text-gray-700 mb-1">Data de Batismo (Opcional)</label>
                   <input name="startDate" type="date" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
                 </div>
+
+                <div className="md:col-span-2 border-t border-gray-100 pt-4">
+                  <h4 className="text-xs font-black text-ibc-teal uppercase tracking-widest mb-3">Celular / Contato</h4>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Celular (com DDD)</label>
+                    <input 
+                      name="celular" 
+                      type="text" 
+                      placeholder="(99) 99999-9999" 
+                      onChange={(e) => {
+                        const start = e.target.selectionStart;
+                        e.target.value = formatPhone(e.target.value);
+                        e.target.setSelectionRange(start, start);
+                      }}
+                      className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                    />
+                  </div>
+                </div>
+
+                <div className="md:col-span-2 border-t border-gray-100 pt-4">
+                  <h4 className="text-xs font-black text-ibc-teal uppercase tracking-widest mb-3">Endereço</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">CEP</label>
+                      <input 
+                        name="cep" 
+                        type="text" 
+                        placeholder="50000-000" 
+                        onChange={(e) => {
+                          const start = e.target.selectionStart;
+                          e.target.value = formatCEP(e.target.value);
+                          e.target.setSelectionRange(start, start);
+                          handleCEPLookup(e.target.value, false);
+                        }}
+                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Logradouro (Rua/Avenida)</label>
+                      <input 
+                        name="logradouro" 
+                        type="text" 
+                        placeholder="Rua Exemplo" 
+                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Número</label>
+                      <input 
+                        name="numero" 
+                        type="text" 
+                        placeholder="123" 
+                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Complemento</label>
+                      <input 
+                        name="complemento" 
+                        type="text" 
+                        placeholder="Apto 101" 
+                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Bairro</label>
+                      <input 
+                        name="bairro" 
+                        type="text" 
+                        placeholder="Bairro" 
+                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Cidade</label>
+                      <input 
+                        name="cidade" 
+                        type="text" 
+                        placeholder="Cidade" 
+                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Estado</label>
+                      <input 
+                        name="estado" 
+                        type="text" 
+                        placeholder="PE" 
+                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">País</label>
+                      <input 
+                        name="pais" 
+                        type="text" 
+                        defaultValue="Brasil" 
+                        placeholder="Brasil" 
+                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -7063,13 +7309,124 @@ export default function App() {
                       </label>
                     </div>
                   </div>
-                  <div>
+                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">Nascimento (Opcional)</label>
                     <input name="birthDate" type="date" defaultValue={selectedMember?.birthDate} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">Data de Batismo (Opcional)</label>
                     <input name="startDate" type="date" defaultValue={selectedMember?.startDate} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
+                  </div>
+
+                  <div className="md:col-span-2 border-t border-gray-100 pt-4">
+                    <h4 className="text-xs font-black text-ibc-teal uppercase tracking-widest mb-3">Celular / Contato</h4>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Celular (com DDD)</label>
+                      <input 
+                        name="celular" 
+                        type="text" 
+                        defaultValue={selectedMember?.celular || ''} 
+                        placeholder="(99) 99999-9999" 
+                        onChange={(e) => {
+                          const start = e.target.selectionStart;
+                          e.target.value = formatPhone(e.target.value);
+                          e.target.setSelectionRange(start, start);
+                        }}
+                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2 border-t border-gray-100 pt-4">
+                    <h4 className="text-xs font-black text-ibc-teal uppercase tracking-widest mb-3">Endereço</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">CEP</label>
+                        <input 
+                          name="cep" 
+                          type="text" 
+                          defaultValue={selectedMember?.cep || ''} 
+                          placeholder="50000-000" 
+                          onChange={(e) => {
+                            const start = e.target.selectionStart;
+                            e.target.value = formatCEP(e.target.value);
+                            e.target.setSelectionRange(start, start);
+                            handleCEPLookup(e.target.value, true);
+                          }}
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Logradouro (Rua/Avenida)</label>
+                        <input 
+                          name="logradouro" 
+                          type="text" 
+                          defaultValue={selectedMember?.logradouro || ''} 
+                          placeholder="Rua Exemplo" 
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Número</label>
+                        <input 
+                          name="numero" 
+                          type="text" 
+                          defaultValue={selectedMember?.numero || ''} 
+                          placeholder="123" 
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Complemento</label>
+                        <input 
+                          name="complemento" 
+                          type="text" 
+                          defaultValue={selectedMember?.complemento || ''} 
+                          placeholder="Apto 101" 
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Bairro</label>
+                        <input 
+                          name="bairro" 
+                          type="text" 
+                          defaultValue={selectedMember?.bairro || ''} 
+                          placeholder="Bairro" 
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Cidade</label>
+                        <input 
+                          name="cidade" 
+                          type="text" 
+                          defaultValue={selectedMember?.cidade || ''} 
+                          placeholder="Cidade" 
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Estado</label>
+                        <input 
+                          name="estado" 
+                          type="text" 
+                          defaultValue={selectedMember?.estado || ''} 
+                          placeholder="PE" 
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">País</label>
+                        <input 
+                          name="pais" 
+                          type="text" 
+                          defaultValue={selectedMember?.pais || 'Brasil'} 
+                          placeholder="Brasil" 
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -7446,6 +7803,84 @@ export default function App() {
                     <p className="text-xs font-bold text-gray-400 italic py-2">Nenhum parentesco registrado.</p>
                   )}
                 </div>
+              </div>
+
+              {/* Celular / Contato */}
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Contato</div>
+                {selectedMember.celular ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2.5 p-3 sm:p-3.5 bg-white rounded-xl border border-gray-100 shadow-sm leading-tight">
+                      <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                      <div>
+                        <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Número de Celular</div>
+                        <span className="text-xs font-bold text-gray-700">{selectedMember.celular}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <a
+                        href={`tel:${getRawPhoneNumber(selectedMember.celular)}`}
+                        className="flex items-center justify-center gap-2 px-3 py-2 sm:py-2.5 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-ibc-teal shadow-sm transition-all"
+                      >
+                        <PhoneCall className="w-3.5 h-3.5 text-ibc-teal" />
+                        Ligar
+                      </a>
+                      <a
+                        href={`https://wa.me/${getWhatsAppNumber(selectedMember.celular)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 px-3 py-2 sm:py-2.5 bg-green-50 hover:bg-green-100 border border-green-200 rounded-xl text-xs font-bold text-green-600 shadow-sm transition-all"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 text-green-500" />
+                        WhatsApp
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs font-bold text-gray-400 italic py-2">Nenhum celular cadastrado.</p>
+                )}
+              </div>
+
+              {/* Endereço */}
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Endereço</div>
+                {hasAddress(selectedMember) ? (
+                  <div className="space-y-3">
+                    <div className="p-3 sm:p-3.5 bg-white rounded-xl border border-gray-100 shadow-sm text-xs font-bold text-gray-700 leading-relaxed space-y-1">
+                      <p className="font-extrabold text-gray-800">
+                        {selectedMember.logradouro || "Não preenchido"}{selectedMember.numero ? `, nº ${selectedMember.numero}` : ""}
+                      </p>
+                      {selectedMember.complemento && (
+                        <p className="text-gray-500 text-[11px] font-bold">
+                          {selectedMember.complemento}
+                        </p>
+                      )}
+                      {(selectedMember.bairro || selectedMember.cep) && (
+                        <p className="text-gray-500 text-[11px] font-bold">
+                          {selectedMember.bairro || "Não preenchido"}{selectedMember.cep ? ` - CEP: ${selectedMember.cep}` : ""}
+                        </p>
+                      )}
+                      {(selectedMember.cidade || selectedMember.estado) && (
+                        <p className="text-gray-500 text-[11px] font-bold">
+                          {selectedMember.cidade || "Não preenchido"} - {selectedMember.estado || "Não preenchido"}{selectedMember.pais && `, ${selectedMember.pais}`}
+                        </p>
+                      )}
+                    </div>
+
+                    <a
+                      href={getMapsUrl(selectedMember)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full px-3 py-2 sm:py-2.5 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-ibc-teal shadow-sm transition-all"
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-ibc-teal" />
+                      Visualizar no Mapa
+                    </a>
+                  </div>
+                ) : (
+                  <p className="text-xs font-bold text-gray-400 italic py-2">Nenhum endereço cadastrado.</p>
+                )}
               </div>
 
               {/* Informações de Saída (se inativo) */}
