@@ -405,6 +405,7 @@ interface Ministry {
   id: string;
   name: string;
   color: string;
+  description?: string;
   photoUrl?: string;
   createdAt: any;
   updatedAt: any;
@@ -901,40 +902,103 @@ export default function App() {
   const [expandedFunction, setExpandedFunction] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [showInstallBanner, setShowInstallBanner] = useState(!localStorage.getItem('pwa_install_dismissed'));
+  
+  const [isStandalone, setIsStandalone] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !!(
+        window.matchMedia('(display-mode: standalone)').matches || 
+        (navigator as any).standalone || 
+        document.referrer.includes('android-app://')
+      );
+    }
+    return false;
+  });
+
+  const [showInstallBanner, setShowInstallBanner] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const isStandaloneMode = !!(
+        window.matchMedia('(display-mode: standalone)').matches || 
+        (navigator as any).standalone || 
+        document.referrer.includes('android-app://')
+      );
+      if (isStandaloneMode) return false;
+    }
+    return !localStorage.getItem('pwa_install_dismissed');
+  });
+
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
+
+  const handleCloseBanner = () => {
+    setShowInstallBanner(false);
+    localStorage.setItem('pwa_install_dismissed', 'true');
+    localStorage.setItem('pwa_install_dismissed_time', Date.now().toString());
+  };
 
   // PWA Install Prompt Detection
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     // Check if app is already installed
-    const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone || document.referrer.includes('android-app://');
+    const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || 
+                             (navigator as any).standalone || 
+                             document.referrer.includes('android-app://');
     setIsStandalone(isStandaloneMode);
+
+    if (isStandaloneMode) {
+      setShowInstallBanner(false);
+      setShowInstallModal(false);
+      return;
+    }
+
+    // Set up a listener for changes to standalone display-mode
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    const handleMediaQueryChange = (e: MediaQueryListEvent) => {
+      const active = e.matches;
+      setIsStandalone(active);
+      if (active) {
+        setShowInstallBanner(false);
+        setShowInstallModal(false);
+      }
+    };
+    
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleMediaQueryChange);
+    } else {
+      mediaQuery.addListener(handleMediaQueryChange);
+    }
+
+    const handleAppInstalled = () => {
+      setIsStandalone(true);
+      setShowInstallBanner(false);
+      setShowInstallModal(false);
+    };
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     // Detect iOS
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(isIOSDevice);
 
+    let timeoutId: any = null;
+
     const handler = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
       
-      // If we got the prompt and haven't dismissed it, show our modal
       const isDismissed = localStorage.getItem('pwa_install_dismissed');
       const lastDismissedTime = localStorage.getItem('pwa_install_dismissed_time');
       const now = Date.now();
       const threeDays = 3 * 24 * 60 * 60 * 1000;
       
-      const shouldShow = !isStandaloneMode && (!isDismissed || (lastDismissedTime && now - parseInt(lastDismissedTime) > threeDays));
+      const shouldShow = !isDismissed || (lastDismissedTime && now - parseInt(lastDismissedTime) > threeDays);
 
       if (shouldShow) {
-        setTimeout(() => setShowInstallModal(true), 3000);
+        timeoutId = setTimeout(() => setShowInstallModal(true), 3000);
       }
     };
 
     // For iOS, we don't have beforeinstallprompt, so we check manually
-    if (isIOSDevice && !isStandaloneMode) {
+    if (isIOSDevice) {
       const isDismissed = localStorage.getItem('pwa_install_dismissed');
       const lastDismissedTime = localStorage.getItem('pwa_install_dismissed_time');
       const now = Date.now();
@@ -942,13 +1006,22 @@ export default function App() {
       
       const shouldShow = !isDismissed || (lastDismissedTime && now - parseInt(lastDismissedTime) > threeDays);
       if (shouldShow) {
-        setTimeout(() => setShowInstallModal(true), 5000);
+        timeoutId = setTimeout(() => setShowInstallModal(true), 5000);
       }
     }
 
     window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, [isStandalone]);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleMediaQueryChange);
+      } else {
+        mediaQuery.removeListener(handleMediaQueryChange);
+      }
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, []);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
@@ -2813,6 +2886,7 @@ export default function App() {
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const color = formData.get('color') as string;
+    const description = formData.get('description') as string;
 
     try {
       setIsSaving(true);
@@ -2820,6 +2894,7 @@ export default function App() {
       const docRef = await addDoc(collection(db, 'ministries'), {
         name,
         color,
+        description: description?.trim() || "",
         photoUrl: '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -2829,7 +2904,7 @@ export default function App() {
         type: 'add',
         collection: 'ministries',
         id: docRef.id,
-        data: { name, color },
+        data: { name, color, description: description?.trim() || "" },
         message: `Ministério ${name} cadastrado.`
       });
 
@@ -2849,6 +2924,7 @@ export default function App() {
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const color = formData.get('color') as string;
+    const description = formData.get('description') as string;
 
     try {
       setIsSaving(true);
@@ -2858,6 +2934,7 @@ export default function App() {
       await updateDoc(doc(db, 'ministries', selectedMinistry.id), {
         name,
         color,
+        description: description?.trim() || "",
         updatedAt: serverTimestamp()
       });
       
@@ -3566,7 +3643,7 @@ export default function App() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
-                    onClick={() => setIsStandalone(true)} // Or just hide it another way
+                    onClick={handleCloseBanner}
                     className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     <X className="w-4 h-4" />
@@ -3827,7 +3904,7 @@ export default function App() {
               </div>
               <div className="flex items-center gap-2">
                 <button 
-                  onClick={() => setIsStandalone(true)}
+                  onClick={handleCloseBanner}
                   className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <X className="w-4 h-4" />
@@ -6732,29 +6809,40 @@ export default function App() {
         title={selectedMinistry?.name || 'Participantes'}
       >
         <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-          {members.filter(m => (m.ministryIds?.includes(selectedMinistry?.id || '')) || (m.ministryId === selectedMinistry?.id)).length > 0 ? (
-            <div className="space-y-2">
-              {members.filter(m => (m.ministryIds?.includes(selectedMinistry?.id || '')) || (m.ministryId === selectedMinistry?.id)).map((member) => (
-                <div key={member.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-2xl border border-gray-100">
-                  <div className="w-10 h-10 rounded-xl bg-ibc-blue flex items-center justify-center text-white font-bold overflow-hidden">
-                    {member.photoUrl ? (
-                      <img src={member.photoUrl} alt={member.name} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                    ) : (
-                      member.name.charAt(0)
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">{member.name}</p>
-                    <p className="text-[10px] text-ibc-teal font-bold uppercase tracking-widest">{member.function}</p>
-                  </div>
-                </div>
-              ))}
+          {/* Descrição do Ministério */}
+          <div className="pb-4 border-b border-gray-100">
+            <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Descrição do Ministério</h5>
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 italic text-gray-600 leading-relaxed text-sm">
+              {selectedMinistry?.description || "Descrição não informada"}
             </div>
-          ) : (
-            <div className="text-center py-10">
-              <p className="text-sm text-gray-400 font-medium">Nenhum participante vinculado a este ministério.</p>
-            </div>
-          )}
+          </div>
+
+          <div>
+            <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Participantes</h5>
+            {members.filter(m => (m.ministryIds?.includes(selectedMinistry?.id || '')) || (m.ministryId === selectedMinistry?.id)).length > 0 ? (
+              <div className="space-y-2">
+                {members.filter(m => (m.ministryIds?.includes(selectedMinistry?.id || '')) || (m.ministryId === selectedMinistry?.id)).map((member) => (
+                  <div key={member.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                    <div className="w-10 h-10 rounded-xl bg-ibc-blue flex items-center justify-center text-white font-bold overflow-hidden">
+                      {member.photoUrl ? (
+                        <img src={member.photoUrl} alt={member.name} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                      ) : (
+                        member.name.charAt(0)
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{member.name}</p>
+                      <p className="text-[10px] text-ibc-teal font-bold uppercase tracking-widest">{member.function}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-sm text-gray-400 font-medium">Nenhum participante vinculado a este ministério.</p>
+              </div>
+            )}
+          </div>
         </div>
       </Modal>
 
@@ -6768,6 +6856,15 @@ export default function App() {
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Nome do Ministério</label>
             <input required name="name" type="text" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Descrição do Ministério (Opcional)</label>
+            <textarea 
+              name="description" 
+              placeholder="Descreva as responsabilidades, propósitos e atividades deste ministério..."
+              rows={4}
+              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-none text-sm" 
+            />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Cor de Identificação</label>
@@ -6801,6 +6898,16 @@ export default function App() {
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Nome do Ministério</label>
             <input required name="name" type="text" defaultValue={selectedMinistry?.name} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Descrição do Ministério (Opcional)</label>
+            <textarea 
+              name="description" 
+              defaultValue={selectedMinistry?.description || ''}
+              placeholder="Descreva as responsabilidades, propósitos e atividades deste ministério..."
+              rows={4}
+              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-none text-sm" 
+            />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Cor de Identificação</label>

@@ -86,6 +86,7 @@
       "properties": {
         "name": { "type": "string", "description": "Name of the ministry" },
         "color": { "type": "string", "description": "Hex color code for the ministry" },
+        "description": { "type": "string", "description": "Detailed description of the ministry" },
         "photoUrl": { "type": "string", "description": "URL of the ministry's cover photo" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
