@@ -711,9 +711,9 @@ export default function App() {
   const [members, setMembers] = useState<Member[]>(() => loadFromCache<Member[]>('members', []));
   const [memberFunctions, setMemberFunctions] = useState<MemberFunction[]>(() => loadFromCache<MemberFunction[]>('memberFunctions', []));
   const [relationshipTypes, setRelationshipTypes] = useState<RelationshipType[]>(() => loadFromCache<RelationshipType[]>('relationshipTypes', []));
-  const [isMemberFunctionsCollapsed, setIsMemberFunctionsCollapsed] = useState(false);
-  const [isRelationshipTypesCollapsed, setIsRelationshipTypesCollapsed] = useState(false);
-  const [isRHFilterCollapsed, setIsRHFilterCollapsed] = useState(false);
+  const [isMemberFunctionsCollapsed, setIsMemberFunctionsCollapsed] = useState(true);
+  const [isRelationshipTypesCollapsed, setIsRelationshipTypesCollapsed] = useState(true);
+  const [isRHFilterCollapsed, setIsRHFilterCollapsed] = useState(true);
   const [rhFilterType, setRhFilterType] = useState<'all' | 'relationship' | 'function' | 'couples'>('all');
   const [rhSelectedValue, setRhSelectedValue] = useState<string>('');
   
@@ -2257,7 +2257,13 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => signOut(auth);
+  const handleLogout = () => {
+    showConfirm(
+      "Confirmar Saída",
+      "Deseja realmente sair da sua conta?",
+      () => signOut(auth)
+    );
+  };
   
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -4477,10 +4483,11 @@ export default function App() {
               onClick={() => {
                 setIsAddMinistryModalOpen(true);
               }}
-              className="bg-ibc-teal text-white px-6 py-4 rounded-2xl flex items-center font-bold hover:bg-ibc-teal/90 transition-all shadow-lg shadow-ibc-teal/20 active:scale-95"
+              className="bg-ibc-teal text-white px-3 py-2.5 sm:px-6 sm:py-3.5 rounded-xl sm:rounded-2xl flex items-center font-bold hover:bg-ibc-teal/90 transition-all shadow-lg shadow-ibc-teal/20 active:scale-95 text-xs whitespace-nowrap"
             >
-              <Plus className="w-5 h-5 mr-2" />
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
               <span className="hidden sm:inline">Novo Ministério</span>
+              <span className="sm:hidden">Novo</span>
             </button>
           )}
         </header>
@@ -4852,19 +4859,19 @@ export default function App() {
                         </p>
                       </div>
 
-                      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex space-x-1 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 lg:translate-y-[-10px] lg:group-hover:translate-y-0 z-20">
-                        <button 
-                          onClick={(e) => { 
-                            e.stopPropagation(); 
-                            setSelectedMinistry(m); 
-                            setIsEditMinistryModalOpen(true); 
-                          }}
-                          className="p-2 text-white hover:bg-white/20 rounded-xl transition-all backdrop-blur-md bg-white/10"
-                          title="Editar Ministério"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        {appUser?.isFullAdmin && (
+                      {(appUser?.role === 'admin' || appUser?.isFullAdmin) && (
+                        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex space-x-1 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 lg:translate-y-[-10px] lg:group-hover:translate-y-0 z-20">
+                          <button 
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              setSelectedMinistry(m); 
+                              setIsEditMinistryModalOpen(true); 
+                            }}
+                            className="p-2 text-white hover:bg-white/20 rounded-xl transition-all backdrop-blur-md bg-white/10"
+                            title="Editar Ministério"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleDeleteMinistry(m.id, m.name); }}
                             className="p-2 text-white hover:bg-red-500/40 rounded-xl transition-all backdrop-blur-md bg-white/10"
@@ -4872,8 +4879,8 @@ export default function App() {
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </motion.div>
                   ))}
                 </AnimatePresence>
