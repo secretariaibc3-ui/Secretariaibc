@@ -174,8 +174,31 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
+    
+    // Serve sw.js without cache
+    app.get('/sw.js', (req, res) => {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Content-Type', 'application/javascript');
+      res.sendFile(path.join(distPath, 'sw.js'));
+    });
+
+    // Serve version.json without cache
+    app.get('/version.json', (req, res) => {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Content-Type', 'application/json');
+      res.sendFile(path.join(distPath, 'version.json'));
+    });
+
+    // Serve manifest.json without cache (keeps installation/shortcuts updated)
+    app.get('/manifest.json', (req, res) => {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Content-Type', 'application/manifest+json');
+      res.sendFile(path.join(distPath, 'manifest.json'));
+    });
+
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

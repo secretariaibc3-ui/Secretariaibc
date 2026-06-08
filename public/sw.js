@@ -58,10 +58,11 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
   
-  // Don't cache Firestore/Firebase API requests
+  // Don't cache Firestore/Firebase API requests or version check
   if (url.origin.includes('firestore.googleapis.com') || 
       url.origin.includes('firebaseinstallations.googleapis.com') ||
-      url.origin.includes('identitytoolkit.googleapis.com')) {
+      url.origin.includes('identitytoolkit.googleapis.com') ||
+      url.pathname.includes('/version.json')) {
     return;
   }
 

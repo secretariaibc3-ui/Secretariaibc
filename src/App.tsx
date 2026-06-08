@@ -955,6 +955,8 @@ export default function App() {
   const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
   const [showUpdateBanner, setShowUpdateBanner] = useState(false);
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const runningVersionRef = useRef<string | null>(null);
   
   const [isStandalone, setIsStandalone] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -1144,32 +1146,66 @@ export default function App() {
 
   // --- Check for updates on load, app focus or periodically ---
   useEffect(() => {
-    if (!swRegistration) return;
+    let checkInterval: any = null;
+    let isMounted = true;
 
-    // Initial check for updates
-    swRegistration.update().catch(err => console.debug("Failed SW update:", err));
+    const checkVersion = async (isInitial = false) => {
+      try {
+        const response = await fetch('/version.json?t=' + Date.now(), {
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        
+        if (isInitial) {
+          runningVersionRef.current = data.version;
+          console.log('App initial version loaded:', data.version);
+        } else {
+          if (runningVersionRef.current && data.version && data.version !== runningVersionRef.current) {
+            console.log('New update detected! Current:', runningVersionRef.current, 'New:', data.version);
+            setShowUpdateBanner(true);
+            
+            // Also trigger a SwRegistration update check to download sw.js if available
+            if (swRegistration) {
+              swRegistration.update().catch(err => console.debug("Auto SW update call:", err));
+            }
+          }
+        }
+      } catch (err) {
+        console.debug('Failed to check app version:', err);
+      }
+    };
 
-    // Periodically check for updates (every 5 minutes)
-    const intervalId = setInterval(() => {
-      swRegistration.update().catch(err => console.debug("Failed SW update:", err));
-    }, 1000 * 60 * 5);
+    // Initial check
+    checkVersion(true);
 
-    // Check for updates when window/tab returns to focus
+    // Check version every 30 seconds for fast update detection
+    checkInterval = setInterval(() => {
+      if (isMounted) checkVersion(false);
+    }, 30000);
+
+    // Check version & sw registration when window/tab returns to focus
     const handleFocus = () => {
-      swRegistration.update().catch(err => console.debug("Failed SW update:", err));
+      if (isMounted) checkVersion(false);
+      if (swRegistration) {
+        swRegistration.update().catch(err => console.debug("Failed SW update on focus:", err));
+      }
     };
     window.addEventListener('focus', handleFocus);
 
     return () => {
-      clearInterval(intervalId);
+      isMounted = false;
+      if (checkInterval) clearInterval(checkInterval);
       window.removeEventListener('focus', handleFocus);
     };
   }, [swRegistration]);
 
   const handleUpdateNow = async () => {
+    setIsUpdating(true);
     if (waitingWorker) {
       waitingWorker.postMessage({ type: 'SKIP_WAITING' });
     } else {
+      // Bypasses browser cache to reload fresh assets
       window.location.reload();
     }
   };
@@ -1507,9 +1543,43 @@ export default function App() {
         setIsViewPresencaModalOpen(false);
         setIsMinistryMembersModalOpen(false);
         setIsGalleryPickerOpen(false);
+        setIsAddFunctionModalOpen(false);
+        setIsEditFunctionModalOpen(false);
+        setIsViewFunctionDetailsModalOpen(false);
+        setIsAddRelationshipTypeModalOpen(false);
+        setIsEditRelationshipTypeModalOpen(false);
+        setIsExportModalOpen(false);
+        setExpandedCard(null);
+        setExpandedFunction(null);
         setAlertConfig(null);
         setConfirmConfig(null);
         setPasswordPromptConfig(null);
+      } else {
+        // Safe reset if no state is present in pop
+        setIsAddMemberModalOpen(false);
+        setIsEditMemberModalOpen(false);
+        setIsViewMemberModalOpen(false);
+        setIsDeactivateModalOpen(false);
+        setIsAddUserModalOpen(false);
+        setIsShareModalOpen(false);
+        setIsAddMinistryModalOpen(false);
+        setIsEditMinistryModalOpen(false);
+        setIsAddAtaModalOpen(false);
+        setIsEditAtaModalOpen(false);
+        setIsViewAtaModalOpen(false);
+        setIsAddPresencaModalOpen(false);
+        setIsEditPresencaModalOpen(false);
+        setIsViewPresencaModalOpen(false);
+        setIsMinistryMembersModalOpen(false);
+        setIsGalleryPickerOpen(false);
+        setIsAddFunctionModalOpen(false);
+        setIsEditFunctionModalOpen(false);
+        setIsViewFunctionDetailsModalOpen(false);
+        setIsAddRelationshipTypeModalOpen(false);
+        setIsEditRelationshipTypeModalOpen(false);
+        setIsExportModalOpen(false);
+        setExpandedCard(null);
+        setExpandedFunction(null);
       }
     };
 
@@ -1536,7 +1606,10 @@ export default function App() {
                          isAddMinistryModalOpen || isEditMinistryModalOpen || isAddAtaModalOpen || 
                          isEditAtaModalOpen || isViewAtaModalOpen || isAddPresencaModalOpen || 
                          isEditPresencaModalOpen || isViewPresencaModalOpen || isMinistryMembersModalOpen || 
-                         isGalleryPickerOpen || (alertConfig?.isOpen ?? false) || (confirmConfig?.isOpen ?? false) || 
+                         isGalleryPickerOpen || isAddFunctionModalOpen || isEditFunctionModalOpen || 
+                         isViewFunctionDetailsModalOpen || isAddRelationshipTypeModalOpen || isEditRelationshipTypeModalOpen || 
+                         isExportModalOpen ||
+                         (alertConfig?.isOpen ?? false) || (confirmConfig?.isOpen ?? false) || 
                          (passwordPromptConfig?.isOpen ?? false);
 
   useEffect(() => {
@@ -1552,6 +1625,31 @@ export default function App() {
       }
     }
   }, [isAnyModalOpen]);
+
+  // Specific history pushes for expandedCard and expandedFunction to allow native back button to close them directly
+  useEffect(() => {
+    if (expandedFunction) {
+      if (window.history.state?.expandedFunction !== expandedFunction) {
+        window.history.pushState({ tab: activeTab, expandedFunction }, '');
+      }
+    } else {
+      if (window.history.state?.expandedFunction) {
+        window.history.back();
+      }
+    }
+  }, [expandedFunction]);
+
+  useEffect(() => {
+    if (expandedCard) {
+      if (window.history.state?.expandedCard !== expandedCard) {
+        window.history.pushState({ tab: activeTab, expandedCard }, '');
+      }
+    } else {
+      if (window.history.state?.expandedCard) {
+        window.history.back();
+      }
+    }
+  }, [expandedCard]);
 
   const inverseRelationship = (type: string): string => {
     if (!type) return "";
@@ -5605,7 +5703,7 @@ export default function App() {
                                     <span className="text-sm font-bold text-gray-700 truncate group-hover:text-ibc-teal transition-colors">{f.name}</span>
                                     <Info className="w-3.5 h-3.5 ml-2 text-gray-400 group-hover:text-ibc-teal transition-colors shrink-0" />
                                   </div>
-                                  <div className="flex items-center space-x-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <div className="flex items-center space-x-3 shrink-0">
                                     <button 
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -5681,7 +5779,7 @@ export default function App() {
                               {relationshipTypes.map((rt) => (
                                 <div key={rt.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-ibc-teal/30 transition-all group">
                                   <span className="text-sm font-bold text-gray-700 truncate mr-2">{rt.name}</span>
-                                  <div className="flex items-center space-x-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <div className="flex items-center space-x-3 shrink-0">
                                     <button 
                                       onClick={() => {
                                         setSelectedRelationshipType(rt);
@@ -8485,6 +8583,7 @@ export default function App() {
         isOpen={isAddFunctionModalOpen} 
         onClose={() => handleModalCloseWithCheck(() => resetModalStates())} 
         title="Nova Função"
+        maxWidth="max-w-3xl"
       >
         <form onSubmit={handleAddFunction} onInput={() => setIsFormDirty(true)} className="space-y-4">
           <div>
@@ -8502,8 +8601,8 @@ export default function App() {
             <textarea 
               name="description" 
               placeholder="Descreva as responsabilidades e finalidade desta função..."
-              rows={4}
-              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-none text-sm" 
+              rows={12}
+              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-64 sm:h-[26rem] min-h-[15rem] custom-scrollbar" 
             />
           </div>
           <button 
@@ -8522,6 +8621,7 @@ export default function App() {
         isOpen={isEditFunctionModalOpen} 
         onClose={() => handleModalCloseWithCheck(() => resetModalStates())} 
         title="Editar Função"
+        maxWidth="max-w-3xl"
       >
         <form onSubmit={handleEditFunction} onInput={() => setIsFormDirty(true)} className="space-y-4">
           <div>
@@ -8540,8 +8640,8 @@ export default function App() {
               name="description" 
               defaultValue={selectedFunction?.description}
               placeholder="Descreva as responsabilidades e finalidade desta função..."
-              rows={4}
-              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-none text-sm" 
+              rows={12}
+              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-64 sm:h-[26rem] min-h-[15rem] custom-scrollbar" 
             />
           </div>
           <button 
@@ -8781,38 +8881,45 @@ export default function App() {
       <AnimatePresence>
         {showUpdateBanner && (
           <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            initial={{ opacity: 0, y: 100, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.95 }}
-            className="fixed bottom-6 right-6 z-[350] w-[calc(100%-3rem)] sm:max-w-md bg-white border border-ibc-teal/20 p-5 rounded-[2.5rem] shadow-2xl backdrop-blur-xl"
+            exit={{ opacity: 0, y: 100, scale: 0.95 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-[350] w-[calc(100%-2rem)] sm:w-auto sm:max-w-md bg-white border border-ibc-teal/20 p-4 rounded-[2rem] shadow-2xl backdrop-blur-xl shrink-0"
           >
-            <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
-              <div className="flex items-center sm:items-start space-x-4">
-                <div className="w-12 h-12 bg-ibc-teal/10 rounded-2xl flex items-center justify-center shrink-0">
-                  <RefreshCcw className="w-6 h-6 text-ibc-teal" />
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="flex items-center space-x-3 w-full sm:w-auto">
+                <div className="w-10 h-10 bg-ibc-teal/10 rounded-2xl flex items-center justify-center shrink-0">
+                  <RefreshCcw className={`w-5 h-5 text-ibc-teal ${isUpdating ? 'animate-spin' : ''}`} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-gray-900 leading-tight">Nova atualização disponível!</h3>
-                  <p className="text-xs text-gray-500 font-medium leading-relaxed mt-1">
-                    Uma nova versão do aplicativo está pronta. Deseja atualizar agora para acessar os novos recursos?
-                  </p>
+                  <h3 className="text-sm font-bold text-gray-900 leading-tight">Uma nova atualização está disponível.</h3>
+                  <p className="text-xs text-gray-500 font-medium leading-normal mt-0.5">Versão mais recente pronta para uso.</p>
                 </div>
               </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 mt-5">
-              <button
-                onClick={() => setShowUpdateBanner(false)}
-                className="w-full py-3 bg-gray-50 hover:bg-gray-100 text-gray-500 rounded-2xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all text-center"
-              >
-                Depois
-              </button>
-              <button
-                onClick={handleUpdateNow}
-                className="w-full py-3 bg-ibc-teal hover:bg-ibc-teal/90 text-white rounded-2xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-ibc-teal/10 text-center animate-pulse"
-              >
-                Atualizar Agora
-              </button>
+              
+              <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                <button
+                  disabled={isUpdating}
+                  onClick={() => setShowUpdateBanner(false)}
+                  className="px-3 py-2 bg-gray-50 hover:bg-gray-100 disabled:opacity-50 text-gray-500 rounded-xl text-xs font-bold active:scale-95 transition-all text-center"
+                >
+                  Depois
+                </button>
+                <button
+                  disabled={isUpdating}
+                  onClick={handleUpdateNow}
+                  className="px-4 py-2 bg-ibc-teal hover:bg-ibc-teal/95 disabled:opacity-50 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shadow-md shadow-ibc-teal/10 flex items-center justify-center shrink-0"
+                >
+                  {isUpdating ? (
+                    <>
+                      <RefreshCcw className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                      Atualizando...
+                    </>
+                  ) : (
+                    'Atualizar agora'
+                  )}
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
