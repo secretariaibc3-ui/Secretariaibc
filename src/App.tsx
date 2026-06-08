@@ -4181,6 +4181,86 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Sidebar */}
+      <motion.aside
+        initial={{ x: '-100%' }}
+        animate={{ x: isMobileMenuOpen ? 0 : '-100%' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        style={{ backgroundColor: `rgba(255, 255, 255, calc(var(--glass-opacity, 80) / 100))` }}
+        className="fixed inset-y-0 left-0 w-72 backdrop-blur-2xl z-50 md:hidden shadow-2xl rounded-r-[3rem] border-r border-white/40"
+      >
+        <div className="p-8 flex items-center justify-between">
+          <div className="flex flex-col items-start">
+            <img 
+              src={currentLogo} 
+              alt={appSettings.appName} 
+              className="h-10 w-auto mb-1 rounded-lg"
+              referrerPolicy="no-referrer"
+            />
+            <h1 className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">
+              {appSettings.appName}
+            </h1>
+            <p className="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-widest">{appSettings.churchCnpj || "CNPJ Não informado"}</p>
+          </div>
+          <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+            <X className="w-6 h-6 text-gray-400" />
+          </button>
+        </div>
+        <Reorder.Group 
+          axis="y" 
+          values={filteredNavItems} 
+          onReorder={(newOrder) => {
+            if (appUser?.role === 'admin') handleNavReorder(newOrder);
+          }}
+          className="p-4 space-y-2 list-none"
+        >
+          {filteredNavItems.map((item) => (
+            <Reorder.Item 
+              key={item.id} 
+              value={item}
+              dragListener={appUser?.role === 'admin'}
+              className="relative cursor-grab active:cursor-grabbing list-none"
+              onDragStart={() => { isReorderingNav.current = true; }}
+              onDragEnd={() => { isReorderingNav.current = false; }}
+              whileDrag={{ scale: 1.02 }}
+            >
+              <SidebarItem 
+                icon={TAB_ICONS[item.id]} 
+                label={item.label} 
+                active={activeTab === item.id} 
+                onClick={() => { setActiveTab(item.id as any); setIsMobileMenuOpen(false); }}
+                collapsed={false}
+                showDragHandle={appUser?.role === 'admin'}
+              />
+            </Reorder.Item>
+          ))}
+        </Reorder.Group>
+
+
+        <div className="absolute bottom-0 left-0 right-0 p-6">
+          <div className="flex items-center p-4 rounded-2xl bg-gray-50 border border-gray-100 space-x-3">
+            <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}`} className="w-10 h-10 rounded-xl border-2 border-white shadow-sm" alt="Profile" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-gray-900 truncate">{user.displayName}</p>
+              <button onClick={handleLogout} className="text-xs text-red-500 font-bold hover:underline">Sair da conta</button>
+            </div>
+          </div>
+        </div>
+      </motion.aside>
+
       <div className="flex-1 flex flex-col md:flex-row relative z-0" style={{ transform: `scale(${uiScale})`, transformOrigin: 'top left', width: `${100 / uiScale}%`, height: `${100 / uiScale}%` }}>
 
       {/* Sidebar - Desktop */}
@@ -4270,86 +4350,6 @@ export default function App() {
                 <LogOut className="w-4 h-4" />
               </button>
             )}
-          </div>
-        </div>
-      </motion.aside>
-
-      {/* Mobile Menu Overlay */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Mobile Sidebar */}
-      <motion.aside
-        initial={{ x: '-100%' }}
-        animate={{ x: isMobileMenuOpen ? 0 : '-100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        style={{ backgroundColor: `rgba(255, 255, 255, calc(var(--glass-opacity, 80) / 100))` }}
-        className="fixed inset-y-0 left-0 w-72 backdrop-blur-2xl z-50 md:hidden shadow-2xl rounded-r-[3rem] border-r border-white/40"
-      >
-        <div className="p-8 flex items-center justify-between">
-          <div className="flex flex-col items-start">
-            <img 
-              src={currentLogo} 
-              alt={appSettings.appName} 
-              className="h-10 w-auto mb-1 rounded-lg"
-              referrerPolicy="no-referrer"
-            />
-            <h1 className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">
-              {appSettings.appName}
-            </h1>
-            <p className="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-widest">{appSettings.churchCnpj || "CNPJ Não informado"}</p>
-          </div>
-          <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
-            <X className="w-6 h-6 text-gray-400" />
-          </button>
-        </div>
-        <Reorder.Group 
-          axis="y" 
-          values={filteredNavItems} 
-          onReorder={(newOrder) => {
-            if (appUser?.role === 'admin') handleNavReorder(newOrder);
-          }}
-          className="p-4 space-y-2 list-none"
-        >
-          {filteredNavItems.map((item) => (
-            <Reorder.Item 
-              key={item.id} 
-              value={item}
-              dragListener={appUser?.role === 'admin'}
-              className="relative cursor-grab active:cursor-grabbing list-none"
-              onDragStart={() => { isReorderingNav.current = true; }}
-              onDragEnd={() => { isReorderingNav.current = false; }}
-              whileDrag={{ scale: 1.02 }}
-            >
-              <SidebarItem 
-                icon={TAB_ICONS[item.id]} 
-                label={item.label} 
-                active={activeTab === item.id} 
-                onClick={() => { setActiveTab(item.id as any); setIsMobileMenuOpen(false); }}
-                collapsed={false}
-                showDragHandle={appUser?.role === 'admin'}
-              />
-            </Reorder.Item>
-          ))}
-        </Reorder.Group>
-
-
-        <div className="absolute bottom-0 left-0 right-0 p-6">
-          <div className="flex items-center p-4 rounded-2xl bg-gray-50 border border-gray-100 space-x-3">
-            <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}`} className="w-10 h-10 rounded-xl border-2 border-white shadow-sm" alt="Profile" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-gray-900 truncate">{user.displayName}</p>
-              <button onClick={handleLogout} className="text-xs text-red-500 font-bold hover:underline">Sair da conta</button>
-            </div>
           </div>
         </div>
       </motion.aside>
