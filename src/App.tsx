@@ -622,7 +622,7 @@ const RoleSelectionModal = ({
   </Modal>
 );
 
-const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg" }: { isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; maxWidth?: string }) => {
+const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg", className = "" }: { isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; maxWidth?: string; className?: string }) => {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -651,7 +651,8 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg" }: { is
             style={{ backgroundColor: `rgba(255, 255, 255, calc(var(--glass-opacity, 80) / 100))` }}
             className={cn(
               "relative backdrop-blur-2xl rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl w-full border border-white/40 flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden",
-              maxWidth
+              maxWidth,
+              className
             )}
           >
             <div className="flex items-center justify-between p-3 sm:p-6 pb-1 sm:pb-2 shrink-0">
@@ -2106,15 +2107,6 @@ export default function App() {
       saveToCache('ministries', ministriesData);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'ministries'));
 
-    let unsubscribeUsers = () => {};
-    if (appUser?.role === 'admin') {
-      unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-        const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppUser));
-        setUsers(usersData);
-        saveToCache('users', usersData);
-      }, (error) => handleFirestoreError(error, OperationType.LIST, 'users'));
-    }
-    
     const fetchData = async () => {
       try {
         const atasSnapshot = await getDocs(query(collection(db, 'atas'), orderBy('createdAt', 'desc')));
@@ -2161,10 +2153,27 @@ export default function App() {
       unsubscribeMembers();
       unsubscribeFunctions();
       unsubscribeMinistries();
-      unsubscribeUsers();
       unsubscribeSettings();
     };
-  }, [user, appUser]);
+  }, [user?.uid]);
+
+  // Admin-only Users Fetching (Depends correctly on user?.uid and appUser?.role)
+  useEffect(() => {
+    if (!user || appUser?.role !== 'admin') {
+      setUsers([]);
+      return;
+    }
+
+    const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppUser));
+      setUsers(usersData);
+      saveToCache('users', usersData);
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'users'));
+
+    return () => {
+      unsubscribeUsers();
+    };
+  }, [user?.uid, appUser?.role]);
 
   const handleLogin = async (e?: React.FormEvent<HTMLFormElement>, methodOverride?: 'email' | 'google') => {
     if (e) e.preventDefault();
@@ -3649,6 +3658,16 @@ export default function App() {
     });
   }, [members, searchQuery, memberStatusFilter]);
 
+  const [visibleMembersCount, setVisibleMembersCount] = useState(30);
+
+  useEffect(() => {
+    setVisibleMembersCount(30);
+  }, [searchQuery, memberStatusFilter]);
+
+  const displayedMembers = useMemo(() => {
+    return filteredMembers.slice(0, visibleMembersCount);
+  }, [filteredMembers, visibleMembersCount]);
+
   const filteredNavItems = useMemo(() => {
     if (appUser?.role === 'admin') return sideNavItems;
     return sideNavItems.filter(item => item.id !== 'adm');
@@ -4597,17 +4616,12 @@ export default function App() {
               {/* Member List */}
               <div className="space-y-1.5 sm:space-y-2 max-w-5xl mx-auto">
                 <AnimatePresence mode="popLayout">
-                  {filteredMembers.map((member) => (
+                  {displayedMembers.map((member) => (
                     <motion.div
-                      layout
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.98 }}
-                      transition={{ 
-                        layout: { type: "spring", stiffness: 400, damping: 30 },
-                        opacity: { duration: 0.2 },
-                        y: { type: "spring", stiffness: 500, damping: 35 }
-                      }}
+                      transition={{ duration: 0.2 }}
                       key={member.id}
                       onClick={() => { setSelectedMember(member); setIsViewMemberModalOpen(true); }}
                       className={cn(
@@ -4784,6 +4798,19 @@ export default function App() {
                     </motion.div>
                   ))}
                 </AnimatePresence>
+                
+                {filteredMembers.length > visibleMembersCount && (
+                  <div className="flex justify-center pt-5 pb-5 animate-fade-in">
+                    <button
+                      type="button"
+                      onClick={() => setVisibleMembersCount(prev => prev + 30)}
+                      className="px-6 py-3 bg-white hover:bg-gray-50 active:scale-95 text-ibc-teal border border-ibc-teal/20 rounded-[1.5rem] text-xs font-black uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-1.5"
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                      Carregar mais membros ({filteredMembers.length - visibleMembersCount} restantes)
+                    </button>
+                  </div>
+                )}
               </div>
               
               {filteredMembers.length === 0 && (
@@ -4803,11 +4830,10 @@ export default function App() {
                   {ministries.map((m, idx) => (
                     <motion.div
                       key={m.id}
-                      layout
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ delay: idx * 0.05 }}
+                      transition={{ duration: 0.2, delay: idx * 0.02 }}
                       onClick={() => { setSelectedMinistry(m); setIsMinistryMembersModalOpen(true); }}
                       className="p-3 sm:p-6 rounded-3xl border border-white/20 shadow-lg hover:shadow-2xl hover:shadow-gray-200/50 transition-all duration-500 group relative overflow-hidden cursor-pointer h-32 sm:h-48 flex flex-col justify-end active:scale-[0.98]"
                       style={{ backgroundColor: `${m.color}cc`, backdropFilter: 'blur(20px)' }}
@@ -4932,11 +4958,10 @@ export default function App() {
                   }).map((ata, idx) => (
                     <motion.div
                       key={ata.id}
-                      layout
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ delay: idx * 0.05 }}
+                      transition={{ duration: 0.2, delay: idx * 0.02 }}
                       onClick={() => { setSelectedAta(ata); setIsViewAtaModalOpen(true); }}
                       className="glass-card p-4 sm:p-6 rounded-[2.5rem] border border-gray-100/50 shadow-sm hover:shadow-2xl hover:shadow-gray-200/40 transition-all duration-500 group relative cursor-pointer active:scale-[0.99]"
                     >
@@ -4996,11 +5021,10 @@ export default function App() {
                   }).map((presenca, idx) => (
                     <motion.div
                       key={presenca.id}
-                      layout
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ delay: idx * 0.05 }}
+                      transition={{ duration: 0.2, delay: idx * 0.02 }}
                       onClick={() => { setSelectedPresenca(presenca); setIsViewPresencaModalOpen(true); }}
                       className="glass-card p-4 sm:p-6 rounded-[2.5rem] border border-gray-100/50 shadow-sm hover:shadow-2xl hover:shadow-gray-200/40 transition-all duration-500 group relative cursor-pointer active:scale-[0.99]"
                     >
@@ -7041,7 +7065,8 @@ export default function App() {
         onClose={() => { setIsMinistryMembersModalOpen(false); setSelectedMinistry(null); setMinistrySearchQuery(''); }} 
         title={selectedMinistry?.name || 'Participantes'}
       >
-        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+        {isMinistryMembersModalOpen && selectedMinistry && (
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           {/* Descrição do Ministério */}
           <div className="pb-4 border-b border-gray-100">
             <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Descrição do Ministério</h5>
@@ -7118,7 +7143,8 @@ export default function App() {
               );
             })()}
           </div>
-        </div>
+          </div>
+        )}
       </Modal>
 
       {/* Add Ministry Modal */}
@@ -7126,6 +7152,8 @@ export default function App() {
         isOpen={isAddMinistryModalOpen} 
         onClose={() => handleModalCloseWithCheck(() => resetModalStates())} 
         title="Novo Ministério"
+        maxWidth="max-w-3xl"
+        className="h-[82vh] sm:h-[82vh]"
       >
         <form onSubmit={handleAddMinistry} onInput={() => setIsFormDirty(true)} className="space-y-4">
           <div>
@@ -7137,8 +7165,8 @@ export default function App() {
             <textarea 
               name="description" 
               placeholder="Descreva as responsabilidades, propósitos e atividades deste ministério..."
-              rows={4}
-              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-none text-sm" 
+              rows={12}
+              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-64 sm:h-[26rem] min-h-[15rem] custom-scrollbar" 
             />
           </div>
           <div>
@@ -7168,6 +7196,8 @@ export default function App() {
         isOpen={isEditMinistryModalOpen} 
         onClose={() => handleModalCloseWithCheck(() => resetModalStates())} 
         title="Editar Ministério"
+        maxWidth="max-w-3xl"
+        className="h-[82vh] sm:h-[82vh]"
       >
         <form onSubmit={handleEditMinistry} onInput={() => setIsFormDirty(true)} className="space-y-4">
           <div>
@@ -7180,8 +7210,8 @@ export default function App() {
               name="description" 
               defaultValue={selectedMinistry?.description || ''}
               placeholder="Descreva as responsabilidades, propósitos e atividades deste ministério..."
-              rows={4}
-              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-none text-sm" 
+              rows={12}
+              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-64 sm:h-[26rem] min-h-[15rem] custom-scrollbar" 
             />
           </div>
           <div>
@@ -8584,6 +8614,7 @@ export default function App() {
         onClose={() => handleModalCloseWithCheck(() => resetModalStates())} 
         title="Nova Função"
         maxWidth="max-w-3xl"
+        className="h-[82vh] sm:h-[82vh]"
       >
         <form onSubmit={handleAddFunction} onInput={() => setIsFormDirty(true)} className="space-y-4">
           <div>
@@ -8622,6 +8653,7 @@ export default function App() {
         onClose={() => handleModalCloseWithCheck(() => resetModalStates())} 
         title="Editar Função"
         maxWidth="max-w-3xl"
+        className="h-[82vh] sm:h-[82vh]"
       >
         <form onSubmit={handleEditFunction} onInput={() => setIsFormDirty(true)} className="space-y-4">
           <div>
