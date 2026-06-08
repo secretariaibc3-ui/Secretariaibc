@@ -36,16 +36,18 @@
   animation: pulse-subtle-orange 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+html, body, #root {
+  height: 100%;
+  height: -webkit-fill-available;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   @apply font-sans text-gray-900 antialiased bg-[#F4F5F7];
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  min-height: 100vh;
-  min-height: -webkit-fill-available;
-}
-
-html {
-  height: -webkit-fill-available;
 }
 
 .glass-panel {

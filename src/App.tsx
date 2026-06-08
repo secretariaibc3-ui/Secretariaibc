@@ -651,7 +651,7 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg", classN
             style={{ backgroundColor: `rgba(255, 255, 255, calc(var(--glass-opacity, 80) / 100))` }}
             className={cn(
               fullscreen 
-                ? "relative backdrop-blur-2xl shadow-none w-screen h-screen max-w-full max-h-screen flex flex-col overflow-hidden rounded-none border-0"
+                ? "relative backdrop-blur-2xl shadow-none w-full h-full max-w-full max-h-full flex flex-col overflow-hidden rounded-none border-0"
                 : "relative backdrop-blur-2xl rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl w-full border border-white/40 flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden",
               maxWidth,
               className
@@ -4040,7 +4040,7 @@ export default function App() {
   }
 
   return (
-    <div className="relative h-screen overflow-hidden bg-gray-50 flex flex-col">
+    <div className="relative h-full w-full overflow-hidden bg-gray-50 flex flex-col">
       {/* Quota Exceeded Sticky Banner */}
       {isQuotaExceeded && (
         <div className="bg-gradient-to-r from-amber-600 to-orange-600 text-white px-5 py-3 text-xs font-semibold flex items-center justify-between z-[9999] shadow-lg shrink-0 border-b border-amber-500/20">
