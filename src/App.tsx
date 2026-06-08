@@ -622,11 +622,11 @@ const RoleSelectionModal = ({
   </Modal>
 );
 
-const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg", className = "" }: { isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; maxWidth?: string; className?: string }) => {
+const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg", className = "", fullscreen = false }: { isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; maxWidth?: string; className?: string; fullscreen?: boolean }) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-2 sm:p-6 overflow-hidden">
+        <div className={cn("fixed inset-0 z-[110] flex items-center justify-center overflow-hidden", fullscreen ? "p-0" : "p-2 sm:p-6")}>
           {/* Overlay - Synchronized with Content */}
           <motion.div 
             initial={{ opacity: 0 }}
@@ -639,9 +639,9 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg", classN
           
           {/* Content - Spring Animation for Fluidity */}
           <motion.div 
-            initial={{ opacity: 0, scale: 0.92, y: 10 }}
+            initial={fullscreen ? { opacity: 0, y: "100%" } : { opacity: 0, scale: 0.92, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+            exit={fullscreen ? { opacity: 0, y: "100%" } : { opacity: 0, scale: 0.95, y: 15 }}
             transition={{ 
               type: "spring", 
               stiffness: 400, 
@@ -650,21 +650,23 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg", classN
             }}
             style={{ backgroundColor: `rgba(255, 255, 255, calc(var(--glass-opacity, 80) / 100))` }}
             className={cn(
-              "relative backdrop-blur-2xl rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl w-full border border-white/40 flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden",
+              fullscreen 
+                ? "relative backdrop-blur-2xl shadow-none w-screen h-screen max-w-full max-h-screen flex flex-col overflow-hidden rounded-none border-0"
+                : "relative backdrop-blur-2xl rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl w-full border border-white/40 flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden",
               maxWidth,
               className
             )}
           >
-            <div className="flex items-center justify-between p-3 sm:p-6 pb-1 sm:pb-2 shrink-0">
-              <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight">{title}</h3>
+            <div className="flex items-center justify-between p-4 sm:p-6 pb-2 sm:pb-3 shrink-0 border-b border-gray-100">
+              <h3 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">{title}</h3>
               <button 
                 onClick={onClose} 
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors focus:outline-none"
+                className="p-2.5 hover:bg-gray-100 rounded-full transition-colors focus:outline-none"
               >
-                <X className="w-5 h-5 text-gray-400" />
+                <X className="w-6 h-6 text-gray-400" />
               </button>
             </div>
-            <div className="p-3 sm:p-8 pt-1 sm:pt-4 overflow-y-auto custom-scrollbar flex-1 overscroll-contain">
+            <div className="p-4 sm:p-8 overflow-y-auto custom-scrollbar flex-1 overscroll-contain">
               {children}
             </div>
           </motion.div>
@@ -4850,14 +4852,14 @@ export default function App() {
                         </p>
                       </div>
 
-                      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex space-x-1 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 sm:translate-y-[-10px] sm:group-hover:translate-y-0 z-20">
+                      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex space-x-1 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 lg:translate-y-[-10px] lg:group-hover:translate-y-0 z-20">
                         <button 
                           onClick={(e) => { 
                             e.stopPropagation(); 
                             setSelectedMinistry(m); 
                             setIsEditMinistryModalOpen(true); 
                           }}
-                          className="p-2 text-white hover:bg-white/20 rounded-xl transition-all backdrop-blur-md"
+                          className="p-2 text-white hover:bg-white/20 rounded-xl transition-all backdrop-blur-md bg-white/10"
                           title="Editar Ministério"
                         >
                           <Edit2 className="w-4 h-4" />
@@ -4865,7 +4867,7 @@ export default function App() {
                         {appUser?.isFullAdmin && (
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleDeleteMinistry(m.id, m.name); }}
-                            className="p-2 text-white hover:bg-red-500/40 rounded-xl transition-all backdrop-blur-md"
+                            className="p-2 text-white hover:bg-red-500/40 rounded-xl transition-all backdrop-blur-md bg-white/10"
                             title="Excluir Ministério"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -4988,7 +4990,7 @@ export default function App() {
                         </p>
                       </div>
 
-                      <div className="absolute top-4 right-4 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 sm:translate-y-[-10px] sm:group-hover:translate-y-0 flex items-center space-x-1">
+                      <div className="absolute top-4 right-4 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 lg:translate-y-[-10px] lg:group-hover:translate-y-0 flex items-center space-x-1">
                         <button 
                           onClick={(e) => { 
                             e.stopPropagation(); 
@@ -5052,7 +5054,7 @@ export default function App() {
                         </p>
                       </div>
 
-                      <div className="absolute top-4 right-4 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 sm:translate-y-[-10px] sm:group-hover:translate-y-0 flex items-center space-x-1">
+                      <div className="absolute top-4 right-4 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 lg:translate-y-[-10px] lg:group-hover:translate-y-0 flex items-center space-x-1">
                         <button 
                           onClick={(e) => { e.stopPropagation(); setSelectedPresenca(presenca); setIsEditPresencaModalOpen(true); }}
                           className="p-2 text-gray-400 hover:text-ibc-teal hover:bg-ibc-teal/5 rounded-xl transition-all"
@@ -7064,9 +7066,10 @@ export default function App() {
         isOpen={isMinistryMembersModalOpen} 
         onClose={() => { setIsMinistryMembersModalOpen(false); setSelectedMinistry(null); setMinistrySearchQuery(''); }} 
         title={selectedMinistry?.name || 'Participantes'}
+        fullscreen={true}
       >
         {isMinistryMembersModalOpen && selectedMinistry && (
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+          <div className="space-y-6">
           {/* Descrição do Ministério */}
           <div className="pb-4 border-b border-gray-100">
             <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Descrição do Ministério</h5>
@@ -7153,33 +7156,35 @@ export default function App() {
         onClose={() => handleModalCloseWithCheck(() => resetModalStates())} 
         title="Novo Ministério"
         maxWidth="max-w-3xl"
-        className="h-[82vh] sm:h-[82vh]"
+        fullscreen={true}
       >
-        <form onSubmit={handleAddMinistry} onInput={() => setIsFormDirty(true)} className="space-y-4">
+        <form onSubmit={handleAddMinistry} onInput={() => setIsFormDirty(true)} className="space-y-6 pb-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Nome do Ministério</label>
-            <input required name="name" type="text" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" />
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">Nome do Ministério</label>
+            <input required name="name" type="text" className="w-full p-3 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Descrição do Ministério (Opcional)</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">Descrição do Ministério (Opcional)</label>
             <textarea 
               name="description" 
               placeholder="Descreva as responsabilidades, propósitos e atividades deste ministério..."
               rows={12}
-              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-64 sm:h-[26rem] min-h-[15rem] custom-scrollbar" 
+              className="w-full p-4 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-80 sm:h-[28rem] min-h-[16rem] custom-scrollbar" 
             />
           </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Cor de Identificação</label>
-            <div className="flex items-center space-x-3">
+          
+          <div className="pt-6 border-t border-gray-100">
+            <label className="block text-sm font-bold text-gray-700 mb-2">Cor de Identificação</label>
+            <div className="flex items-center space-x-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
               <input required name="color" type="color" defaultValue="#064a8f" className="w-12 h-12 rounded-xl border-none cursor-pointer" />
               <p className="text-xs text-gray-400 font-medium">Escolha uma cor para representar este ministério.</p>
             </div>
           </div>
+          
           <button 
             type="submit" 
             disabled={isSaving}
-            className="w-full bg-ibc-teal text-white py-3 rounded-2xl font-bold mt-4 hover:bg-ibc-teal/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full bg-ibc-teal text-white py-3.5 rounded-2xl font-bold mt-4 hover:bg-ibc-teal/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-ibc-teal/10"
           >
             {isSaving ? (
               <>
@@ -7197,34 +7202,36 @@ export default function App() {
         onClose={() => handleModalCloseWithCheck(() => resetModalStates())} 
         title="Editar Ministério"
         maxWidth="max-w-3xl"
-        className="h-[82vh] sm:h-[82vh]"
+        fullscreen={true}
       >
-        <form onSubmit={handleEditMinistry} onInput={() => setIsFormDirty(true)} className="space-y-4">
+        <form onSubmit={handleEditMinistry} onInput={() => setIsFormDirty(true)} className="space-y-6 pb-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Nome do Ministério</label>
-            <input required name="name" type="text" defaultValue={selectedMinistry?.name} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" />
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">Nome do Ministério</label>
+            <input required name="name" type="text" defaultValue={selectedMinistry?.name} className="w-full p-3 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Descrição do Ministério (Opcional)</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">Descrição do Ministério (Opcional)</label>
             <textarea 
               name="description" 
               defaultValue={selectedMinistry?.description || ''}
               placeholder="Descreva as responsabilidades, propósitos e atividades deste ministério..."
               rows={12}
-              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-64 sm:h-[26rem] min-h-[15rem] custom-scrollbar" 
+              className="w-full p-4 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-80 sm:h-[28rem] min-h-[16rem] custom-scrollbar" 
             />
           </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Cor de Identificação</label>
-            <div className="flex items-center space-x-3">
+          
+          <div className="pt-6 border-t border-gray-100">
+            <label className="block text-sm font-bold text-gray-700 mb-2">Cor de Identificação</label>
+            <div className="flex items-center space-x-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
               <input required name="color" type="color" defaultValue={selectedMinistry?.color} className="w-12 h-12 rounded-xl border-none cursor-pointer" />
               <p className="text-xs text-gray-400 font-medium">Escolha uma cor para representar este ministério.</p>
             </div>
           </div>
+          
           <button 
             type="submit" 
             disabled={isSaving}
-            className="w-full bg-ibc-blue text-white py-3 rounded-2xl font-bold mt-4 hover:bg-ibc-blue/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full bg-ibc-blue text-white py-3.5 rounded-2xl font-bold mt-4 hover:bg-ibc-blue/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-ibc-blue/10"
           >
             {isSaving ? (
               <>
@@ -8614,32 +8621,32 @@ export default function App() {
         onClose={() => handleModalCloseWithCheck(() => resetModalStates())} 
         title="Nova Função"
         maxWidth="max-w-3xl"
-        className="h-[82vh] sm:h-[82vh]"
+        fullscreen={true}
       >
-        <form onSubmit={handleAddFunction} onInput={() => setIsFormDirty(true)} className="space-y-4">
+        <form onSubmit={handleAddFunction} onInput={() => setIsFormDirty(true)} className="space-y-6 pb-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Nome da Função</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">Nome da Função</label>
             <input 
               required 
               name="name" 
               type="text" 
               placeholder="Ex: Diácono, Presbítero, etc."
-              className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" 
+              className="w-full p-3 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" 
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Descrição da Função</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">Descrição da Função</label>
             <textarea 
               name="description" 
               placeholder="Descreva as responsabilidades e finalidade desta função..."
               rows={12}
-              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-64 sm:h-[26rem] min-h-[15rem] custom-scrollbar" 
+              className="w-full p-4 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-80 sm:h-[28rem] min-h-[16rem] custom-scrollbar" 
             />
           </div>
           <button 
             type="submit" 
             disabled={isSaving}
-            className="w-full bg-ibc-teal text-white py-3 rounded-2xl font-bold mt-4 hover:bg-ibc-teal/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full bg-ibc-teal text-white py-3.5 rounded-2xl font-bold mt-4 hover:bg-ibc-teal/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-ibc-teal/10"
           >
             {isSaving ? (
               <RefreshCcw className="w-5 h-5 animate-spin" />
@@ -8653,33 +8660,33 @@ export default function App() {
         onClose={() => handleModalCloseWithCheck(() => resetModalStates())} 
         title="Editar Função"
         maxWidth="max-w-3xl"
-        className="h-[82vh] sm:h-[82vh]"
+        fullscreen={true}
       >
-        <form onSubmit={handleEditFunction} onInput={() => setIsFormDirty(true)} className="space-y-4">
+        <form onSubmit={handleEditFunction} onInput={() => setIsFormDirty(true)} className="space-y-6 pb-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Nome da Função</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">Nome da Função</label>
             <input 
               required 
               name="name" 
               type="text" 
               defaultValue={selectedFunction?.name}
-              className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" 
+              className="w-full p-3 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" 
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Descrição da Função</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">Descrição da Função</label>
             <textarea 
               name="description" 
               defaultValue={selectedFunction?.description}
               placeholder="Descreva as responsabilidades e finalidade desta função..."
               rows={12}
-              className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-64 sm:h-[26rem] min-h-[15rem] custom-scrollbar" 
+              className="w-full p-4 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-80 sm:h-[28rem] min-h-[16rem] custom-scrollbar" 
             />
           </div>
           <button 
             type="submit" 
             disabled={isSaving}
-            className="w-full bg-ibc-teal text-white py-3 rounded-2xl font-bold mt-4 hover:bg-ibc-teal/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full bg-ibc-teal text-white py-3.5 rounded-2xl font-bold mt-4 hover:bg-ibc-teal/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-ibc-teal/10"
           >
             {isSaving ? (
               <RefreshCcw className="w-5 h-5 animate-spin" />
