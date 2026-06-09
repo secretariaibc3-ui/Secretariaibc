@@ -498,7 +498,7 @@ const SidebarItem = ({
       />
     )}
     {collapsed && (
-      <div className="absolute left-20 bg-gray-900/90 backdrop-blur-md text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-50 shadow-xl translate-x-[-10px] group-hover:translate-x-0">
+      <div className="absolute left-20 one-ui-glass-dark text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-50 translate-x-[-10px] group-hover:translate-x-0">
         {label}
       </div>
     )}
@@ -648,11 +648,10 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg", classN
               damping: 32,
               mass: 0.8
             }}
-            style={{ backgroundColor: `rgba(255, 255, 255, calc(var(--glass-opacity, 80) / 100))` }}
             className={cn(
               fullscreen 
-                ? "relative backdrop-blur-2xl shadow-none w-full h-full max-w-full max-h-full flex flex-col overflow-hidden rounded-none border-0"
-                : "relative backdrop-blur-2xl rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl w-full border border-white/40 flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden",
+                ? "relative one-ui-glass-auto shadow-none w-full h-full max-w-full max-h-full flex flex-col overflow-hidden rounded-none border-0"
+                : "relative one-ui-glass-auto rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl w-full flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden",
               maxWidth,
               className
             )}
@@ -3891,7 +3890,7 @@ export default function App() {
               exit={{ y: -100, opacity: 0 }}
               className="fixed top-6 left-6 right-6 z-[150] flex justify-center pointer-events-none"
             >
-              <div className="bg-white/90 backdrop-blur-xl border border-ibc-teal/20 p-4 rounded-2xl shadow-2xl flex items-center justify-between gap-4 max-w-md w-full pointer-events-auto">
+              <div className="one-ui-glass-auto p-4 rounded-2xl shadow-2xl flex items-center justify-between gap-4 max-w-md w-full pointer-events-auto">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-ibc-teal rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-ibc-teal/20">
                     <Download className="w-5 h-5" />
@@ -4152,7 +4151,7 @@ export default function App() {
             exit={{ y: -100, opacity: 0 }}
             className="fixed top-6 left-6 right-6 z-[150] flex justify-center pointer-events-none"
           >
-            <div className="bg-white/90 backdrop-blur-xl border border-ibc-teal/20 p-4 rounded-2xl shadow-2xl flex items-center justify-between gap-4 max-w-md w-full pointer-events-auto">
+            <div className="one-ui-glass-auto p-4 rounded-2xl shadow-2xl flex items-center justify-between gap-4 max-w-md w-full pointer-events-auto">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-ibc-teal rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-ibc-teal/20">
                   <Download className="w-5 h-5" />
@@ -4199,8 +4198,7 @@ export default function App() {
         initial={{ x: '-100%' }}
         animate={{ x: isMobileMenuOpen ? 0 : '-100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        style={{ backgroundColor: `rgba(255, 255, 255, calc(var(--glass-opacity, 80) / 100))` }}
-        className="fixed inset-y-0 left-0 w-72 backdrop-blur-2xl z-50 md:hidden shadow-2xl rounded-r-[3rem] border-r border-white/40"
+        className="fixed inset-y-0 left-0 w-72 one-ui-glass-auto z-50 md:hidden shadow-2xl rounded-r-[3rem] border-r"
       >
         <div className="p-8 flex items-center justify-between">
           <div className="flex flex-col items-start">
@@ -4267,8 +4265,7 @@ export default function App() {
       <motion.aside
         initial={false}
         animate={{ width: isSidebarCollapsed ? 90 : 280 }}
-        style={{ backgroundColor: `rgba(244, 245, 247, calc(var(--glass-opacity, 30) / 100))` }}
-        className="hidden md:flex flex-col backdrop-blur-xl z-30 relative border-r border-gray-200/30"
+        className="hidden md:flex flex-col one-ui-glass-auto z-30 relative border-r"
       >
         <div className="p-8 flex items-center justify-between">
             {!isSidebarCollapsed && (
@@ -4497,7 +4494,7 @@ export default function App() {
           {activeTab === 'members' ? (
             <div className="max-w-6xl mx-auto space-y-3 sm:space-y-6">
               {/* Sticky Header Section */}
-              <div className="sticky top-0 bg-[#FBFBFB]/80 backdrop-blur-md z-20 pt-1 pb-2 space-y-2 sm:space-y-3 -mx-4 sm:-mx-8 px-4 sm:px-8 border-b border-gray-100">
+              <div className="sticky top-0 glass-header z-20 pt-1 pb-2 space-y-2 sm:space-y-3 -mx-4 sm:-mx-8 px-4 sm:px-8">
                 {/* Member Stats Cards & Search */}
                 <div className="flex flex-col lg:flex-row lg:items-center gap-2 sm:gap-4">
                   {/* Status Cards - Horizontal on Mobile */}
@@ -5239,10 +5236,10 @@ export default function App() {
                             damping: 32,
                             mass: 0.8
                           }}
-                          className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] bg-white sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col z-10"
+                          className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] one-ui-glass-auto sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col z-10"
                         >
                           {/* Header */}
-                          <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 shrink-0 bg-white/80 backdrop-blur-sm sticky top-0 z-20">
+                          <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 shrink-0 glass-header sticky top-0 z-20">
                             <div className="flex items-center space-x-4">
                               <div 
                                 className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" 
@@ -5417,9 +5414,9 @@ export default function App() {
                           damping: 32,
                           mass: 0.8
                         }}
-                        className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] bg-white sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col z-10"
+                        className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] one-ui-glass-auto sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col z-10"
                       >
-                        <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 shrink-0 bg-white/80 backdrop-blur-sm sticky top-0 z-20">
+                        <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 shrink-0 glass-header sticky top-0 z-20">
                           <div className="flex items-center space-x-4">
                             <div className="w-12 h-12 rounded-2xl bg-ibc-teal/10 text-ibc-teal flex items-center justify-center shadow-lg">
                               <Users className="w-6 h-6" />
@@ -8890,7 +8887,7 @@ export default function App() {
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
             className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] w-[calc(100%-2rem)] max-w-md overflow-hidden"
           >
-            <div className="bg-gray-900 border border-white/10 p-5 rounded-[2rem] shadow-2xl flex items-center justify-between backdrop-blur-xl relative">
+            <div className="one-ui-glass-dark p-5 rounded-[2rem] shadow-2xl flex items-center justify-between relative">
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-ibc-teal/20 rounded-2xl flex items-center justify-center">
                   <RotateCcw className="w-6 h-6 text-ibc-teal" />
@@ -8930,7 +8927,7 @@ export default function App() {
             initial={{ opacity: 0, y: 100, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 100, scale: 0.95 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-[350] w-[calc(100%-2rem)] sm:w-auto sm:max-w-md bg-white border border-ibc-teal/20 p-4 rounded-[2rem] shadow-2xl backdrop-blur-xl shrink-0"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-[350] w-[calc(100%-2rem)] sm:w-auto sm:max-w-md one-ui-glass-auto p-4 rounded-[2rem] shadow-2xl shrink-0"
           >
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="flex items-center space-x-3 w-full sm:w-auto">
