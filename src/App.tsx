@@ -498,7 +498,7 @@ const SidebarItem = ({
       />
     )}
     {collapsed && (
-      <div className="absolute left-20 one-ui-glass-dark text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-50 translate-x-[-10px] group-hover:translate-x-0">
+      <div className="absolute left-20 bg-gray-900/85 backdrop-blur-[20px] border border-white/10 text-white px-3 py-1.5 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-50 translate-x-[-10px] group-hover:translate-x-0">
         {label}
       </div>
     )}
@@ -650,8 +650,8 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg", classN
             }}
             className={cn(
               fullscreen 
-                ? "relative one-ui-glass-auto shadow-none w-full h-full max-w-full max-h-full flex flex-col overflow-hidden rounded-none border-0"
-                : "relative one-ui-glass-auto rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl w-full flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden",
+                ? "relative bg-white/85 dark:bg-gray-900/85 backdrop-blur-[20px] border dark:border-white/10 shadow-none w-full h-full max-w-full max-h-full flex flex-col overflow-hidden rounded-none border-0"
+                : "relative bg-white/85 dark:bg-gray-900/85 backdrop-blur-[20px] border border-white/40 dark:border-white/10 rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl w-full flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden",
               maxWidth,
               className
             )}
@@ -3890,7 +3890,7 @@ export default function App() {
               exit={{ y: -100, opacity: 0 }}
               className="fixed top-6 left-6 right-6 z-[150] flex justify-center pointer-events-none"
             >
-              <div className="one-ui-glass-auto p-4 rounded-2xl shadow-2xl flex items-center justify-between gap-4 max-w-md w-full pointer-events-auto">
+              <div className="bg-white/85 dark:bg-gray-900/85 backdrop-blur-[20px] border border-white/40 dark:border-white/10 p-4 rounded-2xl shadow-2xl flex items-center justify-between gap-4 max-w-md w-full pointer-events-auto">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-ibc-teal rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-ibc-teal/20">
                     <Download className="w-5 h-5" />
@@ -4151,7 +4151,7 @@ export default function App() {
             exit={{ y: -100, opacity: 0 }}
             className="fixed top-6 left-6 right-6 z-[150] flex justify-center pointer-events-none"
           >
-            <div className="one-ui-glass-auto p-4 rounded-2xl shadow-2xl flex items-center justify-between gap-4 max-w-md w-full pointer-events-auto">
+            <div className="bg-white/85 dark:bg-gray-900/85 backdrop-blur-[20px] border border-white/40 dark:border-white/10 p-4 rounded-2xl shadow-2xl flex items-center justify-between gap-4 max-w-md w-full pointer-events-auto">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-ibc-teal rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-ibc-teal/20">
                   <Download className="w-5 h-5" />
@@ -4198,7 +4198,7 @@ export default function App() {
         initial={{ x: '-100%' }}
         animate={{ x: isMobileMenuOpen ? 0 : '-100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="fixed inset-y-0 left-0 w-72 one-ui-glass-auto z-50 md:hidden shadow-2xl rounded-r-[3rem] border-r"
+        className="fixed inset-y-0 left-0 w-72 bg-white/85 dark:bg-gray-900/85 backdrop-blur-[20px] z-50 md:hidden shadow-2xl rounded-r-[3rem] border-r border-white/40 dark:border-white/10"
       >
         <div className="p-8 flex items-center justify-between">
           <div className="flex flex-col items-start">
@@ -4265,7 +4265,7 @@ export default function App() {
       <motion.aside
         initial={false}
         animate={{ width: isSidebarCollapsed ? 90 : 280 }}
-        className="hidden md:flex flex-col one-ui-glass-auto z-30 relative border-r"
+        className="hidden md:flex flex-col bg-white/85 dark:bg-gray-900/85 backdrop-blur-[20px] z-30 relative border-r border-gray-200/50 dark:border-white/10"
       >
         <div className="p-8 flex items-center justify-between">
             {!isSidebarCollapsed && (
@@ -5236,7 +5236,7 @@ export default function App() {
                             damping: 32,
                             mass: 0.8
                           }}
-                          className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] one-ui-glass-auto sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col z-10"
+                          className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] bg-white/85 dark:bg-gray-900/85 backdrop-blur-[20px] border border-white/40 dark:border-white/10 sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col z-10"
                         >
                           {/* Header */}
                           <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 shrink-0 glass-header sticky top-0 z-20">
@@ -5414,7 +5414,7 @@ export default function App() {
                           damping: 32,
                           mass: 0.8
                         }}
-                        className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] one-ui-glass-auto sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col z-10"
+                        className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] bg-white/85 dark:bg-gray-900/85 backdrop-blur-[20px] border border-white/40 dark:border-white/10 sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col z-10"
                       >
                         <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 shrink-0 glass-header sticky top-0 z-20">
                           <div className="flex items-center space-x-4">
@@ -8887,7 +8887,7 @@ export default function App() {
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
             className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] w-[calc(100%-2rem)] max-w-md overflow-hidden"
           >
-            <div className="one-ui-glass-dark p-5 rounded-[2rem] shadow-2xl flex items-center justify-between relative">
+            <div className="bg-gray-900/85 backdrop-blur-[20px] border border-white/10 p-5 rounded-[2rem] shadow-2xl flex items-center justify-between relative">
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-ibc-teal/20 rounded-2xl flex items-center justify-center">
                   <RotateCcw className="w-6 h-6 text-ibc-teal" />
@@ -8927,7 +8927,7 @@ export default function App() {
             initial={{ opacity: 0, y: 100, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 100, scale: 0.95 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-[350] w-[calc(100%-2rem)] sm:w-auto sm:max-w-md one-ui-glass-auto p-4 rounded-[2rem] shadow-2xl shrink-0"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-[350] w-[calc(100%-2rem)] sm:w-auto sm:max-w-md bg-white/85 dark:bg-gray-900/85 backdrop-blur-[20px] border border-white/40 dark:border-white/10 p-4 rounded-[2rem] shadow-2xl shrink-0"
           >
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="flex items-center space-x-3 w-full sm:w-auto">
