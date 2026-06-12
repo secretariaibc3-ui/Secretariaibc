@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover" />
     <title>Secretaria IBC</title>
     <script>
+      (function() {
+        try {
+          var localTheme = localStorage.getItem('theme');
+          var sysTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (localTheme === 'dark' || (!localTheme && sysTheme)) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script>
       window.onerror = function(message, source, lineno, colno, error) {
         const errorMsg = document.createElement('div');
         errorMsg.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:white;color:red;padding:20px;z-index:99999;overflow:auto;font-family:monospace;';

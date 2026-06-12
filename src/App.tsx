@@ -23,6 +23,8 @@ import {
   X, 
   Plus, 
   Minus,
+  Moon,
+  Sun,
   Search, 
   UserPlus, 
   Download, 
@@ -475,7 +477,7 @@ const SidebarItem = ({
       "flex items-center w-full p-4 rounded-[1.5rem] transition-all duration-300 group relative active:scale-[0.98] cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ibc-teal/50",
       active 
         ? "bg-ibc-teal text-white shadow-lg shadow-ibc-teal/20" 
-        : "text-gray-500 hover:bg-black/5 hover:text-gray-900"
+        : "text-gray-500 dark:text-gray-400 hover:bg-black/5 hover:text-gray-900 dark:text-gray-50"
     )}
   >
     {showDragHandle && !collapsed && (
@@ -494,7 +496,7 @@ const SidebarItem = ({
     {active && !collapsed && (
       <motion.div 
         layoutId="activeIndicator"
-        className="absolute left-1 w-1 h-6 bg-white rounded-full"
+        className="absolute left-1 w-1 h-6 bg-white dark:bg-[#111] rounded-full"
       />
     )}
     {collapsed && (
@@ -533,11 +535,11 @@ const AccessControlModal = ({
             key={user.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white border border-gray-100 p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group"
+            className="bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group"
           >
             <div className="flex flex-col gap-1 mb-4">
               <span className="text-[10px] font-black text-ibc-teal uppercase tracking-[0.2em]">Pendente de Aprovação</span>
-              <h4 className="text-sm font-black text-gray-900 truncate">{user.email}</h4>
+              <h4 className="text-sm font-black text-gray-900 dark:text-gray-50 truncate">{user.email}</h4>
               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
                 Solicitado em: {user.requestAt?.seconds ? new Date(user.requestAt.seconds * 1000).toLocaleString('pt-BR') : 'Recentemente'}
               </p>
@@ -581,32 +583,32 @@ const RoleSelectionModal = ({
     <div className="flex flex-col gap-6">
       <div className="bg-ibc-teal/5 p-4 rounded-2xl border border-ibc-teal/10">
         <p className="text-[10px] text-ibc-teal font-black uppercase tracking-widest mb-1">Usuário em Aprovação</p>
-        <p className="text-sm font-bold text-gray-900">{user?.email}</p>
+        <p className="text-sm font-bold text-gray-900 dark:text-gray-50">{user?.email}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4">
         <button
           onClick={() => onConfirm('admin')}
-          className="flex flex-col items-start p-5 rounded-3xl border-2 border-gray-100 hover:border-ibc-teal hover:bg-ibc-teal/[0.02] transition-all group text-left"
+          className="flex flex-col items-start p-5 rounded-3xl border-2 border-gray-100 dark:border-[#222] hover:border-ibc-teal hover:bg-ibc-teal/[0.02] transition-all group text-left"
         >
           <div className="w-10 h-10 bg-ibc-teal/10 text-ibc-teal rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
             <ShieldCheck className="w-5 h-5" />
           </div>
-          <h4 className="text-sm font-black text-gray-900 mb-1">Administrador</h4>
-          <p className="text-[10px] text-gray-500 font-medium leading-relaxed uppercase tracking-tight">
+          <h4 className="text-sm font-black text-gray-900 dark:text-gray-50 mb-1">Administrador</h4>
+          <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed uppercase tracking-tight">
             Acesso total ao sistema. Pode cadastrar, editar, excluir e gerenciar usuários.
           </p>
         </button>
 
         <button
           onClick={() => onConfirm('user')}
-          className="flex flex-col items-start p-5 rounded-3xl border-2 border-gray-100 hover:border-ibc-teal hover:bg-ibc-teal/[0.02] transition-all group text-left"
+          className="flex flex-col items-start p-5 rounded-3xl border-2 border-gray-100 dark:border-[#222] hover:border-ibc-teal hover:bg-ibc-teal/[0.02] transition-all group text-left"
         >
           <div className="w-10 h-10 bg-amber-500/10 text-amber-600 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
             <User className="w-5 h-5" />
           </div>
-          <h4 className="text-sm font-black text-gray-900 mb-1">Usuário</h4>
-          <p className="text-[10px] text-gray-500 font-medium leading-relaxed uppercase tracking-tight">
+          <h4 className="text-sm font-black text-gray-900 dark:text-gray-50 mb-1">Usuário</h4>
+          <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed uppercase tracking-tight">
             Acesso limitado. Pode visualizar e editar membros, mas não acessa funções administrativas.
           </p>
         </button>
@@ -614,7 +616,7 @@ const RoleSelectionModal = ({
 
       <button
         onClick={onClose}
-        className="text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors py-2"
+        className="text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 dark:text-gray-300 transition-colors py-2"
       >
         Cancelar
       </button>
@@ -656,11 +658,11 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg", classN
               className
             )}
           >
-            <div className="flex items-center justify-between p-4 sm:p-6 pb-2 sm:pb-3 shrink-0 border-b border-gray-100">
-              <h3 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">{title}</h3>
+            <div className="flex items-center justify-between p-4 sm:p-6 pb-2 sm:pb-3 shrink-0 border-b border-gray-100 dark:border-[#222]">
+              <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-gray-50 tracking-tight">{title}</h3>
               <button 
                 onClick={onClose} 
-                className="p-2.5 hover:bg-gray-100 rounded-full transition-colors focus:outline-none"
+                className="p-2.5 hover:bg-gray-100 dark:bg-[#1a1a1a] rounded-full transition-colors focus:outline-none"
               >
                 <X className="w-6 h-6 text-gray-400" />
               </button>
@@ -707,6 +709,20 @@ export default function App() {
   const [assembleiaSubTab, setAssembleiaSubTab] = useState<'assembleia' | 'reuniao'>('assembleia');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return document.documentElement.classList.contains('dark');
+  });
+
+  const toggleTheme = () => {
+    const isDark = document.documentElement.classList.toggle('dark');
+    setIsDarkMode(isDark);
+    if (isDark) {
+      localStorage.setItem('theme', 'dark');
+    } else {
+      localStorage.setItem('theme', 'light');
+    }
+  };
+
   const [members, setMembers] = useState<Member[]>(() => loadFromCache<Member[]>('members', []));
   const [memberFunctions, setMemberFunctions] = useState<MemberFunction[]>(() => loadFromCache<MemberFunction[]>('memberFunctions', []));
   const [relationshipTypes, setRelationshipTypes] = useState<RelationshipType[]>(() => loadFromCache<RelationshipType[]>('relationshipTypes', []));
@@ -3802,11 +3818,11 @@ export default function App() {
   // Pending/Blocked Access Screen
   if (appUser && appUser.status !== 'approved') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-black p-6">
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white p-10 rounded-3xl shadow-2xl shadow-gray-200/50 max-w-md w-full border border-gray-100 text-center"
+          className="bg-white dark:bg-[#111] p-10 rounded-3xl shadow-2xl shadow-gray-200/50 max-w-md w-full border border-gray-100 dark:border-[#222] text-center"
         >
           <div className="w-24 h-24 bg-ibc-teal/5 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner overflow-hidden">
             <img 
@@ -3821,8 +3837,8 @@ export default function App() {
             <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="w-8 h-8" />
             </div>
-            <h2 className="text-xl font-black text-gray-900 mb-2">Acesso Restrito</h2>
-            <p className="text-sm text-gray-500 leading-relaxed font-medium">
+            <h2 className="text-xl font-black text-gray-900 dark:text-gray-50 mb-2">Acesso Restrito</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-medium">
               {(appUser.status as any) === 'none' ? (
                 "Você ainda não possui autorização para acessar este aplicativo. Solicite acesso ao administrador."
               ) : appUser.status === 'pending' ? (
@@ -3868,7 +3884,7 @@ export default function App() {
 
             <button
               onClick={handleLogout}
-              className="w-full bg-gray-100 text-gray-600 py-4 px-6 rounded-2xl font-black uppercase tracking-widest hover:bg-gray-200 transition-all active:scale-95 flex items-center justify-center gap-2"
+              className="w-full bg-gray-100 dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 py-4 px-6 rounded-2xl font-black uppercase tracking-widest hover:bg-gray-200 dark:bg-[#222] transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               <LogOut className="w-4 h-4" />
               Sair da conta
@@ -3881,7 +3897,7 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-black p-6">
         <AnimatePresence>
           {!isStandalone && showInstallBanner && (
             <motion.div 
@@ -3896,14 +3912,14 @@ export default function App() {
                     <Download className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-black text-gray-900 leading-tight">Instalar Aplicativo</h4>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Acesse mais rápido e offline</p>
+                    <h4 className="text-sm font-black text-gray-900 dark:text-gray-50 leading-tight">Instalar Aplicativo</h4>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-0.5">Acesse mais rápido e offline</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
                     onClick={handleCloseBanner}
-                    className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-300 transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -3921,7 +3937,7 @@ export default function App() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white p-10 rounded-3xl shadow-2xl shadow-gray-200/50 max-w-md w-full border border-gray-100"
+          className="bg-white dark:bg-[#111] p-10 rounded-3xl shadow-2xl shadow-gray-200/50 max-w-md w-full border border-gray-100 dark:border-[#222]"
         >
           <div className="flex flex-col items-center mb-10">
             <div className="w-24 h-24 bg-ibc-teal/5 rounded-3xl flex items-center justify-center mb-4 shadow-inner overflow-hidden">
@@ -3932,16 +3948,16 @@ export default function App() {
                 referrerPolicy="no-referrer"
               />
             </div>
-            <p className="text-[10px] font-bold text-gray-500 mb-1">CNPJ 05.048.0001/27</p>
+            <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-1">CNPJ 05.048.0001/27</p>
             <p className="text-gray-400 font-black text-[10px] uppercase tracking-[0.3em]">Secretaria</p>
           </div>
 
-          <div className="flex mb-8 bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
+          <div className="flex mb-8 bg-gray-50 dark:bg-black p-1.5 rounded-2xl border border-gray-100 dark:border-[#222]">
             <button 
               onClick={() => { setLoginMethod('email'); setLoginError(''); }}
               className={cn(
                 "flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-2xl transition-all duration-300", 
-                loginMethod === 'email' ? "bg-white shadow-lg shadow-gray-200/50 text-ibc-blue" : "text-gray-400 hover:text-gray-600"
+                loginMethod === 'email' ? "bg-white dark:bg-[#111] shadow-lg shadow-gray-200/50 text-ibc-blue" : "text-gray-400 hover:text-gray-600 dark:text-gray-300"
               )}
             >
               Email
@@ -3950,7 +3966,7 @@ export default function App() {
               onClick={() => { setLoginMethod('google'); setLoginError(''); }}
               className={cn(
                 "flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-2xl transition-all duration-300", 
-                loginMethod === 'google' ? "bg-white shadow-lg shadow-gray-200/50 text-ibc-blue" : "text-gray-400 hover:text-gray-600"
+                loginMethod === 'google' ? "bg-white dark:bg-[#111] shadow-lg shadow-gray-200/50 text-ibc-blue" : "text-gray-400 hover:text-gray-600 dark:text-gray-300"
               )}
             >
               Google
@@ -3965,7 +3981,7 @@ export default function App() {
                   required 
                   name="email" 
                   type="email" 
-                  className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-ibc-teal/5 focus:border-ibc-teal/20 transition-all font-medium placeholder:text-gray-300" 
+                  className="w-full p-4 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-4 focus:ring-ibc-teal/5 focus:border-ibc-teal/20 transition-all font-medium placeholder:text-gray-300" 
                   placeholder="seu@email.com" 
                 />
               </div>
@@ -3975,7 +3991,7 @@ export default function App() {
                   required 
                   name="password" 
                   type="password" 
-                  className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-ibc-teal/5 focus:border-ibc-teal/20 transition-all font-medium placeholder:text-gray-300" 
+                  className="w-full p-4 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-4 focus:ring-ibc-teal/5 focus:border-ibc-teal/20 transition-all font-medium placeholder:text-gray-300" 
                   placeholder="••••••••" 
                 />
               </div>
@@ -4015,7 +4031,7 @@ export default function App() {
                 onClick={() => handleLogin(undefined, 'google')}
                 disabled={isAuthLoading}
                 className={cn(
-                  "w-full bg-white border border-gray-100 text-gray-700 py-4 px-6 rounded-2xl font-black uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center justify-center shadow-lg shadow-gray-100/50 active:scale-95",
+                  "w-full bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] text-gray-700 dark:text-gray-200 py-4 px-6 rounded-2xl font-black uppercase tracking-widest hover:bg-gray-50 dark:bg-black transition-all flex items-center justify-center shadow-lg shadow-gray-100/50 active:scale-95",
                   isAuthLoading && "opacity-50 cursor-wait"
                 )}
               >
@@ -4039,13 +4055,13 @@ export default function App() {
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-gray-50 flex flex-col">
+    <div className="relative h-full w-full overflow-hidden bg-gray-50 dark:bg-black flex flex-col">
       {/* Quota Exceeded Sticky Banner */}
       {isQuotaExceeded && (
         <div className="bg-gradient-to-r from-amber-600 to-orange-600 text-white px-5 py-3 text-xs font-semibold flex items-center justify-between z-[9999] shadow-lg shrink-0 border-b border-amber-500/20">
           <div className="flex items-center gap-3">
             <span className="flex h-2 w-2 relative shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white dark:bg-[#111] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-300"></span>
             </span>
             <span className="leading-tight">
@@ -4074,7 +4090,7 @@ export default function App() {
                 exit={{ opacity: 0, x: -20 }}
                 className="bg-amber-500 text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 flex items-center gap-2 pointer-events-auto"
               >
-                <div className="w-2 h-2 bg-white rounded-full animate-ping" />
+                <div className="w-2 h-2 bg-white dark:bg-[#111] rounded-full animate-ping" />
                 {users.filter(u => u.status === 'pending').length} Solicitações Pendentes
               </motion.div>
             )}
@@ -4082,7 +4098,7 @@ export default function App() {
           
           <button
             onClick={() => setIsAccessControlOpen(true)}
-            className="w-14 h-14 bg-white text-ibc-teal rounded-2xl shadow-2xl shadow-black/10 border border-gray-100 flex items-center justify-center hover:scale-110 active:scale-95 transition-all pointer-events-auto group relative"
+            className="w-14 h-14 bg-white dark:bg-[#111] text-ibc-teal rounded-2xl shadow-2xl shadow-black/10 border border-gray-100 dark:border-[#222] flex items-center justify-center hover:scale-110 active:scale-95 transition-all pointer-events-auto group relative"
           >
             <ShieldCheck className="w-6 h-6 group-hover:rotate-12 transition-transform" />
             {users.some(u => u.status === 'pending') && (
@@ -4157,14 +4173,14 @@ export default function App() {
                   <Download className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-gray-900 leading-tight">Instalar Aplicativo</h4>
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Acesse mais rápido e offline</p>
+                  <h4 className="text-sm font-black text-gray-900 dark:text-gray-50 leading-tight">Instalar Aplicativo</h4>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-0.5">Acesse mais rápido e offline</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <button 
                   onClick={handleCloseBanner}
-                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-300 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -4208,12 +4224,12 @@ export default function App() {
               className="h-10 w-auto mb-1 rounded-lg"
               referrerPolicy="no-referrer"
             />
-            <h1 className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">
+            <h1 className="text-sm font-black text-gray-900 dark:text-gray-50 tracking-tight leading-none uppercase">
               {appSettings.appName}
             </h1>
             <p className="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-widest">{appSettings.churchCnpj || "CNPJ Não informado"}</p>
           </div>
-          <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+          <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 hover:bg-gray-100 dark:bg-[#1a1a1a] rounded-xl transition-colors">
             <X className="w-6 h-6 text-gray-400" />
           </button>
         </div>
@@ -4249,12 +4265,15 @@ export default function App() {
 
 
         <div className="absolute bottom-0 left-0 right-0 p-6">
-          <div className="flex items-center p-4 rounded-2xl bg-gray-50 border border-gray-100 space-x-3">
-            <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}`} className="w-10 h-10 rounded-xl border-2 border-white shadow-sm" alt="Profile" />
+          <div className="flex items-center p-4 rounded-2xl bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] space-x-3">
+            <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}`} className="w-10 h-10 rounded-xl border-2 border-white dark:border-[#111] shadow-sm" alt="Profile" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-gray-900 truncate">{user.displayName}</p>
+              <p className="text-sm font-bold text-gray-900 dark:text-gray-50 truncate">{user.displayName}</p>
               <button onClick={handleLogout} className="text-xs text-red-500 font-bold hover:underline">Sair da conta</button>
             </div>
+            <button onClick={toggleTheme} className="p-2 hover:bg-gray-200 dark:hover:bg-[#333] text-gray-500 dark:text-gray-400 rounded-xl transition-all">
+              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
           </div>
         </div>
       </motion.aside>
@@ -4280,7 +4299,7 @@ export default function App() {
                   className="h-10 w-auto mb-1 rounded-lg"
                   referrerPolicy="no-referrer"
                 />
-                <h1 className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">
+                <h1 className="text-sm font-black text-gray-900 dark:text-gray-50 tracking-tight leading-none uppercase">
                   {appSettings.appName}
                 </h1>
                 <p className="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-widest">{appSettings.churchCnpj || "CNPJ Não informado"}</p>
@@ -4288,7 +4307,7 @@ export default function App() {
             )}
           <button 
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400"
+            className="p-2 hover:bg-gray-100 dark:bg-[#1a1a1a] rounded-xl transition-colors text-gray-400"
           >
             {isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
           </button>
@@ -4328,24 +4347,29 @@ export default function App() {
 
         <div className="p-6">
           <div className={cn(
-            "flex items-center p-3 rounded-2xl bg-gray-50/50 border border-gray-100",
+            "flex items-center p-3 rounded-2xl bg-gray-50/50 border border-gray-100 dark:bg-black/50 dark:border-[#222]",
             isSidebarCollapsed ? "justify-center" : "space-x-3"
           )}>
             <img 
               src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}`} 
-              className="w-10 h-10 rounded-xl border-2 border-white shadow-sm"
+              className="w-10 h-10 rounded-xl border-2 border-white dark:border-[#111] shadow-sm"
               alt="Profile"
             />
             {!isSidebarCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-900 truncate">{user.displayName}</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-gray-50 truncate">{user.displayName}</p>
                 <p className="text-[10px] font-black text-ibc-teal uppercase tracking-widest">{appUser?.role || 'User'}</p>
               </div>
             )}
             {!isSidebarCollapsed && (
-              <button onClick={handleLogout} className="p-2 hover:bg-red-50 text-red-400 hover:text-red-600 rounded-xl transition-all">
-                <LogOut className="w-4 h-4" />
-              </button>
+              <div className="flex space-x-1">
+                <button onClick={toggleTheme} className="p-2 hover:bg-gray-200 dark:hover:bg-[#333] text-gray-500 dark:text-gray-400 rounded-xl transition-all">
+                  {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </button>
+                <button onClick={handleLogout} className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 text-red-400 hover:text-red-600 rounded-xl transition-all">
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -4358,13 +4382,13 @@ export default function App() {
           <div className="flex items-center">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
-              className="md:hidden p-2 mr-3 bg-white shadow-sm border border-gray-100 rounded-xl"
+              className="md:hidden p-2 mr-3 bg-white dark:bg-[#111] shadow-sm border border-gray-100 dark:border-[#222] rounded-xl"
             >
-              <Menu className="w-5 h-5 text-gray-600" />
+              <Menu className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
             <div className="flex flex-col">
               <div className="flex items-center flex-wrap">
-                <h2 className="text-xl sm:text-3xl font-black text-gray-900 tracking-tighter leading-tight">
+                <h2 className="text-xl sm:text-3xl font-black text-gray-900 dark:text-gray-50 tracking-tighter leading-tight">
                   {activeTab === 'members' ? 'Membros' : 
                    activeTab === 'ministries' ? 'Ministérios' : 
                    activeTab === 'assembleia' ? 'Reuniões' : 
@@ -4426,7 +4450,7 @@ export default function App() {
                 </>
               )}
               {filteredMembers.length > 0 && (
-                <label className="flex items-center cursor-pointer group bg-white border border-ibc-teal/20 px-3 py-2.5 sm:px-4 sm:py-3.5 rounded-xl sm:rounded-2xl transition-all hover:bg-ibc-teal/5">
+                <label className="flex items-center cursor-pointer group bg-white dark:bg-[#111] border border-ibc-teal/20 px-3 py-2.5 sm:px-4 sm:py-3.5 rounded-xl sm:rounded-2xl transition-all hover:bg-ibc-teal/5">
                   <div className="relative">
                     <input 
                       type="checkbox" 
@@ -4438,20 +4462,20 @@ export default function App() {
                       "w-4 h-4 sm:w-5 sm:h-5 rounded-md border-2 transition-all flex items-center justify-center",
                       selectedMemberIds.length === filteredMembers.length && filteredMembers.length > 0
                         ? "bg-ibc-teal border-ibc-teal" 
-                        : "border-gray-200 group-hover:border-ibc-teal/50"
+                        : "border-gray-200 dark:border-[#333] group-hover:border-ibc-teal/50"
                     )}>
                       {selectedMemberIds.length === filteredMembers.length && filteredMembers.length > 0 && (
                         <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                       )}
                     </div>
                   </div>
-                  <span className="ml-2 text-xs font-bold text-gray-500 uppercase tracking-widest hidden sm:inline text-nowrap">Selecionar Todos</span>
-                  <span className="ml-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest sm:hidden text-nowrap">Todos</span>
+                  <span className="ml-2 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest hidden sm:inline text-nowrap">Selecionar Todos</span>
+                  <span className="ml-2 text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest sm:hidden text-nowrap">Todos</span>
                 </label>
               )}
               <button 
                 onClick={() => setIsExportModalOpen(true)}
-                className="bg-white text-ibc-teal border border-ibc-teal/20 px-3 py-2.5 sm:px-6 sm:py-3.5 rounded-xl sm:rounded-2xl flex items-center font-bold hover:bg-ibc-teal/5 transition-all active:scale-95 text-xs whitespace-nowrap"
+                className="bg-white dark:bg-[#111] text-ibc-teal border border-ibc-teal/20 px-3 py-2.5 sm:px-6 sm:py-3.5 rounded-xl sm:rounded-2xl flex items-center font-bold hover:bg-ibc-teal/5 transition-all active:scale-95 text-xs whitespace-nowrap"
               >
                 <Download className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
                 <span className="hidden sm:inline">Exportar</span>
@@ -4514,7 +4538,7 @@ export default function App() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-[7px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Ativos</p>
-                        <p className="text-xs sm:text-2xl font-black text-gray-900 leading-none">{activeMembersCount}</p>
+                        <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{activeMembersCount}</p>
                       </div>
                     </button>
                     <button 
@@ -4532,14 +4556,14 @@ export default function App() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-[7px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Ausentes</p>
-                        <p className="text-xs sm:text-2xl font-black text-gray-900 leading-none">{absentMembersCount}</p>
+                        <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{absentMembersCount}</p>
                       </div>
                     </button>
                     <button 
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'inactive' ? 'all' : 'inactive')}
                       className={cn(
-                        "bg-white p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
-                        memberStatusFilter === 'inactive' ? "border-red-500 ring-4 ring-red-50" : "border-gray-100 hover:border-red-200"
+                        "bg-white dark:bg-[#111] p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
+                        memberStatusFilter === 'inactive' ? "border-red-500 ring-4 ring-red-50" : "border-gray-100 dark:border-[#222] hover:border-red-200"
                       )}
                     >
                       <div className={cn(
@@ -4550,7 +4574,7 @@ export default function App() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-[7px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Inativos</p>
-                        <p className="text-xs sm:text-2xl font-black text-gray-900 leading-none">{inactiveMembersCount}</p>
+                        <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{inactiveMembersCount}</p>
                       </div>
                     </button>
                   </div>
@@ -4651,7 +4675,7 @@ export default function App() {
                               "w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center",
                               selectedMemberIds.includes(member.id)
                                 ? "bg-ibc-teal border-ibc-teal" 
-                                : "border-gray-200 group-hover/check:border-ibc-teal/50"
+                                : "border-gray-200 dark:border-[#333] group-hover/check:border-ibc-teal/50"
                             )}>
                               {selectedMemberIds.includes(member.id) && (
                                 <CheckCircle className="w-3 h-3 text-white" />
@@ -4659,7 +4683,7 @@ export default function App() {
                             </div>
                           </div>
                         </label>
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-100 flex items-center justify-center text-ibc-teal font-black text-xs overflow-hidden shrink-0 border border-gray-100">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center text-ibc-teal font-black text-xs overflow-hidden shrink-0 border border-gray-100 dark:border-[#222]">
                           {member.photoUrl ? (
                             <img src={member.photoUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           ) : (
@@ -4668,7 +4692,7 @@ export default function App() {
                         </div>
                         <div className="flex-1 min-w-0 py-0 sm:py-1">
                           <div className="flex items-start justify-between gap-2 overflow-hidden">
-                            <h4 className="text-base sm:text-lg font-black text-gray-900 tracking-tight leading-tight mb-1 truncate flex-1">
+                            <h4 className="text-base sm:text-lg font-black text-gray-900 dark:text-gray-50 tracking-tight leading-tight mb-1 truncate flex-1">
                               {member.name}
                             </h4>
                             <div className="flex flex-shrink-0 gap-1 mt-0.5">
@@ -4684,7 +4708,7 @@ export default function App() {
                             {member.birthDate && (
                               <div className="flex items-center">
                                 <span className="w-1 h-1 rounded-full bg-gray-300 mr-1.5 sm:mr-2" />
-                                <p className="text-[9px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest whitespace-nowrap">
+                                <p className="text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest whitespace-nowrap">
                                   {calculateAge(member.birthDate)} Anos
                                 </p>
                               </div>
@@ -4702,7 +4726,7 @@ export default function App() {
                             }}
                             className={cn(
                               "flex items-center px-1.5 py-1 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap",
-                              member.isAbsent ? "text-orange-500 bg-orange-50" : "text-gray-400 bg-gray-50 hover:bg-orange-50 hover:text-orange-500"
+                              member.isAbsent ? "text-orange-500 bg-orange-50" : "text-gray-400 bg-gray-50 dark:bg-black hover:bg-orange-50 hover:text-orange-500"
                             )}
                           >
                             <Clock className="w-2.5 sm:w-3.5 h-2.5 sm:h-3.5 mr-1 sm:mr-1.5" />
@@ -4720,20 +4744,20 @@ export default function App() {
                               setNewFunctionValue("");
                               setIsEditMemberModalOpen(true); 
                             }}
-                            className="flex items-center px-1.5 py-1 sm:px-3 sm:py-2 bg-gray-50 text-gray-400 hover:text-ibc-blue hover:bg-ibc-blue/5 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
+                            className="flex items-center px-1.5 py-1 sm:px-3 sm:py-2 bg-gray-50 dark:bg-black text-gray-400 hover:text-ibc-blue hover:bg-ibc-blue/5 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
                           >
                             <Edit2 className="w-2.5 sm:w-3.5 h-2.5 sm:h-3.5 mr-1 sm:mr-1.5" />
                             <span>Editar</span>
                           </button>
                         </div>
 
-                        <div className="flex items-center gap-1 sm:gap-2 border-l sm:border-none pl-1.5 sm:pl-0 border-gray-100">
+                        <div className="flex items-center gap-1 sm:gap-2 border-l sm:border-none pl-1.5 sm:pl-0 border-gray-100 dark:border-[#222]">
                           {appUser?.role === 'admin' && (
                             <>
                               {member.isActive ? (
                                 <button 
                                   onClick={() => { setSelectedMember(member); setIsDeactivateModalOpen(true); }}
-                                  className="flex items-center px-2 py-1 sm:px-3 sm:py-2 bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
+                                  className="flex items-center px-2 py-1 sm:px-3 sm:py-2 bg-gray-50 dark:bg-black text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
                                 >
                                   <UserMinus className="w-3 sm:w-3.5 h-3 sm:h-3.5 mr-1 sm:mr-1.5" />
                                   Negativo
@@ -4810,7 +4834,7 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => setVisibleMembersCount(prev => prev + 30)}
-                      className="px-6 py-3 bg-white hover:bg-gray-50 active:scale-95 text-ibc-teal border border-ibc-teal/20 rounded-[1.5rem] text-xs font-black uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-1.5"
+                      className="px-6 py-3 bg-white dark:bg-[#111] hover:bg-gray-50 dark:bg-black active:scale-95 text-ibc-teal border border-ibc-teal/20 rounded-[1.5rem] text-xs font-black uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-1.5"
                     >
                       <ChevronDown className="w-4 h-4" />
                       Carregar mais membros ({filteredMembers.length - visibleMembersCount} restantes)
@@ -4821,11 +4845,11 @@ export default function App() {
               
               {filteredMembers.length === 0 && (
                 <div className="text-center py-20">
-                  <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="bg-gray-100 dark:bg-[#1a1a1a] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Search className="w-8 h-8 text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900">Nenhum membro encontrado</h3>
-                  <p className="text-gray-500">Tente ajustar sua busca ou adicione um novo membro.</p>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-50">Nenhum membro encontrado</h3>
+                  <p className="text-gray-500 dark:text-gray-400">Tente ajustar sua busca ou adicione um novo membro.</p>
                 </div>
               )}
             </div>
@@ -4885,11 +4909,11 @@ export default function App() {
 
               {ministries.length === 0 && (
                 <div className="text-center py-20">
-                  <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="bg-gray-100 dark:bg-[#1a1a1a] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                     <LayoutGrid className="w-8 h-8 text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900">Nenhum ministério encontrado</h3>
-                  <p className="text-gray-500">Adicione um novo ministério para começar.</p>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-50">Nenhum ministério encontrado</h3>
+                  <p className="text-gray-500 dark:text-gray-400">Adicione um novo ministério para começar.</p>
                 </div>
               )}
             </div>
@@ -4930,14 +4954,14 @@ export default function App() {
               )}
 
               {/* Sub-tabs for Reuniões */}
-              <div className="flex flex-wrap items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 w-fit shadow-sm max-w-full">
+              <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-[#111] p-1.5 rounded-2xl border border-gray-100 dark:border-[#222] w-fit shadow-sm max-w-full">
                 <button
                   onClick={() => setAssembleiaSubTab('assembleia')}
                   className={cn(
                     "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
                     assembleiaSubTab === 'assembleia' 
                       ? "bg-ibc-blue text-white shadow-lg shadow-ibc-blue/20" 
-                      : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                      : "text-gray-400 hover:text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:bg-black"
                   )}
                 >
                   Assembleia
@@ -4948,7 +4972,7 @@ export default function App() {
                     "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
                     assembleiaSubTab === 'reuniao' 
                       ? "bg-ibc-blue text-white shadow-lg shadow-ibc-blue/20" 
-                      : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                      : "text-gray-400 hover:text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:bg-black"
                   )}
                 >
                   Reunião
@@ -4977,7 +5001,7 @@ export default function App() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-bold text-gray-900 leading-tight group-hover:text-ibc-blue transition-colors truncate">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 leading-tight group-hover:text-ibc-blue transition-colors truncate">
                               Ata nº {ata.number}
                             </h3>
                             <span className="text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full bg-ibc-blue/10 text-ibc-blue">Ata</span>
@@ -4989,7 +5013,7 @@ export default function App() {
                       </div>
                       
                       <div className="mt-4">
-                        <p className="text-sm text-gray-500 line-clamp-3 leading-relaxed">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-3 leading-relaxed">
                           {ata.content}
                         </p>
                       </div>
@@ -5040,7 +5064,7 @@ export default function App() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-bold text-gray-900 leading-tight group-hover:text-ibc-blue transition-colors truncate">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50 leading-tight group-hover:text-ibc-blue transition-colors truncate">
                               Ata nº {presenca.ataNumber}
                             </h3>
                             <span className="text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full bg-ibc-teal/10 text-ibc-teal">Lista</span>
@@ -5052,7 +5076,7 @@ export default function App() {
                       </div>
                       
                       <div className="mt-4">
-                        <p className="text-sm text-gray-500 font-medium leading-relaxed flex items-center">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium leading-relaxed flex items-center">
                           <FileText className="w-4 h-4 mr-2 text-ibc-teal/40" />
                           Lista de presença para impressão
                         </p>
@@ -5087,7 +5111,7 @@ export default function App() {
               <section className="space-y-3 sm:space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h3 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">Relatórios e Estatísticas</h3>
+                    <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-gray-50 tracking-tight">Relatórios e Estatísticas</h3>
                     <p className="text-xs sm:text-sm text-gray-400 font-medium mt-1">Visão geral do quadro de membros da {appSettings.appName}.</p>
                   </div>
                   <div className="flex items-center space-x-2 sm:space-x-4">
@@ -5106,21 +5130,21 @@ export default function App() {
                 </div>
 
                 {/* Estatísticas de Movimentação de Membros */}
-                <section className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 mt-6">
+                <section className="bg-white dark:bg-[#111] p-6 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-[#222] mt-6">
                   <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-                    <h4 className="text-lg font-black text-gray-900">Estatísticas de Movimentação</h4>
+                    <h4 className="text-lg font-black text-gray-900 dark:text-gray-50">Estatísticas de Movimentação</h4>
                     <div className="flex items-center gap-2">
-                        <select className="bg-gray-50 border-none rounded-xl px-3 py-2 text-xs font-bold text-gray-600" value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))}>
+                        <select className="bg-gray-50 dark:bg-black border-none rounded-xl px-3 py-2 text-xs font-bold text-gray-600 dark:text-gray-300" value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))}>
                           <option value={-1}>Ano Inteiro</option>
                           {Array.from({length: 12}, (_, i) => <option key={i} value={i}>{new Date(0, i).toLocaleString('pt-BR', {month: 'long'})}</option>)}
                         </select>
-                        <select className="bg-gray-50 border-none rounded-xl px-3 py-2 text-xs font-bold text-gray-600" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))}>
+                        <select className="bg-gray-50 dark:bg-black border-none rounded-xl px-3 py-2 text-xs font-bold text-gray-600 dark:text-gray-300" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))}>
                           {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
                         </select>
                     </div>
                   </div>
                   
-                  <div className="text-sm text-gray-500 mb-8 bg-gray-50 p-4 rounded-2xl border border-dashed border-gray-200">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-8 bg-gray-50 dark:bg-black p-4 rounded-2xl border border-dashed border-gray-200 dark:border-[#333]">
                     <div className="flex items-start space-x-3">
                       <div className="w-8 h-8 rounded-lg bg-ibc-teal/10 flex items-center justify-center shrink-0">
                         <TrendingUp className="w-4 h-4 text-ibc-teal" />
@@ -5157,7 +5181,7 @@ export default function App() {
                           </div>
                           
                           <div className="flex items-baseline space-x-2">
-                             <div className="text-xl sm:text-3xl font-black text-gray-900 leading-tight">
+                             <div className="text-xl sm:text-3xl font-black text-gray-900 dark:text-gray-50 leading-tight">
                                {category.members.length}
                              </div>
                              <div className={`flex items-center text-[9px] sm:text-[11px] font-black ${isGrowing ? (category.id === 'absents' || category.id === 'inactives' ? 'text-red-500' : 'text-green-500') : (category.id === 'absents' || category.id === 'inactives' ? 'text-green-500' : 'text-red-500')}`}>
@@ -5166,7 +5190,7 @@ export default function App() {
                              </div>
                           </div>
                           
-                          <div className="mt-3 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                          <div className="mt-3 h-1.5 w-full bg-gray-100 dark:bg-[#1a1a1a] rounded-full overflow-hidden">
                             <motion.div 
                               initial={{ width: 0 }}
                               animate={{ width: `${percentage}%` }}
@@ -5239,7 +5263,7 @@ export default function App() {
                           className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] bg-white/85 dark:bg-gray-900/85 backdrop-blur-[20px] border border-white/40 dark:border-white/10 sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col z-10"
                         >
                           {/* Header */}
-                          <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 shrink-0 glass-header sticky top-0 z-20">
+                          <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 dark:border-[#222] shrink-0 glass-header sticky top-0 z-20">
                             <div className="flex items-center space-x-4">
                               <div 
                                 className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" 
@@ -5251,7 +5275,7 @@ export default function App() {
                                 })()}
                               </div>
                               <div>
-                                <h5 className="text-xl sm:text-2xl font-black text-gray-900 flex items-center leading-none">
+                                <h5 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-gray-50 flex items-center leading-none">
                                   {memberStats.categories[expandedCard].label}
                                 </h5>
                                 <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mt-1.5 flex items-center">
@@ -5267,7 +5291,7 @@ export default function App() {
                             </div>
                             <button 
                               onClick={() => setExpandedCard(null)} 
-                              className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl flex items-center justify-center transition-all active:scale-90"
+                              className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 dark:bg-black text-gray-400 hover:text-gray-900 dark:text-gray-50 hover:bg-gray-100 dark:bg-[#1a1a1a] rounded-2xl flex items-center justify-center transition-all active:scale-90"
                             >
                               <X className="w-5 h-5 sm:w-6 sm:h-6" />
                             </button>
@@ -5283,9 +5307,9 @@ export default function App() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.03 }}
-                                    className="flex items-center space-x-4 p-4 bg-white rounded-3xl border border-gray-100 shadow-sm hover:border-ibc-teal/50 hover:shadow-xl hover:shadow-gray-100 transition-all group"
+                                    className="flex items-center space-x-4 p-4 bg-white dark:bg-[#111] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:border-ibc-teal/50 hover:shadow-xl hover:shadow-gray-100 transition-all group"
                                   >
-                                      <div className="w-14 h-14 rounded-2xl bg-gray-50 overflow-hidden shrink-0 border border-gray-100 flex items-center justify-center text-lg font-bold text-gray-400 group-hover:scale-105 transition-transform">
+                                      <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-black overflow-hidden shrink-0 border border-gray-100 dark:border-[#222] flex items-center justify-center text-lg font-bold text-gray-400 group-hover:scale-105 transition-transform">
                                         {m.photoUrl ? (
                                           <img src={m.photoUrl} className="w-full h-full object-cover" alt={m.name} referrerPolicy="no-referrer" />
                                         ) : (
@@ -5293,7 +5317,7 @@ export default function App() {
                                         )}
                                       </div>
                                       <div className="min-w-0">
-                                        <div className="font-black text-gray-900 text-sm sm:text-base truncate group-hover:text-ibc-teal transition-colors tracking-tight">
+                                        <div className="font-black text-gray-900 dark:text-gray-50 text-sm sm:text-base truncate group-hover:text-ibc-teal transition-colors tracking-tight">
                                           {m.name}
                                         </div>
                                         <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
@@ -5305,10 +5329,10 @@ export default function App() {
                               </div>
                             ) : (
                               <div className="h-full flex flex-col items-center justify-center text-center p-10">
-                                <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center text-gray-200 mb-4">
+                                <div className="w-20 h-20 rounded-full bg-gray-50 dark:bg-black flex items-center justify-center text-gray-200 mb-4">
                                   <X className="w-10 h-10" />
                                 </div>
-                                <h6 className="text-lg font-bold text-gray-900">Nenhum registro encontrado</h6>
+                                <h6 className="text-lg font-bold text-gray-900 dark:text-gray-50">Nenhum registro encontrado</h6>
                                 <p className="text-sm text-gray-400 mt-1 max-w-xs">Não existem membros nesta categoria para o período selecionado.</p>
                               </div>
                             )}
@@ -5327,10 +5351,10 @@ export default function App() {
                   {/* Functions Bar Chart */}
                   <div className="glass-card p-4 sm:p-8 rounded-[3rem] border border-white/40 shadow-sm overflow-x-auto">
                     <div className="flex items-center space-x-3 mb-6 sm:mb-8">
-                      <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                        <LayoutGrid className="w-4 h-4 text-gray-500" />
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center">
+                        <LayoutGrid className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       </div>
-                      <h4 className="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-widest">Membros por Função</h4>
+                      <h4 className="text-xs sm:text-sm font-black text-gray-900 dark:text-gray-50 uppercase tracking-widest">Membros por Função</h4>
                     </div>
                     <div className="space-y-2">
                        {Object.entries(reportData.functionsDetails)
@@ -5339,13 +5363,13 @@ export default function App() {
                          <div key={name}>
                              <button
                                onClick={() => setExpandedFunction(name)}
-                               className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100 hover:border-ibc-teal/50 transition-all group"
+                               className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] hover:border-ibc-teal/50 transition-all group"
                              >
                                 <div className="flex items-center space-x-3">
-                                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-ibc-teal shadow-sm text-xs font-bold">
+                                  <div className="w-8 h-8 rounded-lg bg-white dark:bg-[#111] flex items-center justify-center text-ibc-teal shadow-sm text-xs font-bold">
                                     {data.count}
                                   </div>
-                                  <span className="text-xs font-black text-gray-700 uppercase tracking-widest">{name}</span>
+                                  <span className="text-xs font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest">{name}</span>
                                 </div>
                                 <div className="flex items-center space-x-3">
                                   <span className="text-[10px] font-black text-gray-400">{data.percentage}%</span>
@@ -5360,10 +5384,10 @@ export default function App() {
                   {/* Status Pie Chart */}
                   <div className="glass-card p-4 sm:p-8 rounded-[3rem] border border-white/40 shadow-sm overflow-x-auto">
                     <div className="flex items-center space-x-3 mb-6 sm:mb-8">
-                      <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                        <LucidePieChart className="w-4 h-4 text-gray-500" />
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center">
+                        <LucidePieChart className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       </div>
-                      <h4 className="text-xs sm:text-sm font-black text-gray-900 uppercase tracking-widest">Distribuição por Status</h4>
+                      <h4 className="text-xs sm:text-sm font-black text-gray-900 dark:text-gray-50 uppercase tracking-widest">Distribuição por Status</h4>
                     </div>
                     <div className="h-64 sm:h-80 w-full flex flex-col items-center">
                       <ResponsiveContainer width="100%" height="100%">
@@ -5416,13 +5440,13 @@ export default function App() {
                         }}
                         className="relative w-full h-full sm:max-w-6xl sm:max-h-[90vh] bg-white/85 dark:bg-gray-900/85 backdrop-blur-[20px] border border-white/40 dark:border-white/10 sm:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col z-10"
                       >
-                        <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 shrink-0 glass-header sticky top-0 z-20">
+                        <div className="flex items-center justify-between p-6 sm:p-10 border-b border-gray-100 dark:border-[#222] shrink-0 glass-header sticky top-0 z-20">
                           <div className="flex items-center space-x-4">
                             <div className="w-12 h-12 rounded-2xl bg-ibc-teal/10 text-ibc-teal flex items-center justify-center shadow-lg">
                               <Users className="w-6 h-6" />
                             </div>
                             <div>
-                              <h5 className="text-xl sm:text-2xl font-black text-gray-900 leading-none">
+                              <h5 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">
                                 {expandedFunction}
                               </h5>
                               <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mt-1.5 flex items-center">
@@ -5435,7 +5459,7 @@ export default function App() {
                           </div>
                           <button 
                             onClick={() => setExpandedFunction(null)} 
-                            className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl flex items-center justify-center transition-all active:scale-90"
+                            className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 dark:bg-black text-gray-400 hover:text-gray-900 dark:text-gray-50 hover:bg-gray-100 dark:bg-[#1a1a1a] rounded-2xl flex items-center justify-center transition-all active:scale-90"
                           >
                             <X className="w-5 h-5 sm:w-6 sm:h-6" />
                           </button>
@@ -5449,9 +5473,9 @@ export default function App() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: idx * 0.03 }}
-                                className="flex items-center space-x-4 p-4 bg-white rounded-3xl border border-gray-100 shadow-sm hover:border-ibc-teal/50 hover:shadow-xl hover:shadow-gray-100 transition-all group"
+                                className="flex items-center space-x-4 p-4 bg-white dark:bg-[#111] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:border-ibc-teal/50 hover:shadow-xl hover:shadow-gray-100 transition-all group"
                               >
-                                  <div className="w-14 h-14 rounded-2xl bg-gray-50 overflow-hidden shrink-0 border border-gray-100 flex items-center justify-center text-lg font-bold text-gray-400 group-hover:scale-105 transition-transform">
+                                  <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-black overflow-hidden shrink-0 border border-gray-100 dark:border-[#222] flex items-center justify-center text-lg font-bold text-gray-400 group-hover:scale-105 transition-transform">
                                     {m.photoUrl ? (
                                       <img src={m.photoUrl} className="w-full h-full object-cover" alt={m.name} referrerPolicy="no-referrer" />
                                     ) : (
@@ -5459,7 +5483,7 @@ export default function App() {
                                     )}
                                   </div>
                                   <div className="min-w-0 flex-1">
-                                    <div className="font-black text-gray-900 text-sm sm:text-base truncate group-hover:text-ibc-teal transition-colors tracking-tight">
+                                    <div className="font-black text-gray-900 dark:text-gray-50 text-sm sm:text-base truncate group-hover:text-ibc-teal transition-colors tracking-tight">
                                       {m.name}
                                     </div>
                                     <div className="flex items-center justify-between mt-1">
@@ -5488,13 +5512,13 @@ export default function App() {
           ) : activeTab === 'rh' ? (
             <div className="max-w-6xl mx-auto space-y-4 sm:space-y-10">
               {/* Filtro Card */}
-              <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+              <section className="bg-white dark:bg-[#111] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm overflow-hidden">
                 <div 
                   onClick={() => setIsRHFilterCollapsed(!isRHFilterCollapsed)}
-                  className="flex items-center justify-between p-3 sm:p-8 cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between p-3 sm:p-8 cursor-pointer hover:bg-gray-50 dark:bg-black transition-colors"
                 >
                   <div>
-                    <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight flex items-center">
+                    <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight flex items-center">
                       <Filter className="w-5 h-5 mr-3 text-ibc-teal" />
                       Filtro
                       {isRHFilterCollapsed ? (
@@ -5525,7 +5549,7 @@ export default function App() {
                                 setRhFilterType(e.target.value as any);
                                 setRhSelectedValue('');
                               }}
-                              className="w-full p-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
+                              className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
                             >
                               <option value="all">Selecione um filtro...</option>
                               <option value="relationship">Grau de Parentesco</option>
@@ -5540,7 +5564,7 @@ export default function App() {
                               <select 
                                 value={rhSelectedValue}
                                 onChange={(e) => setRhSelectedValue(e.target.value)}
-                                className="w-full p-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
+                                className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
                               >
                                 <option value="">Todos os parentescos...</option>
                                 {relationshipTypes.map(rt => (
@@ -5556,7 +5580,7 @@ export default function App() {
                               <select 
                                 value={rhSelectedValue}
                                 onChange={(e) => setRhSelectedValue(e.target.value)}
-                                className="w-full p-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
+                                className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
                               >
                                 <option value="">Todas as funções...</option>
                                 {memberFunctions.map(f => (
@@ -5599,18 +5623,18 @@ export default function App() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.05 }}
-                                    className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between group hover:border-ibc-teal/30 transition-all"
+                                    className="p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] flex items-center justify-between group hover:border-ibc-teal/30 transition-all"
                                   >
                                     <div className="flex items-center space-x-3">
-                                      <div className="bg-white p-2 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
+                                      <div className="bg-white dark:bg-[#111] p-2 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
                                         <Heart className="w-4 h-4 text-red-400" />
                                       </div>
-                                      <span className="text-sm font-bold text-gray-700">{couple.names}</span>
+                                      <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{couple.names}</span>
                                     </div>
                                   </motion.div>
                                 ))}
                                 {getCouples().length === 0 && (
-                                  <div className="col-span-full py-12 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                                  <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
                                     <Heart className="w-8 h-8 text-gray-200 mx-auto mb-3" />
                                     <p className="text-xs text-gray-400 font-medium">Nenhum casal identificado nos vínculos atuais.</p>
                                   </div>
@@ -5639,9 +5663,9 @@ export default function App() {
                                       setSelectedMember(member);
                                       setIsViewMemberModalOpen(true);
                                     }}
-                                    className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center space-x-3 hover:border-ibc-teal/30 hover:bg-white cursor-pointer transition-all hover:shadow-md"
+                                    className="p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] flex items-center space-x-3 hover:border-ibc-teal/30 hover:bg-white dark:bg-[#111] cursor-pointer transition-all hover:shadow-md"
                                   >
-                                    <div className="w-10 h-10 rounded-full bg-gray-100 shadow-sm flex items-center justify-center text-ibc-teal font-black text-xs overflow-hidden border border-gray-100 shrink-0">
+                                    <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-[#1a1a1a] shadow-sm flex items-center justify-center text-ibc-teal font-black text-xs overflow-hidden border border-gray-100 dark:border-[#222] shrink-0">
                                       {member.photoUrl ? (
                                         <img src={member.photoUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                       ) : (
@@ -5649,13 +5673,13 @@ export default function App() {
                                       )}
                                     </div>
                                     <div className="flex flex-col min-w-0">
-                                      <span className="text-sm font-bold text-gray-700 truncate">{member.name}</span>
+                                      <span className="text-sm font-bold text-gray-700 dark:text-gray-200 truncate">{member.name}</span>
                                       <span className="text-[10px] font-medium text-gray-400">{member.function}</span>
                                     </div>
                                   </motion.div>
                                 ))}
                                 {getFilteredMembers().length === 0 && (
-                                  <div className="col-span-full py-12 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                                  <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
                                     <Search className="w-8 h-8 text-gray-200 mx-auto mb-3" />
                                     <p className="text-xs text-gray-400 font-medium">Nenhum membro encontrado com este filtro.</p>
                                   </div>
@@ -5664,7 +5688,7 @@ export default function App() {
                             </div>
                           ) : (
                             rhFilterType !== 'all' && (
-                              <div className="text-center py-12 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                              <div className="text-center py-12 bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
                                 <Filter className="w-8 h-8 text-gray-200 mx-auto mb-3" />
                                 <p className="text-xs text-gray-400 font-medium">Selecione uma opção acima para visualizar os resultados.</p>
                               </div>
@@ -5680,13 +5704,13 @@ export default function App() {
               {/* Member Functions Management Section moved from ADM to RH */}
               {appUser?.role === 'admin' ? (
                 <>
-                  <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                  <section className="bg-white dark:bg-[#111] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm overflow-hidden">
                     <div 
                       onClick={() => setIsMemberFunctionsCollapsed(!isMemberFunctionsCollapsed)}
-                      className="flex items-center justify-between p-4 sm:p-8 cursor-pointer hover:bg-gray-50 transition-colors"
+                      className="flex items-center justify-between p-4 sm:p-8 cursor-pointer hover:bg-gray-50 dark:bg-black transition-colors"
                     >
                       <div>
-                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight flex items-center">
+                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight flex items-center">
                           Funções de Membros
                           {isMemberFunctionsCollapsed ? (
                             <ChevronDown className="w-5 h-5 ml-2 text-gray-400" />
@@ -5727,10 +5751,10 @@ export default function App() {
                                     setSelectedFunction(f);
                                     setIsViewFunctionDetailsModalOpen(true);
                                   }}
-                                  className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-ibc-teal/30 hover:bg-gray-50/80 transition-all cursor-pointer select-none group"
+                                  className="flex items-center justify-between p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] hover:border-ibc-teal/30 hover:bg-gray-50/80 transition-all cursor-pointer select-none group"
                                 >
                                   <div className="flex items-center min-w-0 mr-2">
-                                    <span className="text-sm font-bold text-gray-700 truncate group-hover:text-ibc-teal transition-colors">{f.name}</span>
+                                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200 truncate group-hover:text-ibc-teal transition-colors">{f.name}</span>
                                     <Info className="w-3.5 h-3.5 ml-2 text-gray-400 group-hover:text-ibc-teal transition-colors shrink-0" />
                                   </div>
                                   <div className="flex items-center space-x-3 shrink-0">
@@ -5766,13 +5790,13 @@ export default function App() {
                   </section>
 
                   {/* Relationship Types Management Section */}
-                  <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                  <section className="bg-white dark:bg-[#111] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm overflow-hidden">
                     <div 
                       onClick={() => setIsRelationshipTypesCollapsed(!isRelationshipTypesCollapsed)}
-                      className="flex items-center justify-between p-4 sm:p-8 cursor-pointer hover:bg-gray-50 transition-colors"
+                      className="flex items-center justify-between p-4 sm:p-8 cursor-pointer hover:bg-gray-50 dark:bg-black transition-colors"
                     >
                       <div>
-                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight flex items-center">
+                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight flex items-center">
                           Parentesco / Família
                           {isRelationshipTypesCollapsed ? (
                             <ChevronDown className="w-5 h-5 ml-2 text-gray-400" />
@@ -5807,8 +5831,8 @@ export default function App() {
                           <div className="px-4 sm:px-8 pb-4 sm:pb-8">
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                               {relationshipTypes.map((rt) => (
-                                <div key={rt.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-ibc-teal/30 transition-all group">
-                                  <span className="text-sm font-bold text-gray-700 truncate mr-2">{rt.name}</span>
+                                <div key={rt.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] hover:border-ibc-teal/30 transition-all group">
+                                  <span className="text-sm font-bold text-gray-700 dark:text-gray-200 truncate mr-2">{rt.name}</span>
                                   <div className="flex items-center space-x-3 shrink-0">
                                     <button 
                                       onClick={() => {
@@ -5838,10 +5862,10 @@ export default function App() {
                   </section>
                 </>
               ) : (
-                <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                <div className="text-center py-20 bg-white dark:bg-[#111] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm">
                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                   <h3 className="text-lg font-bold text-gray-900">Acesso Restrito</h3>
-                   <p className="text-gray-500 max-w-sm mx-auto mt-2">Esta área é destinada apenas para administradores do sistema.</p>
+                   <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50">Acesso Restrito</h3>
+                   <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto mt-2">Esta área é destinada apenas para administradores do sistema.</p>
                 </div>
               )}
             </div>
@@ -5857,7 +5881,7 @@ export default function App() {
                       <BookOpen className="w-6 h-6 text-ibc-teal" />
                     </div>
                     <div>
-                      <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight leading-snug">
+                      <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight leading-snug">
                         Você sabe o que é Estatuto e Regimento Interno?
                       </h3>
                       <p className="text-xs sm:text-sm text-gray-400 font-bold mt-1">
@@ -5867,28 +5891,28 @@ export default function App() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                    <div className="p-5 bg-white rounded-2xl border border-gray-100 hover:border-ibc-teal/20 hover:shadow-sm transition-all duration-300">
+                    <div className="p-5 bg-white dark:bg-[#111] rounded-2xl border border-gray-100 dark:border-[#222] hover:border-ibc-teal/20 hover:shadow-sm transition-all duration-300">
                       <div className="flex items-center space-x-2.5 mb-2.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-ibc-teal shadow-sm" />
-                        <h4 className="font-bold text-gray-900 text-sm sm:text-base">Estatuto (ou Estatuto Social)</h4>
+                        <h4 className="font-bold text-gray-900 dark:text-gray-50 text-sm sm:text-base">Estatuto (ou Estatuto Social)</h4>
                       </div>
-                      <p className="text-xs sm:text-sm text-gray-500 leading-relaxed font-semibold">
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-semibold">
                         É a "certidão de nascimento" da instituição. Define as regras fundamentais, como os objetivos, direitos e deveres dos membros, cargos da diretoria e como alterar as regras principais.
                       </p>
                     </div>
 
-                    <div className="p-5 bg-white rounded-2xl border border-gray-100 hover:border-ibc-teal/20 hover:shadow-sm transition-all duration-300">
+                    <div className="p-5 bg-white dark:bg-[#111] rounded-2xl border border-gray-100 dark:border-[#222] hover:border-ibc-teal/20 hover:shadow-sm transition-all duration-300">
                       <div className="flex items-center space-x-2.5 mb-2.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-ibc-blue shadow-sm" />
-                        <h4 className="font-bold text-gray-900 text-sm sm:text-base">Regimento Interno</h4>
+                        <h4 className="font-bold text-gray-900 dark:text-gray-50 text-sm sm:text-base">Regimento Interno</h4>
                       </div>
-                      <p className="text-xs sm:text-sm text-gray-500 leading-relaxed font-semibold">
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-semibold">
                         É um documento complementar. Ele detalha a rotina, o funcionamento prático, horários, vestimentas, uso de espaços e procedimentos do dia a dia, sempre respeitando o que foi definido no estatuto.
                       </p>
                     </div>
                   </div>
 
-                  <div className="bg-ibc-teal/[0.04] border-l-4 border-ibc-teal p-4 rounded-r-2xl font-bold text-gray-800 text-xs sm:text-sm flex items-center space-x-2">
+                  <div className="bg-ibc-teal/[0.04] border-l-4 border-ibc-teal p-4 rounded-r-2xl font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-sm flex items-center space-x-2">
                     <span className="text-base">💡</span>
                     <span><strong>Em resumo:</strong> o estatuto cria as bases e o regimento interno detalha a operação.</span>
                   </div>
@@ -5898,7 +5922,7 @@ export default function App() {
               {/* Document Actions Section */}
               <section className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                 {/* Card Estatuto */}
-                <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between relative group hover:shadow-md transition-all duration-300">
+                <div className="bg-white dark:bg-[#111] p-6 sm:p-8 rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm flex flex-col justify-between relative group hover:shadow-md transition-all duration-300">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="w-12 h-12 rounded-2xl bg-ibc-teal/10 flex items-center justify-center text-ibc-teal">
@@ -5911,7 +5935,7 @@ export default function App() {
                             Disponível
                           </span>
                         ) : (
-                          <span className="px-2.5 py-1 bg-gray-50 text-gray-400 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-nowrap flex items-center">
+                          <span className="px-2.5 py-1 bg-gray-50 dark:bg-black text-gray-400 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-nowrap flex items-center">
                             <span className="w-1.5 h-1.5 rounded-full bg-gray-300 mr-1.5" />
                             Pendente
                           </span>
@@ -5920,7 +5944,7 @@ export default function App() {
                     </div>
                     
                     <div>
-                      <h4 className="text-lg font-extrabold text-gray-900 tracking-tight">Estatuto Social</h4>
+                      <h4 className="text-lg font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">Estatuto Social</h4>
                       <p className="text-xs text-gray-400 font-medium mt-1">
                         Regras fundamentais e objetivos principais da instituição.
                       </p>
@@ -5941,7 +5965,7 @@ export default function App() {
                     ) : (
                       <button 
                         disabled
-                        className="w-full bg-gray-100 text-gray-400 py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center space-x-2 cursor-not-allowed"
+                        className="w-full bg-gray-100 dark:bg-[#1a1a1a] text-gray-400 py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center space-x-2 cursor-not-allowed"
                       >
                         <AlertCircle className="w-4 h-4" />
                         <span>Aguardando Publicação</span>
@@ -5949,8 +5973,8 @@ export default function App() {
                     )}
 
                     {appUser?.role === 'admin' && (
-                      <div className="relative pt-2 border-t border-gray-100">
-                        <label className="w-full bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-800 py-3 px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center space-x-2 cursor-pointer transition-all border border-gray-200 border-dashed active:scale-98">
+                      <div className="relative pt-2 border-t border-gray-100 dark:border-[#222]">
+                        <label className="w-full bg-gray-50 dark:bg-black hover:bg-gray-100 dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:text-gray-100 py-3 px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center space-x-2 cursor-pointer transition-all border border-gray-200 dark:border-[#333] border-dashed active:scale-98">
                           {isUploadingEstatuto ? (
                             <>
                               <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-500 mr-2" />
@@ -5958,7 +5982,7 @@ export default function App() {
                             </>
                           ) : (
                             <>
-                              <FileUp className="w-4 h-4 text-gray-500" />
+                              <FileUp className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                               <span>{appSettings.estatutoUrl ? 'Atualizar Estatuto' : 'Importar Estatuto'}</span>
                             </>
                           )}
@@ -5976,7 +6000,7 @@ export default function App() {
                 </div>
 
                 {/* Card Regimento */}
-                <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between relative group hover:shadow-md transition-all duration-300">
+                <div className="bg-white dark:bg-[#111] p-6 sm:p-8 rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm flex flex-col justify-between relative group hover:shadow-md transition-all duration-300">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="w-12 h-12 rounded-2xl bg-ibc-teal/10 flex items-center justify-center text-ibc-teal">
@@ -5989,7 +6013,7 @@ export default function App() {
                             Disponível
                           </span>
                         ) : (
-                          <span className="px-2.5 py-1 bg-gray-50 text-gray-400 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-nowrap flex items-center">
+                          <span className="px-2.5 py-1 bg-gray-50 dark:bg-black text-gray-400 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-nowrap flex items-center">
                             <span className="w-1.5 h-1.5 rounded-full bg-gray-300 mr-1.5" />
                             Pendente
                           </span>
@@ -5998,7 +6022,7 @@ export default function App() {
                     </div>
                     
                     <div>
-                      <h4 className="text-lg font-extrabold text-gray-900 tracking-tight">Regimento Interno</h4>
+                      <h4 className="text-lg font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">Regimento Interno</h4>
                       <p className="text-xs text-gray-400 font-medium mt-1">
                         Regulamentos práticos para convivência, rotinas e atividades no dia a dia.
                       </p>
@@ -6019,7 +6043,7 @@ export default function App() {
                     ) : (
                       <button 
                         disabled
-                        className="w-full bg-gray-100 text-gray-400 py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center space-x-2 cursor-not-allowed"
+                        className="w-full bg-gray-100 dark:bg-[#1a1a1a] text-gray-400 py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center space-x-2 cursor-not-allowed"
                       >
                         <AlertCircle className="w-4 h-4" />
                         <span>Aguardando Publicação</span>
@@ -6027,8 +6051,8 @@ export default function App() {
                     )}
 
                     {appUser?.role === 'admin' && (
-                      <div className="relative pt-2 border-t border-gray-100">
-                        <label className="w-full bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-800 py-3 px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center space-x-2 cursor-pointer transition-all border border-gray-200 border-dashed active:scale-98">
+                      <div className="relative pt-2 border-t border-gray-100 dark:border-[#222]">
+                        <label className="w-full bg-gray-50 dark:bg-black hover:bg-gray-100 dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:text-gray-100 py-3 px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center space-x-2 cursor-pointer transition-all border border-gray-200 dark:border-[#333] border-dashed active:scale-98">
                           {isUploadingRegimento ? (
                             <>
                               <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-500 mr-2" />
@@ -6036,7 +6060,7 @@ export default function App() {
                             </>
                           ) : (
                             <>
-                              <FileUp className="w-4 h-4 text-gray-500" />
+                              <FileUp className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                               <span>{appSettings.regimentoUrl ? 'Atualizar Regimento' : 'Importar Regimento'}</span>
                             </>
                           )}
@@ -6057,7 +6081,7 @@ export default function App() {
           ) : (
             <div className="max-w-6xl mx-auto space-y-10">
               {/* Scale Control Section */}
-              <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
+              <section className="bg-white dark:bg-[#111] p-8 rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-ibc-teal/5 rounded-full translate-x-1/3 -translate-y-1/3 blur-2xl pointer-events-none group-hover:bg-ibc-teal/10 transition-all duration-700" />
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
                   <div className="flex items-center space-x-4">
@@ -6065,15 +6089,15 @@ export default function App() {
                       <Maximize2 className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-extrabold text-gray-900 tracking-tight">Tamanho da Interface</h3>
+                      <h3 className="text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">Tamanho da Interface</h3>
                       <p className="text-sm text-gray-400 font-medium mt-1">Ajuste o zoom do aplicativo para melhor visualização profissional.</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl border border-gray-100">
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-black p-2 rounded-2xl border border-gray-100 dark:border-[#222]">
                     <button 
                       onClick={() => setUiScale(prev => Math.max(prev - 0.1, 0.7))}
-                      className="w-12 h-12 bg-white text-ibc-teal border border-ibc-teal/20 rounded-xl flex items-center justify-center hover:bg-ibc-teal/5 transition-all active:scale-95 shadow-sm"
+                      className="w-12 h-12 bg-white dark:bg-[#111] text-ibc-teal border border-ibc-teal/20 rounded-xl flex items-center justify-center hover:bg-ibc-teal/5 transition-all active:scale-95 shadow-sm"
                       title="Diminuir Zoom"
                     >
                       <Minus className="w-5 h-5" />
@@ -6092,11 +6116,11 @@ export default function App() {
                       <Plus className="w-5 h-5" />
                     </button>
 
-                    <div className="w-px h-8 bg-gray-200 mx-1" />
+                    <div className="w-px h-8 bg-gray-200 dark:bg-[#222] mx-1" />
 
                     <button 
                       onClick={() => setUiScale(1)}
-                      className="px-4 h-12 bg-gray-100 text-gray-500 rounded-xl flex items-center justify-center hover:bg-gray-200 transition-all active:scale-95 text-xs font-black uppercase tracking-widest"
+                      className="px-4 h-12 bg-gray-100 dark:bg-[#1a1a1a] text-gray-500 dark:text-gray-400 rounded-xl flex items-center justify-center hover:bg-gray-200 dark:bg-[#222] transition-all active:scale-95 text-xs font-black uppercase tracking-widest"
                       title="Resetar para 100%"
                     >
                       Reset
@@ -6115,7 +6139,7 @@ export default function App() {
                       <div className="w-10 h-10 rounded-xl bg-ibc-blue text-white flex items-center justify-center shadow-lg shadow-ibc-blue/20">
                         <Share className="w-5 h-5" />
                       </div>
-                      <h4 className="text-xl font-extrabold text-gray-900 tracking-tight">Compartilhar Aplicativo</h4>
+                      <h4 className="text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">Compartilhar Aplicativo</h4>
                     </div>
                     <button 
                       onClick={handleShareApp}
@@ -6127,13 +6151,13 @@ export default function App() {
                   </div>
 
                   <div className="space-y-4">
-                    <p className="text-sm text-gray-500 font-medium leading-relaxed max-w-2xl">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium leading-relaxed max-w-2xl">
                       Divulgue o acesso à plataforma para outros membros da secretaria ou diretoria. 
                       Este é o link oficial para acesso externo através de qualquer navegador.
                     </p>
                     
                     <div className="flex items-center space-x-3">
-                      <div className="flex-1 bg-white border border-blue-100 p-3 sm:p-4 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm text-gray-600 font-bold font-mono outline-none shadow-inner overflow-hidden whitespace-nowrap overflow-ellipsis">
+                      <div className="flex-1 bg-white dark:bg-[#111] border border-blue-100 p-3 sm:p-4 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm text-gray-600 dark:text-gray-300 font-bold font-mono outline-none shadow-inner overflow-hidden whitespace-nowrap overflow-ellipsis">
                         {publicAppLink}
                       </div>
                       <button 
@@ -6141,7 +6165,7 @@ export default function App() {
                           navigator.clipboard.writeText(publicAppLink);
                           showAlert("Sucesso", "Link copiado para a área de transferência!");
                         }}
-                        className="bg-white text-ibc-blue p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-blue-100 hover:bg-blue-50 transition-all shadow-sm active:scale-95 shrink-0"
+                        className="bg-white dark:bg-[#111] text-ibc-blue p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-blue-100 hover:bg-blue-50 transition-all shadow-sm active:scale-95 shrink-0"
                         title="Copiar Link"
                       >
                         <Copy className="w-5 h-5" />
@@ -6167,7 +6191,7 @@ export default function App() {
                     </p>
                     <button 
                       onClick={handleInstallClick}
-                      className="bg-white text-ibc-teal px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg hover:shadow-white/20 hover:-translate-y-1 transition-all active:scale-95 flex items-center"
+                      className="bg-white dark:bg-[#111] text-ibc-teal px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg hover:shadow-white/20 hover:-translate-y-1 transition-all active:scale-95 flex items-center"
                     >
                       <Download className="w-4 h-4 mr-2" />
                       Instalar Agora
@@ -6181,14 +6205,14 @@ export default function App() {
                 <section className="glass-card p-4 sm:p-8 rounded-[3rem] border border-white/40 shadow-sm">
                   <div className="flex items-center justify-between mb-6 sm:mb-8">
                     <div>
-                      <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight">Identidade Visual & App</h3>
+                      <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">Identidade Visual & App</h3>
                       <p className="text-sm text-gray-400 font-medium mt-1">Personalize a identidade da sua igreja no sistema.</p>
                     </div>
                   </div>
 
                   <div className="space-y-8">
-                    <div className="flex flex-col sm:flex-row items-center gap-8 p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
-                      <div className="w-32 h-32 bg-white rounded-2xl border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm p-1">
+                    <div className="flex flex-col sm:flex-row items-center gap-8 p-6 bg-gray-50/50 rounded-2xl border border-gray-100 dark:border-[#222]">
+                      <div className="w-32 h-32 bg-white dark:bg-[#111] rounded-2xl border border-gray-200 dark:border-[#333] flex items-center justify-center overflow-hidden shadow-sm p-1">
                         <img 
                           src={currentLogo} 
                           alt={appSettings.appName} 
@@ -6196,8 +6220,8 @@ export default function App() {
                         />
                       </div>
                       <div className="flex-1 space-y-4">
-                        <h4 className="text-sm font-bold text-gray-900">Foto de Perfil do Aplicativo</h4>
-                        <p className="text-xs text-gray-500 leading-relaxed">
+                        <h4 className="text-sm font-bold text-gray-900 dark:text-gray-50">Foto de Perfil do Aplicativo</h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                           Esta imagem será utilizada como <strong>ícone oficial do aplicativo (PWA)</strong> em celulares e computadores, 
                           além de aparecer na tela de login e barra lateral. 
                           O sistema ajustará automaticamente para o formato quadrado.
@@ -6257,7 +6281,7 @@ export default function App() {
                                 showAlert("Sucesso", "Nome do aplicativo atualizado!");
                               }
                             }}
-                            className="flex-1 p-3 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-ibc-teal/20"
+                            className="flex-1 p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-ibc-teal/20"
                             placeholder="Ex: IBC Coqueiral"
                           />
                         </div>
@@ -6283,7 +6307,7 @@ export default function App() {
                               showAlert("Sucesso", "CNPJ atualizado!");
                             }
                           }}
-                          className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-ibc-teal/20"
+                          className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-ibc-teal/20"
                           placeholder="00.000.000/0000-00"
                         />
                       </div>
@@ -6293,10 +6317,10 @@ export default function App() {
               )}
 
               {appUser?.isFullAdmin && (
-                <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                <section className="bg-white dark:bg-[#111] p-8 rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm">
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <h3 className="text-xl font-extrabold text-gray-900 tracking-tight">Backup de Dados</h3>
+                      <h3 className="text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">Backup de Dados</h3>
                       <p className="text-sm text-gray-400 font-medium mt-1">Baixe uma cópia de todos os dados do sistema.</p>
                     </div>
                     <button 
@@ -6318,10 +6342,10 @@ export default function App() {
 
               {/* User Management Section */}
               {appUser?.isFullAdmin && (
-                <section className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                <section className="bg-white dark:bg-[#111] p-8 rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm">
                 <div className="flex items-center justify-between mb-8">
                   <div>
-                    <h3 className="text-xl font-extrabold text-gray-900 tracking-tight">Usuários do Sistema</h3>
+                    <h3 className="text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">Usuários do Sistema</h3>
                     <p className="text-sm text-gray-400 font-medium mt-1">Gerencie quem tem acesso e níveis de permissão.</p>
                   </div>
                   <div className="flex flex-col items-end space-y-3">
@@ -6346,27 +6370,27 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="mt-10 p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
+                <div className="mt-10 p-6 bg-gray-50/50 rounded-2xl border border-gray-100 dark:border-[#222]">
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Link de Acesso Atual (Ambiente de Desenvolvimento)</h4>
                   <div className="flex items-center space-x-3">
                     <input 
                       readOnly 
                       value={window.location.origin} 
-                      className="flex-1 bg-white border border-gray-100 p-3 rounded-xl text-sm text-gray-600 font-medium outline-none focus:ring-2 focus:ring-gray-100 transition-all"
+                      className="flex-1 bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] p-3 rounded-xl text-sm text-gray-600 dark:text-gray-300 font-medium outline-none focus:ring-2 focus:ring-gray-100 transition-all"
                     />
                     <button 
                       onClick={() => {
                         navigator.clipboard.writeText(window.location.origin);
                         showAlert("Sucesso", "Link copiado!");
                       }}
-                      className="text-gray-400 hover:text-gray-600 p-3"
+                      className="text-gray-400 hover:text-gray-600 dark:text-gray-300 p-3"
                     >
                       <Copy className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
 
-                <div className="mt-10 overflow-hidden border border-gray-100 rounded-2xl">
+                <div className="mt-10 overflow-hidden border border-gray-100 dark:border-[#222] rounded-2xl">
                 {/* Table for large screens, Cards for mobile */}
                 <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full text-left">
@@ -6385,7 +6409,7 @@ export default function App() {
                           <tr key={u.id} className={cn("hover:bg-gray-50/30 transition-colors", u.status === 'pending' && "bg-amber-50/30")}>
                             <td className="px-8 py-5">
                               <div className="flex flex-col">
-                                <span className="text-sm font-semibold text-gray-700">{u.email}</span>
+                                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{u.email}</span>
                                 {u.status === 'pending' && (
                                   <span className="mt-1 w-fit inline-flex items-center px-2 py-0.5 rounded text-[8px] font-black bg-amber-100 text-amber-800 uppercase tracking-widest">
                                     Novo Acesso
@@ -6412,7 +6436,7 @@ export default function App() {
                               </span>
                             </td>
                             <td className="px-8 py-5">
-                              <p className="text-[10px] font-bold text-gray-500 uppercase">
+                              <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">
                                 {u.requestAt?.seconds ? new Date(u.requestAt.seconds * 1000).toLocaleDateString('pt-BR') : '-'}
                               </p>
                               <p className="text-[9px] text-gray-400">
@@ -6421,7 +6445,7 @@ export default function App() {
                             </td>
                             <td className="px-8 py-5">
                               <div className="flex flex-col">
-                                <p className="text-[10px] font-bold text-gray-500 uppercase">
+                                <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">
                                   {u.status === 'approved' && u.approvedAt?.seconds ? new Date(u.approvedAt.seconds * 1000).toLocaleDateString('pt-BR') : 
                                    u.status === 'blocked' && u.rejectedAt?.seconds ? new Date(u.rejectedAt.seconds * 1000).toLocaleDateString('pt-BR') : '-'}
                                 </p>
@@ -6518,7 +6542,7 @@ export default function App() {
                       <div key={u.id} className="p-4 bg-white/40 hover:bg-white/60 backdrop-blur-md transition-colors">
                         <div className="flex justify-between items-start mb-3">
                           <div className="min-w-0 mr-2">
-                            <p className="text-sm font-bold text-gray-900 truncate">{u.email}</p>
+                            <p className="text-sm font-bold text-gray-900 dark:text-gray-50 truncate">{u.email}</p>
                             <span className={cn(
                               "inline-block mt-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-sm",
                               u.role === 'admin' ? "bg-purple-500 text-white" : "bg-blue-500 text-white"
@@ -6573,7 +6597,7 @@ export default function App() {
                                 message: `Nível de ${u.email} alterado.`
                               });
                             }}
-                            className="w-full bg-gray-50 text-[10px] font-black text-ibc-teal uppercase tracking-widest py-2 rounded-xl border border-gray-100 hover:bg-ibc-teal/5 transition-all"
+                            className="w-full bg-gray-50 dark:bg-black text-[10px] font-black text-ibc-teal uppercase tracking-widest py-2 rounded-xl border border-gray-100 dark:border-[#222] hover:bg-ibc-teal/5 transition-all"
                           >
                             Tornar {u.role === 'admin' ? 'Usuário Comum' : 'Administrador'}
                           </button>
@@ -6598,7 +6622,7 @@ export default function App() {
         title="Compartilhar Aplicativo"
       >
         <div className="space-y-6">
-          <p className="text-sm text-gray-500 font-medium text-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-medium text-center">
             Escolha como você deseja compartilhar o link do sistema da {appSettings.appName}.
           </p>
           
@@ -6652,12 +6676,12 @@ export default function App() {
                 showAlert("Sucesso", "Link copiado!");
                 setIsShareModalOpen(false);
               }}
-              className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-3xl border border-gray-100 hover:bg-gray-100 transition-all group"
+              className="flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-black rounded-3xl border border-gray-100 dark:border-[#222] hover:bg-gray-100 dark:bg-[#1a1a1a] transition-all group"
             >
-              <div className="w-12 h-12 rounded-2xl bg-gray-500 text-white flex items-center justify-center mb-3 shadow-lg shadow-gray-500/20 group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 rounded-2xl bg-gray-50 dark:bg-black0 text-white flex items-center justify-center mb-3 shadow-lg shadow-gray-500/20 group-hover:scale-110 transition-transform">
                 <Copy className="w-6 h-6" />
               </div>
-              <span className="text-[10px] font-black text-gray-700 uppercase tracking-widest text-center">Copiar Link</span>
+              <span className="text-[10px] font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest text-center">Copiar Link</span>
             </button>
           </div>
         </div>
@@ -6682,7 +6706,7 @@ export default function App() {
           </div>
           
           <div className="prose prose-sm max-w-none">
-            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+            <p className="text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
               {selectedAta?.content}
             </p>
           </div>
@@ -6690,7 +6714,7 @@ export default function App() {
           {selectedAta?.photoUrl && (
             <div className="mt-6">
               <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Foto Anexada</h4>
-              <div className="rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
+              <div className="rounded-3xl overflow-hidden border border-gray-100 dark:border-[#222] shadow-sm">
                 <img 
                   src={selectedAta.photoUrl} 
                   alt="Foto da Ata" 
@@ -6703,14 +6727,14 @@ export default function App() {
 
           <div className="grid grid-cols-2 gap-8 pt-10 border-t border-gray-50">
             <div className="text-center">
-              <div className="h-px bg-gray-200 mb-2"></div>
+              <div className="h-px bg-gray-200 dark:bg-[#222] mb-2"></div>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{selectedAta?.signer1Role || "Pastor Presidente"}</p>
-              <p className="text-xs font-bold text-gray-900 mt-1">{selectedAta?.signer1Name || "____________________"}</p>
+              <p className="text-xs font-bold text-gray-900 dark:text-gray-50 mt-1">{selectedAta?.signer1Name || "____________________"}</p>
             </div>
             <div className="text-center">
-              <div className="h-px bg-gray-200 mb-2"></div>
+              <div className="h-px bg-gray-200 dark:bg-[#222] mb-2"></div>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{selectedAta?.signer2Role || "Secretário"}</p>
-              <p className="text-xs font-bold text-gray-900 mt-1">{selectedAta?.signer2Name || "____________________"}</p>
+              <p className="text-xs font-bold text-gray-900 dark:text-gray-50 mt-1">{selectedAta?.signer2Name || "____________________"}</p>
             </div>
           </div>
         </div>
@@ -6726,18 +6750,18 @@ export default function App() {
         <form onSubmit={handleSaveAta} onInput={() => setIsFormDirty(true)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Tipo</label>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Tipo</label>
               <select required name="type" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm">
                 <option value="Assembleia">Assembleia</option>
                 <option value="Reunião">Reunião</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Nº da Ata</label>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nº da Ata</label>
               <input required name="number" type="text" placeholder="001/2026" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Data</label>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Data</label>
               <input required name="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
             </div>
           </div>
@@ -6745,14 +6769,14 @@ export default function App() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Conteúdo da Ata</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Conteúdo da Ata</label>
                 <textarea required name="content" rows={12} className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm leading-relaxed shadow-sm" placeholder="Escreva o conteúdo da ata aqui..."></textarea>
               </div>
             </div>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Anexar Foto (Opcional)</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Anexar Foto (Opcional)</label>
                 <div className="relative group">
                   <input 
                     name="photo" 
@@ -6764,7 +6788,7 @@ export default function App() {
                   />
                   <label 
                     htmlFor="ata-photo-upload"
-                    className="flex items-center justify-center w-full min-h-[200px] md:min-h-[290px] border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:border-ibc-teal/40 hover:bg-ibc-teal/5 transition-all group overflow-hidden"
+                    className="flex items-center justify-center w-full min-h-[200px] md:min-h-[290px] border-2 border-dashed border-gray-200 dark:border-[#333] rounded-2xl cursor-pointer hover:border-ibc-teal/40 hover:bg-ibc-teal/5 transition-all group overflow-hidden"
                   >
                     {photoPreview ? (
                       <img src={photoPreview} className="w-full h-full object-contain max-h-[300px]" alt="Preview" referrerPolicy="no-referrer" />
@@ -6780,7 +6804,7 @@ export default function App() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Presidência</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Presidência</label>
                   <select 
                     value={signer1Role}
                     onChange={(e) => setSigner1Role(e.target.value)}
@@ -6789,12 +6813,12 @@ export default function App() {
                     <option value="Pastor Presidente">Pastor Presidente</option>
                     <option value="Vice-Presidente">Vice-Presidente</option>
                   </select>
-                  <div className="mt-2 p-2 bg-gray-50 rounded-xl border border-gray-100 text-[10px] font-bold text-gray-500">
-                    Nome: <span className="text-gray-900">{getMemberNameByFunction(signer1Role) || "Não encontrado"}</span>
+                  <div className="mt-2 p-2 bg-gray-50 dark:bg-black rounded-xl border border-gray-100 dark:border-[#222] text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                    Nome: <span className="text-gray-900 dark:text-gray-50">{getMemberNameByFunction(signer1Role) || "Não encontrado"}</span>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Secretaria</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Secretaria</label>
                   <select 
                     value={signer2Role}
                     onChange={(e) => setSigner2Role(e.target.value)}
@@ -6803,8 +6827,8 @@ export default function App() {
                     <option value="Secretário 1">Secretário 1</option>
                     <option value="Secretário 2">Secretário 2</option>
                   </select>
-                  <div className="mt-2 p-2 bg-gray-50 rounded-xl border border-gray-100 text-[10px] font-bold text-gray-500">
-                    Nome: <span className="text-gray-900">{getMemberNameByFunction(signer2Role) || "Não encontrado"}</span>
+                  <div className="mt-2 p-2 bg-gray-50 dark:bg-black rounded-xl border border-gray-100 dark:border-[#222] text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                    Nome: <span className="text-gray-900 dark:text-gray-50">{getMemberNameByFunction(signer2Role) || "Não encontrado"}</span>
                   </div>
                 </div>
               </div>
@@ -6837,18 +6861,18 @@ export default function App() {
           <form onSubmit={handleEditAta} onInput={() => setIsFormDirty(true)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Tipo</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Tipo</label>
                 <select required name="type" defaultValue={selectedAta.type} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm">
                   <option value="Assembleia">Assembleia</option>
                   <option value="Reunião">Reunião</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Nº da Ata</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nº da Ata</label>
                 <input required name="number" type="text" defaultValue={selectedAta.number} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Data</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Data</label>
                 <input required name="date" type="date" defaultValue={selectedAta.date} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
               </div>
             </div>
@@ -6856,14 +6880,14 @@ export default function App() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Conteúdo da Ata</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Conteúdo da Ata</label>
                   <textarea required name="content" rows={12} defaultValue={selectedAta.content} className="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm leading-relaxed shadow-sm" placeholder="Escreva o conteúdo da ata aqui..."></textarea>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Alterar Foto (Opcional)</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Alterar Foto (Opcional)</label>
                   <div className="relative group">
                     <input 
                       name="photo" 
@@ -6875,7 +6899,7 @@ export default function App() {
                     />
                     <label 
                       htmlFor="edit-ata-photo-upload"
-                      className="flex items-center justify-center w-full min-h-[200px] md:min-h-[290px] border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:border-ibc-teal/40 hover:bg-ibc-teal/5 transition-all group overflow-hidden"
+                      className="flex items-center justify-center w-full min-h-[200px] md:min-h-[290px] border-2 border-dashed border-gray-200 dark:border-[#333] rounded-2xl cursor-pointer hover:border-ibc-teal/40 hover:bg-ibc-teal/5 transition-all group overflow-hidden"
                     >
                       {photoPreview || selectedAta.photoUrl ? (
                         <img src={photoPreview || selectedAta.photoUrl} className="w-full h-full object-contain max-h-[300px]" alt="Preview" referrerPolicy="no-referrer" />
@@ -6894,7 +6918,7 @@ export default function App() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Presidência</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Presidência</label>
                     <select 
                       value={signer1Role}
                       onChange={(e) => setSigner1Role(e.target.value)}
@@ -6903,12 +6927,12 @@ export default function App() {
                       <option value="Pastor Presidente">Pastor Presidente</option>
                       <option value="Vice-Presidente">Vice-Presidente</option>
                     </select>
-                    <div className="mt-2 p-2 bg-gray-50 rounded-xl border border-gray-100 text-[10px] font-bold text-gray-500">
-                      Nome: <span className="text-gray-900">{getMemberNameByFunction(signer1Role) || "Não encontrado"}</span>
+                    <div className="mt-2 p-2 bg-gray-50 dark:bg-black rounded-xl border border-gray-100 dark:border-[#222] text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                      Nome: <span className="text-gray-900 dark:text-gray-50">{getMemberNameByFunction(signer1Role) || "Não encontrado"}</span>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Secretaria</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Secretaria</label>
                     <select 
                       value={signer2Role}
                       onChange={(e) => setSigner2Role(e.target.value)}
@@ -6917,8 +6941,8 @@ export default function App() {
                       <option value="Secretário 1">Secretário 1</option>
                       <option value="Secretário 2">Secretário 2</option>
                     </select>
-                    <div className="mt-2 p-2 bg-gray-50 rounded-xl border border-gray-100 text-[10px] font-bold text-gray-500">
-                      Nome: <span className="text-gray-900">{getMemberNameByFunction(signer2Role) || "Não encontrado"}</span>
+                    <div className="mt-2 p-2 bg-gray-50 dark:bg-black rounded-xl border border-gray-100 dark:border-[#222] text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                      Nome: <span className="text-gray-900 dark:text-gray-50">{getMemberNameByFunction(signer2Role) || "Não encontrado"}</span>
                     </div>
                   </div>
                 </div>
@@ -6960,9 +6984,9 @@ export default function App() {
           
           <div>
             <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Visualização do Modelo (50 linhas)</h4>
-            <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 space-y-3">
+            <div className="bg-gray-50 dark:bg-black p-6 rounded-3xl border border-gray-100 dark:border-[#222] space-y-3">
               {[1, 2, 3, 4, 5].map(n => (
-                <div key={n} className="flex items-center space-x-3 border-b border-gray-200 pb-2">
+                <div key={n} className="flex items-center space-x-3 border-b border-gray-200 dark:border-[#333] pb-2">
                   <span className="text-[10px] font-bold text-gray-300">{n}.</span>
                   <div className="h-4 w-full bg-transparent"></div>
                 </div>
@@ -6984,19 +7008,19 @@ export default function App() {
         <form onSubmit={handleAddPresenca} onInput={() => setIsFormDirty(true)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Tipo</label>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Tipo</label>
               <select required name="type" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal">
                 <option value="Assembleia">Assembleia</option>
                 <option value="Reunião">Reunião</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Nº da Ata</label>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nº da Ata</label>
               <input required name="ataNumber" type="text" placeholder="001/2026" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Data</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Data</label>
             <input required name="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" />
           </div>
           <div className="bg-ibc-teal/5 p-4 rounded-2xl border border-ibc-teal/10">
@@ -7029,19 +7053,19 @@ export default function App() {
           <form onSubmit={handleEditPresenca} onInput={() => setIsFormDirty(true)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Tipo</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Tipo</label>
                 <select required name="type" defaultValue={selectedPresenca.type} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal">
                   <option value="Assembleia">Assembleia</option>
                   <option value="Reunião">Reunião</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Nº da Ata</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nº da Ata</label>
                 <input required name="ataNumber" type="text" defaultValue={selectedPresenca.ataNumber} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Data</label>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Data</label>
               <input required name="date" type="date" defaultValue={selectedPresenca.date} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" />
             </div>
             <div className="bg-ibc-teal/5 p-4 rounded-2xl border border-ibc-teal/10">
@@ -7075,9 +7099,9 @@ export default function App() {
         {isMinistryMembersModalOpen && selectedMinistry && (
           <div className="space-y-6">
           {/* Descrição do Ministério */}
-          <div className="pb-4 border-b border-gray-100">
+          <div className="pb-4 border-b border-gray-100 dark:border-[#222]">
             <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Descrição do Ministério</h5>
-            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 italic text-gray-600 leading-relaxed text-sm">
+            <div className="p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] italic text-gray-600 dark:text-gray-300 leading-relaxed text-sm">
               {selectedMinistry?.description || "Descrição não informada"}
             </div>
           </div>
@@ -7085,14 +7109,14 @@ export default function App() {
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
               <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Participantes</h5>
-              <div className="relative flex items-center bg-gray-50 border border-gray-100 rounded-xl px-2 py-1 select-none">
+              <div className="relative flex items-center bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-xl px-2 py-1 select-none">
                 <Search className="w-3.5 h-3.5 text-gray-400 mr-1 shrink-0" />
                 <input 
                   type="text" 
                   placeholder="Buscar participante..." 
                   value={ministrySearchQuery}
                   onChange={(e) => setMinistrySearchQuery(e.target.value)}
-                  className="bg-transparent text-xs font-bold outline-none text-gray-700 w-36 placeholder:text-gray-300"
+                  className="bg-transparent text-xs font-bold outline-none text-gray-700 dark:text-gray-200 w-36 placeholder:text-gray-300"
                 />
                 {ministrySearchQuery && (
                   <button onClick={() => setMinistrySearchQuery('')} className="text-gray-400 hover:text-red-500 ml-1">
@@ -7132,7 +7156,7 @@ export default function App() {
               return (
                 <div className="space-y-2">
                   {filteredMinistryMembers.map((member) => (
-                    <div key={member.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                    <div key={member.id} className="flex items-center space-x-4 p-3 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222]">
                       <div className="w-10 h-10 rounded-xl bg-ibc-blue flex items-center justify-center text-white font-bold overflow-hidden animate-fade-in">
                         {member.photoUrl ? (
                           <img src={member.photoUrl} alt={member.name} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
@@ -7141,7 +7165,7 @@ export default function App() {
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-gray-900">{member.name}</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-gray-50">{member.name}</p>
                         <p className="text-[10px] text-ibc-teal font-bold uppercase tracking-widest">{member.function}</p>
                       </div>
                     </div>
@@ -7164,22 +7188,22 @@ export default function App() {
       >
         <form onSubmit={handleAddMinistry} onInput={() => setIsFormDirty(true)} className="space-y-6 pb-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">Nome do Ministério</label>
-            <input required name="name" type="text" className="w-full p-3 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" />
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Nome do Ministério</label>
+            <input required name="name" type="text" className="w-full p-3 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">Descrição do Ministério (Opcional)</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Descrição do Ministério (Opcional)</label>
             <textarea 
               name="description" 
               placeholder="Descreva as responsabilidades, propósitos e atividades deste ministério..."
               rows={12}
-              className="w-full p-4 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-80 sm:h-[28rem] min-h-[16rem] custom-scrollbar" 
+              className="w-full p-4 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-80 sm:h-[28rem] min-h-[16rem] custom-scrollbar" 
             />
           </div>
           
-          <div className="pt-6 border-t border-gray-100">
-            <label className="block text-sm font-bold text-gray-700 mb-2">Cor de Identificação</label>
-            <div className="flex items-center space-x-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+          <div className="pt-6 border-t border-gray-100 dark:border-[#222]">
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Cor de Identificação</label>
+            <div className="flex items-center space-x-3 bg-gray-50 dark:bg-black p-4 rounded-2xl border border-gray-100 dark:border-[#222]">
               <input required name="color" type="color" defaultValue="#064a8f" className="w-12 h-12 rounded-xl border-none cursor-pointer" />
               <p className="text-xs text-gray-400 font-medium">Escolha uma cor para representar este ministério.</p>
             </div>
@@ -7210,23 +7234,23 @@ export default function App() {
       >
         <form onSubmit={handleEditMinistry} onInput={() => setIsFormDirty(true)} className="space-y-6 pb-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">Nome do Ministério</label>
-            <input required name="name" type="text" defaultValue={selectedMinistry?.name} className="w-full p-3 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" />
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Nome do Ministério</label>
+            <input required name="name" type="text" defaultValue={selectedMinistry?.name} className="w-full p-3 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">Descrição do Ministério (Opcional)</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Descrição do Ministério (Opcional)</label>
             <textarea 
               name="description" 
               defaultValue={selectedMinistry?.description || ''}
               placeholder="Descreva as responsabilidades, propósitos e atividades deste ministério..."
               rows={12}
-              className="w-full p-4 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-80 sm:h-[28rem] min-h-[16rem] custom-scrollbar" 
+              className="w-full p-4 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-80 sm:h-[28rem] min-h-[16rem] custom-scrollbar" 
             />
           </div>
           
-          <div className="pt-6 border-t border-gray-100">
-            <label className="block text-sm font-bold text-gray-700 mb-2">Cor de Identificação</label>
-            <div className="flex items-center space-x-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+          <div className="pt-6 border-t border-gray-100 dark:border-[#222]">
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Cor de Identificação</label>
+            <div className="flex items-center space-x-3 bg-gray-50 dark:bg-black p-4 rounded-2xl border border-gray-100 dark:border-[#222]">
               <input required name="color" type="color" defaultValue={selectedMinistry?.color} className="w-12 h-12 rounded-xl border-none cursor-pointer" />
               <p className="text-xs text-gray-400 font-medium">Escolha uma cor para representar este ministério.</p>
             </div>
@@ -7257,7 +7281,7 @@ export default function App() {
           <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Nome Completo</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nome Completo</label>
                   <input 
                     required 
                     name="name" 
@@ -7273,7 +7297,7 @@ export default function App() {
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-sm font-bold text-gray-700">Função</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200">Função</label>
                     <button 
                       type="button"
                       onClick={() => {
@@ -7300,7 +7324,7 @@ export default function App() {
                     <select 
                       required 
                       name="function"
-                      className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal bg-white shadow-sm"
+                      className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal bg-white dark:bg-[#111] shadow-sm"
                     >
                       <option value="">Selecionar Função...</option>
                       {memberFunctions.map((f) => (
@@ -7310,41 +7334,41 @@ export default function App() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Sexo</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Sexo</label>
                   <div className="grid grid-cols-2 gap-2">
                     <label className="flex items-center justify-center p-2 border rounded-2xl cursor-pointer hover:bg-ibc-teal/5 hover:border-ibc-teal transition-all group">
                       <input required type="radio" name="gender" value="Homem" className="sr-only" />
                       <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 rounded-full border-2 border-gray-300 group-has-[:checked]:border-ibc-teal group-has-[:checked]:bg-ibc-teal flex items-center justify-center">
-                          <div className="w-1.5 h-1.5 rounded-full bg-white opacity-0 group-has-[:checked]:opacity-100" />
+                        <div className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-[#444] group-has-[:checked]:border-ibc-teal group-has-[:checked]:bg-ibc-teal flex items-center justify-center">
+                          <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-[#111] opacity-0 group-has-[:checked]:opacity-100" />
                         </div>
-                        <span className="text-xs font-bold text-gray-600 group-has-[:checked]:text-ibc-teal">Homem</span>
+                        <span className="text-xs font-bold text-gray-600 dark:text-gray-300 group-has-[:checked]:text-ibc-teal">Homem</span>
                       </div>
                     </label>
                     <label className="flex items-center justify-center p-2 border rounded-2xl cursor-pointer hover:bg-ibc-teal/5 hover:border-ibc-teal transition-all group">
                       <input required type="radio" name="gender" value="Mulher" className="sr-only" />
                       <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 rounded-full border-2 border-gray-300 group-has-[:checked]:border-ibc-teal group-has-[:checked]:bg-ibc-teal flex items-center justify-center">
-                          <div className="w-1.5 h-1.5 rounded-full bg-white opacity-0 group-has-[:checked]:opacity-100" />
+                        <div className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-[#444] group-has-[:checked]:border-ibc-teal group-has-[:checked]:bg-ibc-teal flex items-center justify-center">
+                          <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-[#111] opacity-0 group-has-[:checked]:opacity-100" />
                         </div>
-                        <span className="text-xs font-bold text-gray-600 group-has-[:checked]:text-ibc-teal">Mulher</span>
+                        <span className="text-xs font-bold text-gray-600 dark:text-gray-300 group-has-[:checked]:text-ibc-teal">Mulher</span>
                       </div>
                     </label>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Nascimento (Opcional)</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nascimento (Opcional)</label>
                   <input name="birthDate" type="date" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Data de Batismo (Opcional)</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Data de Batismo (Opcional)</label>
                   <input name="startDate" type="date" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
                 </div>
 
-                <div className="md:col-span-2 border-t border-gray-100 pt-4">
+                <div className="md:col-span-2 border-t border-gray-100 dark:border-[#222] pt-4">
                   <h4 className="text-xs font-black text-ibc-teal uppercase tracking-widest mb-3">Celular / Contato</h4>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Celular (com DDD)</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Celular (com DDD)</label>
                     <input 
                       name="celular" 
                       type="text" 
@@ -7355,11 +7379,11 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="md:col-span-2 border-t border-gray-100 pt-4">
+                <div className="md:col-span-2 border-t border-gray-100 dark:border-[#222] pt-4">
                   <h4 className="text-xs font-black text-ibc-teal uppercase tracking-widest mb-3">Endereço</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">CEP</label>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">CEP</label>
                       <input 
                         name="cep" 
                         type="text" 
@@ -7372,7 +7396,7 @@ export default function App() {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Logradouro (Rua/Avenida)</label>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Logradouro (Rua/Avenida)</label>
                       <input 
                         name="logradouro" 
                         type="text" 
@@ -7381,7 +7405,7 @@ export default function App() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Número</label>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Número</label>
                       <input 
                         name="numero" 
                         type="text" 
@@ -7390,7 +7414,7 @@ export default function App() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Complemento</label>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Complemento</label>
                       <input 
                         name="complemento" 
                         type="text" 
@@ -7399,7 +7423,7 @@ export default function App() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Bairro</label>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Bairro</label>
                       <input 
                         name="bairro" 
                         type="text" 
@@ -7408,7 +7432,7 @@ export default function App() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Cidade</label>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Cidade</label>
                       <input 
                         name="cidade" 
                         type="text" 
@@ -7417,7 +7441,7 @@ export default function App() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Estado</label>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Estado</label>
                       <input 
                         name="estado" 
                         type="text" 
@@ -7426,7 +7450,7 @@ export default function App() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">País</label>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">País</label>
                       <input 
                         name="pais" 
                         type="text" 
@@ -7440,7 +7464,7 @@ export default function App() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Foto de Perfil</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Foto de Perfil</label>
                 <div className="flex flex-col items-center space-y-4">
                   {photoPreview && (
                     <div className="relative w-32 h-32 rounded-2xl overflow-hidden shadow-lg border-4 border-white">
@@ -7454,9 +7478,9 @@ export default function App() {
                       </button>
                     </div>
                   )}
-                  <label className="flex items-center justify-center gap-2 w-full px-4 py-4 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:border-ibc-teal hover:bg-gray-50 transition-all">
+                  <label className="flex items-center justify-center gap-2 w-full px-4 py-4 border-2 border-dashed border-gray-200 dark:border-[#333] rounded-2xl cursor-pointer hover:border-ibc-teal hover:bg-gray-50 dark:bg-black transition-all">
                     <Upload className="w-4 h-4 text-gray-400" />
-                    <span className="text-xs font-bold text-gray-600">{photoPreview ? "Alterar Foto" : "Anexar Foto"}</span>
+                    <span className="text-xs font-bold text-gray-600 dark:text-gray-300">{photoPreview ? "Alterar Foto" : "Anexar Foto"}</span>
                     <input 
                       type="file" 
                       className="hidden" 
@@ -7468,15 +7492,15 @@ export default function App() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Ministérios</label>
-                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-4 shadow-inner">
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Ministérios</label>
+                <div className="p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] space-y-4 shadow-inner">
                   {tempMemberMinistries.map((mm, idx) => {
                     const ministry = ministries.find(m => m.id === mm.ministryId);
                     return (
-                      <div key={idx} className="flex items-center justify-between p-2 bg-white rounded-xl border border-gray-100 shadow-sm">
+                      <div key={idx} className="flex items-center justify-between p-2 bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-sm">
                         <div className="flex items-center space-x-2">
                           <span className="text-[10px] font-black bg-ibc-teal/10 text-ibc-teal px-2 py-0.5 rounded-lg uppercase">{mm.role}</span>
-                          <span className="text-xs font-bold text-gray-700">{ministry?.name || "Ministério Removido"}</span>
+                          <span className="text-xs font-bold text-gray-700 dark:text-gray-200">{ministry?.name || "Ministério Removido"}</span>
                         </div>
                         <button 
                           type="button"
@@ -7517,7 +7541,7 @@ export default function App() {
                             setIsAddingNewMinistryRole(false);
                             setNewMinistryRoleValue("");
                           }}
-                          className="p-1 text-gray-400 hover:text-gray-600"
+                          className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-300"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -7566,15 +7590,15 @@ export default function App() {
               </div>
 
               <div className="space-y-4">
-                <label className="block text-sm font-bold text-gray-700">Parentesco / Família</label>
-                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-4 shadow-inner">
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200">Parentesco / Família</label>
+                <div className="p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] space-y-4 shadow-inner">
                   {tempRelationships.map((rel, idx) => {
                     const relative = members.find(m => m.id === rel.memberId);
                     return (
-                      <div key={idx} className="flex items-center justify-between p-2 bg-white rounded-xl border border-gray-100 shadow-sm">
+                      <div key={idx} className="flex items-center justify-between p-2 bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-sm">
                         <div className="flex items-center space-x-2">
                           <span className="text-[10px] font-black bg-ibc-teal/10 text-ibc-teal px-2 py-0.5 rounded-lg uppercase">{getGenderedKinship(rel.type, relative?.gender)}</span>
-                          <span className="text-xs font-bold text-gray-700">{relative?.name}</span>
+                          <span className="text-xs font-bold text-gray-700 dark:text-gray-200">{relative?.name}</span>
                         </div>
                         <button 
                           type="button"
@@ -7649,7 +7673,7 @@ export default function App() {
             <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Nome Completo</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nome Completo</label>
                     <input 
                       required 
                       name="name" 
@@ -7666,7 +7690,7 @@ export default function App() {
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="block text-sm font-bold text-gray-700">Função</label>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200">Função</label>
                       <button 
                         type="button"
                         onClick={() => {
@@ -7694,7 +7718,7 @@ export default function App() {
                         required 
                         name="function"
                         defaultValue={selectedMember?.function}
-                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal bg-white shadow-sm"
+                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal bg-white dark:bg-[#111] shadow-sm"
                       >
                         <option value="">Selecionar Função...</option>
                         {memberFunctions.map((f) => (
@@ -7704,41 +7728,41 @@ export default function App() {
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Sexo</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Sexo</label>
                     <div className="grid grid-cols-2 gap-2">
                       <label className="flex items-center justify-center p-2 border rounded-2xl cursor-pointer hover:bg-ibc-teal/5 hover:border-ibc-teal transition-all group">
                         <input required type="radio" name="gender" value="Homem" defaultChecked={selectedMember?.gender === 'Homem'} className="sr-only" />
                         <div className="flex items-center space-x-2">
-                          <div className="w-4 h-4 rounded-full border-2 border-gray-300 group-has-[:checked]:border-ibc-teal group-has-[:checked]:bg-ibc-teal flex items-center justify-center">
-                            <div className="w-1.5 h-1.5 rounded-full bg-white opacity-0 group-has-[:checked]:opacity-100" />
+                          <div className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-[#444] group-has-[:checked]:border-ibc-teal group-has-[:checked]:bg-ibc-teal flex items-center justify-center">
+                            <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-[#111] opacity-0 group-has-[:checked]:opacity-100" />
                           </div>
-                          <span className="text-xs font-bold text-gray-600 group-has-[:checked]:text-ibc-teal">Homem</span>
+                          <span className="text-xs font-bold text-gray-600 dark:text-gray-300 group-has-[:checked]:text-ibc-teal">Homem</span>
                         </div>
                       </label>
                       <label className="flex items-center justify-center p-2 border rounded-2xl cursor-pointer hover:bg-ibc-teal/5 hover:border-ibc-teal transition-all group">
                         <input required type="radio" name="gender" value="Mulher" defaultChecked={selectedMember?.gender === 'Mulher'} className="sr-only" />
                         <div className="flex items-center space-x-2">
-                          <div className="w-4 h-4 rounded-full border-2 border-gray-300 group-has-[:checked]:border-ibc-teal group-has-[:checked]:bg-ibc-teal flex items-center justify-center">
-                            <div className="w-1.5 h-1.5 rounded-full bg-white opacity-0 group-has-[:checked]:opacity-100" />
+                          <div className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-[#444] group-has-[:checked]:border-ibc-teal group-has-[:checked]:bg-ibc-teal flex items-center justify-center">
+                            <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-[#111] opacity-0 group-has-[:checked]:opacity-100" />
                           </div>
-                          <span className="text-xs font-bold text-gray-600 group-has-[:checked]:text-ibc-teal">Mulher</span>
+                          <span className="text-xs font-bold text-gray-600 dark:text-gray-300 group-has-[:checked]:text-ibc-teal">Mulher</span>
                         </div>
                       </label>
                     </div>
                   </div>
                    <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Nascimento (Opcional)</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nascimento (Opcional)</label>
                     <input name="birthDate" type="date" defaultValue={selectedMember?.birthDate} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Data de Batismo (Opcional)</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Data de Batismo (Opcional)</label>
                     <input name="startDate" type="date" defaultValue={selectedMember?.startDate} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
                   </div>
 
-                  <div className="md:col-span-2 border-t border-gray-100 pt-4">
+                  <div className="md:col-span-2 border-t border-gray-100 dark:border-[#222] pt-4">
                     <h4 className="text-xs font-black text-ibc-teal uppercase tracking-widest mb-3">Celular / Contato</h4>
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Celular (com DDD)</label>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Celular (com DDD)</label>
                       <input 
                         name="celular" 
                         type="text" 
@@ -7750,11 +7774,11 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="md:col-span-2 border-t border-gray-100 pt-4">
+                  <div className="md:col-span-2 border-t border-gray-100 dark:border-[#222] pt-4">
                     <h4 className="text-xs font-black text-ibc-teal uppercase tracking-widest mb-3">Endereço</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">CEP</label>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">CEP</label>
                         <input 
                           name="cep" 
                           type="text" 
@@ -7768,7 +7792,7 @@ export default function App() {
                         />
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Logradouro (Rua/Avenida)</label>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Logradouro (Rua/Avenida)</label>
                         <input 
                           name="logradouro" 
                           type="text" 
@@ -7778,7 +7802,7 @@ export default function App() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Número</label>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Número</label>
                         <input 
                           name="numero" 
                           type="text" 
@@ -7788,7 +7812,7 @@ export default function App() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Complemento</label>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Complemento</label>
                         <input 
                           name="complemento" 
                           type="text" 
@@ -7798,7 +7822,7 @@ export default function App() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Bairro</label>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Bairro</label>
                         <input 
                           name="bairro" 
                           type="text" 
@@ -7808,7 +7832,7 @@ export default function App() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Cidade</label>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Cidade</label>
                         <input 
                           name="cidade" 
                           type="text" 
@@ -7818,7 +7842,7 @@ export default function App() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Estado</label>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Estado</label>
                         <input 
                           name="estado" 
                           type="text" 
@@ -7828,7 +7852,7 @@ export default function App() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">País</label>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">País</label>
                         <input 
                           name="pais" 
                           type="text" 
@@ -7842,7 +7866,7 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Foto de Perfil</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Foto de Perfil</label>
                   <div className="flex flex-col items-center space-y-4">
                     {(photoPreview || selectedMember.photoUrl) && (
                       <div className="relative w-32 h-32 rounded-2xl overflow-hidden shadow-lg border-4 border-white">
@@ -7863,9 +7887,9 @@ export default function App() {
                         )}
                       </div>
                     )}
-                    <label className="flex items-center justify-center gap-2 w-full px-4 py-4 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:border-ibc-teal hover:bg-gray-50 transition-all">
+                    <label className="flex items-center justify-center gap-2 w-full px-4 py-4 border-2 border-dashed border-gray-200 dark:border-[#333] rounded-2xl cursor-pointer hover:border-ibc-teal hover:bg-gray-50 dark:bg-black transition-all">
                       <Upload className="w-4 h-4 text-gray-400" />
-                      <span className="text-xs font-bold text-gray-600">{(photoPreview || selectedMember.photoUrl) ? "Alterar Foto" : "Anexar Foto"}</span>
+                      <span className="text-xs font-bold text-gray-600 dark:text-gray-300">{(photoPreview || selectedMember.photoUrl) ? "Alterar Foto" : "Anexar Foto"}</span>
                       <input 
                         type="file" 
                         className="hidden" 
@@ -7877,20 +7901,20 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Ministérios</label>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Ministérios</label>
                   {selectedMember && selectedMember.isActive === false ? (
                     <div className="bg-red-50 p-4 rounded-2xl border border-red-100 text-red-700 text-xs font-bold leading-relaxed">
                       Membros negativados/inativos não são elegíveis para inclusão em ministérios.
                     </div>
                   ) : (
-                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-4 shadow-inner">
+                    <div className="p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] space-y-4 shadow-inner">
                       {tempMemberMinistries.map((mm, idx) => {
                         const ministry = ministries.find(m => m.id === mm.ministryId);
                         return (
-                          <div key={idx} className="flex items-center justify-between p-2 bg-white rounded-xl border border-gray-100 shadow-sm">
+                          <div key={idx} className="flex items-center justify-between p-2 bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-sm">
                             <div className="flex items-center space-x-2">
                               <span className="text-[10px] font-black bg-ibc-teal/10 text-ibc-teal px-2 py-0.5 rounded-lg uppercase">{mm.role}</span>
-                              <span className="text-xs font-bold text-gray-700">{ministry?.name || "Ministério Removido"}</span>
+                              <span className="text-xs font-bold text-gray-700 dark:text-gray-200">{ministry?.name || "Ministério Removido"}</span>
                             </div>
                             <button 
                               type="button"
@@ -7931,7 +7955,7 @@ export default function App() {
                                 setIsAddingNewMinistryRole(false);
                                 setNewMinistryRoleValue("");
                               }}
-                              className="p-1 text-gray-400 hover:text-gray-600"
+                              className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-300"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -7981,15 +8005,15 @@ export default function App() {
                 </div>
 
                 <div className="space-y-4">
-                  <label className="block text-sm font-bold text-gray-700">Parentesco / Família</label>
-                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-4 shadow-inner">
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200">Parentesco / Família</label>
+                  <div className="p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] space-y-4 shadow-inner">
                     {tempRelationships.map((rel, idx) => {
                       const relative = members.find(m => m.id === rel.memberId);
                       return (
-                        <div key={idx} className="flex items-center justify-between p-2 bg-white rounded-xl border border-gray-100 shadow-sm">
+                        <div key={idx} className="flex items-center justify-between p-2 bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-sm">
                           <div className="flex items-center space-x-2">
                             <span className="text-[10px] font-black bg-ibc-teal/10 text-ibc-teal px-2 py-0.5 rounded-lg uppercase">{getGenderedKinship(rel.type, relative?.gender)}</span>
-                            <span className="text-xs font-bold text-gray-700">{relative?.name}</span>
+                            <span className="text-xs font-bold text-gray-700 dark:text-gray-200">{relative?.name}</span>
                           </div>
                           <button 
                             type="button"
@@ -8067,7 +8091,7 @@ export default function App() {
             <div className="flex flex-col items-center">
               {/* Foto de Perfil em destaque */}
               <div className="relative mb-3 sm:mb-6">
-                <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white shadow-xl border-4 border-white overflow-hidden flex items-center justify-center ring-4 ring-gray-50">
+                <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white dark:bg-[#111] shadow-xl border-4 border-white overflow-hidden flex items-center justify-center ring-4 ring-gray-50">
                   {selectedMember.photoUrl ? (
                     <img 
                       src={selectedMember.photoUrl} 
@@ -8090,7 +8114,7 @@ export default function App() {
                 )}
               </div>
 
-              <h3 className="text-2xl font-black text-gray-900 tracking-tight text-center">{selectedMember.name}</h3>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-gray-50 tracking-tight text-center">{selectedMember.name}</h3>
               <div className="mt-2 text-ibc-teal font-black text-xs uppercase tracking-[0.2em]">{selectedMember.function}</div>
               
               {!selectedMember.isActive && (
@@ -8101,31 +8125,31 @@ export default function App() {
 
               {/* Grid de Informações Horizontais - Centralizado e Responsivo */}
               <div className="w-full max-w-3xl mt-4 sm:mt-8 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 px-4">
-                <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center text-center">
+                <div className="p-3 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] flex flex-col items-center text-center">
                   <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Sexo</div>
-                  <div className="text-sm font-bold text-gray-700">
+                  <div className="text-sm font-bold text-gray-700 dark:text-gray-200">
                     {selectedMember.gender || "—"}
                   </div>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center text-center">
+                <div className="p-3 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] flex flex-col items-center text-center">
                   <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Status</div>
                   <div className="flex items-center justify-center">
                     <span className={cn(
                       "w-2 h-2 rounded-full mr-1.5",
                       selectedMember.isActive ? "bg-green-500" : "bg-red-500"
                     )} />
-                    <span className="text-xs font-bold text-gray-700">{selectedMember.isActive ? "Ativo" : "Inativo"}</span>
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-200">{selectedMember.isActive ? "Ativo" : "Inativo"}</span>
                   </div>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center text-center">
+                <div className="p-3 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] flex flex-col items-center text-center">
                   <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Nascimento</div>
-                  <div className="text-xs font-bold text-gray-700">
+                  <div className="text-xs font-bold text-gray-700 dark:text-gray-200">
                     {selectedMember.birthDate ? safeFormatDate(selectedMember.birthDate) : "—"}
                   </div>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center text-center">
+                <div className="p-3 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] flex flex-col items-center text-center">
                   <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Batismo</div>
-                  <div className="text-xs font-bold text-gray-700">
+                  <div className="text-xs font-bold text-gray-700 dark:text-gray-200">
                     {selectedMember.startDate ? safeFormatDate(selectedMember.startDate) : "—"}
                   </div>
                 </div>
@@ -8142,19 +8166,19 @@ export default function App() {
             </div>
 
             {/* Seção Inferior: Detalhes Adicionais em Colunas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4 sm:gap-6 sm:pt-6 border-t border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4 sm:gap-6 sm:pt-6 border-t border-gray-100 dark:border-[#222]">
               {/* Ministérios */}
-              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <div className="p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222]">
                 <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Ministérios</div>
                 <div className="space-y-2">
                   {selectedMember.ministries && selectedMember.ministries.length > 0 ? (
                     selectedMember.ministries.map((mm, idx) => {
                       const m = ministries.find(min => min.id === mm.ministryId);
                       return (
-                        <div key={idx} className="flex items-center justify-between p-2 bg-white rounded-xl border border-gray-100 shadow-sm">
+                        <div key={idx} className="flex items-center justify-between p-2 bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-sm">
                           <div className="flex items-center space-x-3 overflow-hidden">
                             <div className="min-w-0">
-                              <p className="text-[11px] font-black text-gray-900 leading-tight truncate">{m?.name || "Não encontrado"}</p>
+                              <p className="text-[11px] font-black text-gray-900 dark:text-gray-50 leading-tight truncate">{m?.name || "Não encontrado"}</p>
                               <p className="text-[9px] font-bold text-ibc-teal uppercase tracking-widest mt-0.5">{mm.role}</p>
                             </div>
                           </div>
@@ -8166,7 +8190,7 @@ export default function App() {
                       {selectedMember.ministryIds.map(mid => {
                         const m = ministries.find(min => min.id === mid);
                         return (
-                          <span key={mid} className="px-3 py-1 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 shadow-sm">
+                          <span key={mid} className="px-3 py-1 bg-white dark:bg-[#111] border border-gray-200 dark:border-[#333] rounded-xl text-xs font-bold text-gray-700 dark:text-gray-200 shadow-sm">
                             {m?.name || "Ministério Removido"}
                           </span>
                         );
@@ -8179,16 +8203,16 @@ export default function App() {
               </div>
 
               {/* Família / Parentesco */}
-              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <div className="p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222]">
                 <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Família / Parentesco</div>
                 <div className="space-y-2">
                   {selectedMember.relationships && selectedMember.relationships.length > 0 ? (
                     selectedMember.relationships.map((rel, idx) => {
                       const relative = members.find(m => m.id === rel.memberId);
                       return (
-                        <div key={idx} className="flex items-center justify-between p-2 bg-white rounded-xl border border-gray-100 shadow-sm hover:border-ibc-blue/30 transition-colors">
+                        <div key={idx} className="flex items-center justify-between p-2 bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-sm hover:border-ibc-blue/30 transition-colors">
                           <div className="flex items-center space-x-3 overflow-hidden">
-                            <div className="w-8 h-8 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                            <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] overflow-hidden flex-shrink-0">
                               {relative?.photoUrl ? (
                                 <img src={relative.photoUrl} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                               ) : (
@@ -8198,7 +8222,7 @@ export default function App() {
                               )}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-[11px] font-black text-gray-900 leading-tight truncate">{relative?.name || "Não encontrado"}</p>
+                              <p className="text-[11px] font-black text-gray-900 dark:text-gray-50 leading-tight truncate">{relative?.name || "Não encontrado"}</p>
                               <p className="text-[9px] font-bold text-ibc-teal uppercase tracking-widest mt-0.5">{getGenderedKinship(rel.type, relative?.gender)}</p>
                             </div>
                           </div>
@@ -8223,22 +8247,22 @@ export default function App() {
               </div>
 
               {/* Celular / Contato */}
-              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <div className="p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222]">
                 <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Contato</div>
                 {selectedMember.celular ? (
                   <div className="space-y-3">
-                    <div className="flex items-center space-x-2.5 p-3 sm:p-3.5 bg-white rounded-xl border border-gray-100 shadow-sm leading-tight">
+                    <div className="flex items-center space-x-2.5 p-3 sm:p-3.5 bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-sm leading-tight">
                       <Phone className="w-4 h-4 text-gray-400 shrink-0" />
                       <div>
                         <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Número de Celular</div>
-                        <span className="text-xs font-bold text-gray-700">{selectedMember.celular}</span>
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-200">{selectedMember.celular}</span>
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-2">
                       <a
                         href={`tel:${getRawPhoneNumber(selectedMember.celular)}`}
-                        className="flex items-center justify-center gap-2 px-3 py-2 sm:py-2.5 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-ibc-teal shadow-sm transition-all"
+                        className="flex items-center justify-center gap-2 px-3 py-2 sm:py-2.5 bg-white dark:bg-[#111] hover:bg-gray-100 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl text-xs font-bold text-ibc-teal shadow-sm transition-all"
                       >
                         <PhoneCall className="w-3.5 h-3.5 text-ibc-teal" />
                         Ligar
@@ -8260,26 +8284,26 @@ export default function App() {
               </div>
 
               {/* Endereço */}
-              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <div className="p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222]">
                 <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Endereço</div>
                 {hasAddress(selectedMember) ? (
                   <div className="space-y-3">
-                    <div className="p-3 sm:p-3.5 bg-white rounded-xl border border-gray-100 shadow-sm text-xs font-bold text-gray-700 leading-relaxed space-y-1">
-                      <p className="font-extrabold text-gray-800">
+                    <div className="p-3 sm:p-3.5 bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-sm text-xs font-bold text-gray-700 dark:text-gray-200 leading-relaxed space-y-1">
+                      <p className="font-extrabold text-gray-800 dark:text-gray-100">
                         {selectedMember.logradouro || "Não preenchido"}{selectedMember.numero ? `, nº ${selectedMember.numero}` : ""}
                       </p>
                       {selectedMember.complemento && (
-                        <p className="text-gray-500 text-[11px] font-bold">
+                        <p className="text-gray-500 dark:text-gray-400 text-[11px] font-bold">
                           {selectedMember.complemento}
                         </p>
                       )}
                       {(selectedMember.bairro || selectedMember.cep) && (
-                        <p className="text-gray-500 text-[11px] font-bold">
+                        <p className="text-gray-500 dark:text-gray-400 text-[11px] font-bold">
                           {selectedMember.bairro || "Não preenchido"}{selectedMember.cep ? ` - CEP: ${selectedMember.cep}` : ""}
                         </p>
                       )}
                       {(selectedMember.cidade || selectedMember.estado) && (
-                        <p className="text-gray-500 text-[11px] font-bold">
+                        <p className="text-gray-500 dark:text-gray-400 text-[11px] font-bold">
                           {selectedMember.cidade || "Não preenchido"} - {selectedMember.estado || "Não preenchido"}{selectedMember.pais && `, ${selectedMember.pais}`}
                         </p>
                       )}
@@ -8289,7 +8313,7 @@ export default function App() {
                       href={getMapsUrl(selectedMember)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full px-3 py-2 sm:py-2.5 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-ibc-teal shadow-sm transition-all"
+                      className="flex items-center justify-center gap-2 w-full px-3 py-2 sm:py-2.5 bg-white dark:bg-[#111] hover:bg-gray-100 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl text-xs font-bold text-ibc-teal shadow-sm transition-all"
                     >
                       <MapPin className="w-3.5 h-3.5 text-ibc-teal" />
                       Visualizar no Mapa
@@ -8323,7 +8347,7 @@ export default function App() {
               )}
             </div>
 
-            <div className="flex space-x-3 pt-4 sm:pt-6 border-t border-gray-100">
+            <div className="flex space-x-3 pt-4 sm:pt-6 border-t border-gray-100 dark:border-[#222]">
               <button 
                 onClick={() => { 
                   setIsViewMemberModalOpen(false); 
@@ -8341,7 +8365,7 @@ export default function App() {
               </button>
               <button 
                 onClick={() => setIsViewMemberModalOpen(false)}
-                className="px-8 bg-gray-100 text-gray-500 py-3 rounded-2xl font-bold hover:bg-gray-200 transition-all active:scale-95"
+                className="px-8 bg-gray-100 dark:bg-[#1a1a1a] text-gray-500 dark:text-gray-400 py-3 rounded-2xl font-bold hover:bg-gray-200 dark:bg-[#222] transition-all active:scale-95"
               >
                 Fechar
               </button>
@@ -8356,15 +8380,15 @@ export default function App() {
         title="Negativar Membro"
       >
         <form onSubmit={handleDeactivateMember} className="space-y-4">
-          <p className="text-sm text-gray-500 mb-4">
-            Você está negativando o membro: <span className="font-bold text-gray-900">{selectedMember?.name}</span>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Você está negativando o membro: <span className="font-bold text-gray-900 dark:text-gray-50">{selectedMember?.name}</span>
           </p>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Data de Saída</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Data de Saída</label>
             <input required name="exitDate" type="date" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-red-500" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Motivo</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Motivo</label>
             <textarea required name="exitReason" rows={3} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-red-500" placeholder="Descreva o motivo da saída..."></textarea>
           </div>
           <button 
@@ -8389,15 +8413,15 @@ export default function App() {
       >
         <form onSubmit={handleAddUser} className="space-y-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Email</label>
             <input required name="email" type="email" placeholder="email@gmail.com" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Senha Inicial</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Senha Inicial</label>
             <input required name="password" type="password" placeholder="Mínimo 6 caracteres" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Nível de Acesso</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nível de Acesso</label>
             <select name="role" defaultValue="admin" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal">
               <option value="admin">Administrador (Acesso Total)</option>
               <option value="user">Usuário (Apenas Leitura/Edição Membros)</option>
@@ -8431,14 +8455,14 @@ export default function App() {
                   onClick={() => setExportFilter('ativos')}
                   className={cn(
                     "p-4 rounded-2xl border-2 transition-all text-left flex items-center justify-between group",
-                    exportFilter === 'ativos' ? "border-ibc-teal bg-ibc-teal/5 ring-1 ring-ibc-teal" : "border-gray-100 hover:border-ibc-teal/30"
+                    exportFilter === 'ativos' ? "border-ibc-teal bg-ibc-teal/5 ring-1 ring-ibc-teal" : "border-gray-100 dark:border-[#222] hover:border-ibc-teal/30"
                   )}
                 >
                   <div>
-                    <p className="font-bold text-gray-900">Apenas Ativos</p>
+                    <p className="font-bold text-gray-900 dark:text-gray-50">Apenas Ativos</p>
                     <p className="text-xs text-gray-400">Exportar membros com status Ativo.</p>
                   </div>
-                  <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all", exportFilter === 'ativos' ? "bg-ibc-teal border-ibc-teal" : "border-gray-200")}>
+                  <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all", exportFilter === 'ativos' ? "bg-ibc-teal border-ibc-teal" : "border-gray-200 dark:border-[#333]")}>
                     {exportFilter === 'ativos' && <Check className="w-3 h-3 text-white" />}
                   </div>
                 </button>
@@ -8447,14 +8471,14 @@ export default function App() {
                   onClick={() => setExportFilter('ausentes')}
                   className={cn(
                     "p-4 rounded-2xl border-2 transition-all text-left flex items-center justify-between group",
-                    exportFilter === 'ausentes' ? "border-ibc-teal bg-ibc-teal/5 ring-1 ring-ibc-teal" : "border-gray-100 hover:border-ibc-teal/30"
+                    exportFilter === 'ausentes' ? "border-ibc-teal bg-ibc-teal/5 ring-1 ring-ibc-teal" : "border-gray-100 dark:border-[#222] hover:border-ibc-teal/30"
                   )}
                 >
                   <div>
-                    <p className="font-bold text-gray-900">Apenas Ausentes</p>
+                    <p className="font-bold text-gray-900 dark:text-gray-50">Apenas Ausentes</p>
                     <p className="text-xs text-gray-400">Exportar membros marcados como Ausentes.</p>
                   </div>
-                  <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all", exportFilter === 'ausentes' ? "bg-ibc-teal border-ibc-teal" : "border-gray-200")}>
+                  <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all", exportFilter === 'ausentes' ? "bg-ibc-teal border-ibc-teal" : "border-gray-200 dark:border-[#333]")}>
                     {exportFilter === 'ausentes' && <Check className="w-3 h-3 text-white" />}
                   </div>
                 </button>
@@ -8463,14 +8487,14 @@ export default function App() {
                   onClick={() => setExportFilter('inativos')}
                   className={cn(
                     "p-4 rounded-2xl border-2 transition-all text-left flex items-center justify-between group",
-                    exportFilter === 'inativos' ? "border-ibc-teal bg-ibc-teal/5 ring-1 ring-ibc-teal" : "border-gray-100 hover:border-ibc-teal/30"
+                    exportFilter === 'inativos' ? "border-ibc-teal bg-ibc-teal/5 ring-1 ring-ibc-teal" : "border-gray-100 dark:border-[#222] hover:border-ibc-teal/30"
                   )}
                 >
                   <div>
-                    <p className="font-bold text-gray-900">Apenas Inativos</p>
+                    <p className="font-bold text-gray-900 dark:text-gray-50">Apenas Inativos</p>
                     <p className="text-xs text-gray-400">Exportar membros negativados ou inativos.</p>
                   </div>
-                  <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all", exportFilter === 'inativos' ? "bg-ibc-teal border-ibc-teal" : "border-gray-200")}>
+                  <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all", exportFilter === 'inativos' ? "bg-ibc-teal border-ibc-teal" : "border-gray-200 dark:border-[#333]")}>
                     {exportFilter === 'inativos' && <Check className="w-3 h-3 text-white" />}
                   </div>
                 </button>
@@ -8479,14 +8503,14 @@ export default function App() {
                   onClick={() => setExportFilter('todos')}
                   className={cn(
                     "p-4 rounded-2xl border-2 transition-all text-left flex items-center justify-between group",
-                    exportFilter === 'todos' ? "border-ibc-teal bg-ibc-teal/5 ring-1 ring-ibc-teal" : "border-gray-100 hover:border-ibc-teal/30"
+                    exportFilter === 'todos' ? "border-ibc-teal bg-ibc-teal/5 ring-1 ring-ibc-teal" : "border-gray-100 dark:border-[#222] hover:border-ibc-teal/30"
                   )}
                 >
                   <div>
-                    <p className="font-bold text-gray-900">Todos os Membros</p>
+                    <p className="font-bold text-gray-900 dark:text-gray-50">Todos os Membros</p>
                     <p className="text-xs text-gray-400">Exportar a lista completa de membros cadastrados.</p>
                   </div>
-                  <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all", exportFilter === 'todos' ? "bg-ibc-teal border-ibc-teal" : "border-gray-200")}>
+                  <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all", exportFilter === 'todos' ? "bg-ibc-teal border-ibc-teal" : "border-gray-200 dark:border-[#333]")}>
                     {exportFilter === 'todos' && <Check className="w-3 h-3 text-white" />}
                   </div>
                 </button>
@@ -8495,18 +8519,18 @@ export default function App() {
                   onClick={() => setExportFilter('unico')}
                   className={cn(
                     "p-4 rounded-2xl border-2 transition-all text-left flex items-center justify-between group",
-                    exportFilter === 'unico' ? "border-ibc-teal bg-ibc-teal/5 ring-1 ring-ibc-teal" : "border-gray-100 hover:border-ibc-teal/30"
+                    exportFilter === 'unico' ? "border-ibc-teal bg-ibc-teal/5 ring-1 ring-ibc-teal" : "border-gray-100 dark:border-[#222] hover:border-ibc-teal/30"
                   )}
                 >
                   <div className="flex-1">
-                    <p className="font-bold text-gray-900">Escolher um Membro</p>
+                    <p className="font-bold text-gray-900 dark:text-gray-50">Escolher um Membro</p>
                     <p className="text-xs text-gray-400">Exportar a ficha individual de um membro específico.</p>
                     {exportFilter === 'unico' && (
                       <div className="mt-4" onClick={(e) => e.stopPropagation()}>
                         <select
                           value={selectedExportMemberId}
                           onChange={(e) => setSelectedExportMemberId(e.target.value)}
-                          className="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal bg-white"
+                          className="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal bg-white dark:bg-[#111]"
                         >
                           <option value="">Selecionar membro...</option>
                           {members.sort((a,b) => a.name.localeCompare(b.name)).map(m => (
@@ -8516,7 +8540,7 @@ export default function App() {
                       </div>
                     )}
                   </div>
-                  <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ml-4", exportFilter === 'unico' ? "bg-ibc-teal border-ibc-teal" : "border-gray-200")}>
+                  <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ml-4", exportFilter === 'unico' ? "bg-ibc-teal border-ibc-teal" : "border-gray-200 dark:border-[#333]")}>
                     {exportFilter === 'unico' && <Check className="w-3 h-3 text-white" />}
                   </div>
                 </button>
@@ -8546,14 +8570,14 @@ export default function App() {
                   }}
                   className={cn(
                     "w-full p-4 rounded-2xl border-2 transition-all text-left flex items-center justify-between",
-                    selectAllFields ? "border-ibc-teal bg-ibc-teal/5" : "border-gray-100"
+                    selectAllFields ? "border-ibc-teal bg-ibc-teal/5" : "border-gray-100 dark:border-[#222]"
                   )}
                 >
                   <div>
-                    <p className="font-black text-gray-900 uppercase tracking-widest text-xs">Todas as Informações</p>
+                    <p className="font-black text-gray-900 dark:text-gray-50 uppercase tracking-widest text-xs">Todas as Informações</p>
                     <p className="text-[10px] text-gray-400 font-medium">Exportar todos os campos disponíveis no cadastro.</p>
                   </div>
-                  <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all", selectAllFields ? "bg-ibc-teal border-ibc-teal" : "border-gray-200")}>
+                  <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all", selectAllFields ? "bg-ibc-teal border-ibc-teal" : "border-gray-200 dark:border-[#333]")}>
                     {selectAllFields && <Check className="w-3 h-3 text-white" />}
                   </div>
                 </button>
@@ -8566,7 +8590,7 @@ export default function App() {
                         key={field.id}
                         className={cn(
                           "flex items-center p-3 rounded-xl border transition-all cursor-pointer",
-                          exportFields.includes(field.id) ? "border-ibc-teal bg-ibc-teal/5" : "border-gray-100 hover:border-ibc-teal/20"
+                          exportFields.includes(field.id) ? "border-ibc-teal bg-ibc-teal/5" : "border-gray-100 dark:border-[#222] hover:border-ibc-teal/20"
                         )}
                       >
                         <input
@@ -8586,11 +8610,11 @@ export default function App() {
                         />
                         <div className={cn(
                           "w-4 h-4 rounded border flex items-center justify-center mr-3 transition-all",
-                          exportFields.includes(field.id) ? "bg-ibc-teal border-ibc-teal" : "border-gray-300 bg-white"
+                          exportFields.includes(field.id) ? "bg-ibc-teal border-ibc-teal" : "border-gray-300 dark:border-[#444] bg-white dark:bg-[#111]"
                         )}>
                           {exportFields.includes(field.id) && <Check className="w-2.5 h-2.5 text-white" />}
                         </div>
-                        <span className={cn("text-xs font-bold", exportFields.includes(field.id) ? "text-ibc-teal" : "text-gray-500")}>
+                        <span className={cn("text-xs font-bold", exportFields.includes(field.id) ? "text-ibc-teal" : "text-gray-500 dark:text-gray-400")}>
                           {field.label}
                         </span>
                       </label>
@@ -8602,7 +8626,7 @@ export default function App() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setExportStep('selection')}
-                  className="flex-1 bg-gray-100 text-gray-600 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-gray-200 transition-all flex items-center justify-center"
+                  className="flex-1 bg-gray-100 dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-gray-200 dark:bg-[#222] transition-all flex items-center justify-center"
                 >
                   <ChevronLeft className="w-5 h-5 mr-2" />
                   Voltar
@@ -8629,22 +8653,22 @@ export default function App() {
       >
         <form onSubmit={handleAddFunction} onInput={() => setIsFormDirty(true)} className="space-y-6 pb-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">Nome da Função</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Nome da Função</label>
             <input 
               required 
               name="name" 
               type="text" 
               placeholder="Ex: Diácono, Presbítero, etc."
-              className="w-full p-3 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" 
+              className="w-full p-3 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" 
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">Descrição da Função</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Descrição da Função</label>
             <textarea 
               name="description" 
               placeholder="Descreva as responsabilidades e finalidade desta função..."
               rows={12}
-              className="w-full p-4 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-80 sm:h-[28rem] min-h-[16rem] custom-scrollbar" 
+              className="w-full p-4 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-80 sm:h-[28rem] min-h-[16rem] custom-scrollbar" 
             />
           </div>
           <button 
@@ -8668,23 +8692,23 @@ export default function App() {
       >
         <form onSubmit={handleEditFunction} onInput={() => setIsFormDirty(true)} className="space-y-6 pb-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">Nome da Função</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Nome da Função</label>
             <input 
               required 
               name="name" 
               type="text" 
               defaultValue={selectedFunction?.name}
-              className="w-full p-3 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" 
+              className="w-full p-3 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" 
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">Descrição da Função</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Descrição da Função</label>
             <textarea 
               name="description" 
               defaultValue={selectedFunction?.description}
               placeholder="Descreva as responsabilidades e finalidade desta função..."
               rows={12}
-              className="w-full p-4 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-80 sm:h-[28rem] min-h-[16rem] custom-scrollbar" 
+              className="w-full p-4 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-80 sm:h-[28rem] min-h-[16rem] custom-scrollbar" 
             />
           </div>
           <button 
@@ -8710,21 +8734,21 @@ export default function App() {
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-xl font-black text-gray-900">{selectedFunction?.name}</h4>
+              <h4 className="text-xl font-black text-gray-900 dark:text-gray-50">{selectedFunction?.name}</h4>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Função de Membro</p>
             </div>
           </div>
           
-          <div className="pt-4 border-t border-gray-100">
+          <div className="pt-4 border-t border-gray-100 dark:border-[#222]">
             <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Descrição da Função</h5>
-            <div className="p-5 bg-gray-50 rounded-3xl border border-gray-100 italic text-gray-600 leading-relaxed min-h-[120px]">
+            <div className="p-5 bg-gray-50 dark:bg-black rounded-3xl border border-gray-100 dark:border-[#222] italic text-gray-600 dark:text-gray-300 leading-relaxed min-h-[120px]">
               {selectedFunction?.description || "Descrição não informada"}
             </div>
           </div>
 
           <button
             onClick={() => setIsViewFunctionDetailsModalOpen(false)}
-            className="w-full bg-gray-100 text-gray-600 py-3 rounded-2xl font-bold mt-4 hover:bg-gray-200 transition-all"
+            className="w-full bg-gray-100 dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 py-3 rounded-2xl font-bold mt-4 hover:bg-gray-200 dark:bg-[#222] transition-all"
           >
             Fechar
           </button>
@@ -8738,7 +8762,7 @@ export default function App() {
       >
         <form onSubmit={handleAddRelationshipType} onInput={() => setIsFormDirty(true)} className="space-y-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Grau de Parentesco</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Grau de Parentesco</label>
             <input 
               required 
               name="name" 
@@ -8766,7 +8790,7 @@ export default function App() {
       >
         <form onSubmit={handleEditRelationshipType} onInput={() => setIsFormDirty(true)} className="space-y-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Grau de Parentesco</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Grau de Parentesco</label>
             <input 
               required 
               name="name" 
@@ -8794,7 +8818,7 @@ export default function App() {
         title={alertConfig?.title || 'Aviso'}
       >
         <div className="space-y-4">
-          <p className="text-gray-600">{alertConfig?.message}</p>
+          <p className="text-gray-600 dark:text-gray-300">{alertConfig?.message}</p>
           <button
             onClick={() => setAlertConfig(null)}
             className="w-full bg-ibc-teal text-white py-2 rounded-2xl font-bold"
@@ -8811,11 +8835,11 @@ export default function App() {
         title={confirmConfig?.title || 'Confirmar'}
       >
         <div className="space-y-4">
-          <p className="text-gray-600">{confirmConfig?.message}</p>
+          <p className="text-gray-600 dark:text-gray-300">{confirmConfig?.message}</p>
           <div className="flex space-x-3">
             <button
               onClick={() => setConfirmConfig(null)}
-              className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-2xl font-bold hover:bg-gray-200 transition-all"
+              className="flex-1 bg-gray-100 dark:bg-[#1a1a1a] text-gray-700 dark:text-gray-200 py-2 rounded-2xl font-bold hover:bg-gray-200 dark:bg-[#222] transition-all"
             >
               Cancelar
             </button>
@@ -8839,7 +8863,7 @@ export default function App() {
         title={passwordPromptConfig?.title || 'Segurança'}
       >
         <div className="space-y-4">
-          <p className="text-gray-600">{passwordPromptConfig?.message}</p>
+          <p className="text-gray-600 dark:text-gray-300">{passwordPromptConfig?.message}</p>
           <input 
             type="password"
             value={enteredPassword}
@@ -8857,7 +8881,7 @@ export default function App() {
           <div className="flex space-x-3">
             <button
               onClick={() => setPasswordPromptConfig(null)}
-              className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-2xl font-bold hover:bg-gray-200 transition-all"
+              className="flex-1 bg-gray-100 dark:bg-[#1a1a1a] text-gray-700 dark:text-gray-200 py-2 rounded-2xl font-bold hover:bg-gray-200 dark:bg-[#222] transition-all"
             >
               Cancelar
             </button>
@@ -8935,8 +8959,8 @@ export default function App() {
                   <RefreshCcw className={`w-5 h-5 text-ibc-teal ${isUpdating ? 'animate-spin' : ''}`} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900 leading-tight">Uma nova atualização está disponível.</h3>
-                  <p className="text-xs text-gray-500 font-medium leading-normal mt-0.5">Versão mais recente pronta para uso.</p>
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-gray-50 leading-tight">Uma nova atualização está disponível.</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium leading-normal mt-0.5">Versão mais recente pronta para uso.</p>
                 </div>
               </div>
               
@@ -8944,7 +8968,7 @@ export default function App() {
                 <button
                   disabled={isUpdating}
                   onClick={() => setShowUpdateBanner(false)}
-                  className="px-3 py-2 bg-gray-50 hover:bg-gray-100 disabled:opacity-50 text-gray-500 rounded-xl text-xs font-bold active:scale-95 transition-all text-center"
+                  className="px-3 py-2 bg-gray-50 dark:bg-black hover:bg-gray-100 dark:bg-[#1a1a1a] disabled:opacity-50 text-gray-500 dark:text-gray-400 rounded-xl text-xs font-bold active:scale-95 transition-all text-center"
                 >
                   Depois
                 </button>
@@ -8983,10 +9007,10 @@ export default function App() {
               initial={{ y: 200, opacity: 0, scale: 0.95 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 200, opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-sm bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+              className="relative w-full max-w-sm bg-white dark:bg-[#111] rounded-[2.5rem] shadow-2xl overflow-hidden"
             >
               <div className="bg-gradient-to-br from-ibc-teal to-teal-700 p-8 flex flex-col items-center text-center space-y-4">
-                <div className="w-20 h-20 bg-white rounded-3xl shadow-xl p-2 flex items-center justify-center overflow-hidden">
+                <div className="w-20 h-20 bg-white dark:bg-[#111] rounded-3xl shadow-xl p-2 flex items-center justify-center overflow-hidden">
                    <img 
                      src={appSettings.logoUrl || 'https://firebasestorage.googleapis.com/v0/b/igreja-batista-coqueiral.appspot.com/o/assets%2Flogo_ibc.png?alt=media'} 
                      alt="App Logo"
@@ -9004,14 +9028,14 @@ export default function App() {
                   <div className="space-y-5">
                     <div className="flex items-start gap-4">
                       <div className="w-8 h-8 rounded-2xl bg-ibc-teal/10 flex items-center justify-center text-ibc-teal text-sm font-black shrink-0">1</div>
-                      <p className="text-sm text-gray-600 font-medium leading-relaxed">
-                        Toque no ícone de <span className="inline-flex items-center gap-1 mx-1 px-2 py-1 bg-gray-100 rounded-lg text-gray-900 border border-gray-200 font-bold"><Share className="w-4 h-4" /> Compartilhar</span> na barra inferior do Safari.
+                      <p className="text-sm text-gray-600 dark:text-gray-300 font-medium leading-relaxed">
+                        Toque no ícone de <span className="inline-flex items-center gap-1 mx-1 px-2 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg text-gray-900 dark:text-gray-50 border border-gray-200 dark:border-[#333] font-bold"><Share className="w-4 h-4" /> Compartilhar</span> na barra inferior do Safari.
                       </p>
                     </div>
                     <div className="flex items-start gap-4">
                       <div className="w-8 h-8 rounded-2xl bg-ibc-teal/10 flex items-center justify-center text-ibc-teal text-sm font-black shrink-0">2</div>
-                      <p className="text-sm text-gray-600 font-medium leading-relaxed">
-                        Role para baixo e selecione <span className="inline-flex items-center gap-1 mx-1 px-2 py-1 bg-gray-100 rounded-lg text-gray-900 border border-gray-200 font-bold"><Plus className="w-4 h-4" /> Adicionar à Tela de Início</span>.
+                      <p className="text-sm text-gray-600 dark:text-gray-300 font-medium leading-relaxed">
+                        Role para baixo e selecione <span className="inline-flex items-center gap-1 mx-1 px-2 py-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg text-gray-900 dark:text-gray-50 border border-gray-200 dark:border-[#333] font-bold"><Plus className="w-4 h-4" /> Adicionar à Tela de Início</span>.
                       </p>
                     </div>
                   </div>
@@ -9033,13 +9057,13 @@ export default function App() {
                     <div className="flex items-start gap-4">
                       <div className="w-8 h-8 rounded-2xl bg-ibc-teal/10 flex items-center justify-center text-ibc-teal text-sm font-black shrink-0">1</div>
                       <p className="text-sm text-gray-650 font-medium leading-relaxed">
-                        Toque no ícone de menu <span className="inline-flex items-center px-1.5 py-0.5 bg-gray-100 rounded-lg text-gray-900 border border-gray-200 font-black">⋮</span> (três pontinhos) no canto superior direito do Chrome.
+                        Toque no ícone de menu <span className="inline-flex items-center px-1.5 py-0.5 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg text-gray-900 dark:text-gray-50 border border-gray-200 dark:border-[#333] font-black">⋮</span> (três pontinhos) no canto superior direito do Chrome.
                       </p>
                     </div>
                     <div className="flex items-start gap-4">
                       <div className="w-8 h-8 rounded-2xl bg-ibc-teal/10 flex items-center justify-center text-ibc-teal text-sm font-black shrink-0">2</div>
                       <p className="text-sm text-gray-655 font-medium leading-relaxed">
-                        Selecione a opção <span className="inline-flex items-center px-1.5 py-0.5 bg-gray-100 rounded-lg text-gray-900 border border-gray-200 font-black">Instalar aplicativo</span> ou <span className="inline-flex items-center px-1.5 py-0.5 bg-gray-100 rounded-lg text-gray-900 border border-gray-200 font-black">Adicionar à tela inicial</span>.
+                        Selecione a opção <span className="inline-flex items-center px-1.5 py-0.5 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg text-gray-900 dark:text-gray-50 border border-gray-200 dark:border-[#333] font-black">Instalar aplicativo</span> ou <span className="inline-flex items-center px-1.5 py-0.5 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg text-gray-900 dark:text-gray-50 border border-gray-200 dark:border-[#333] font-black">Adicionar à tela inicial</span>.
                       </p>
                     </div>
                   </div>
@@ -9052,7 +9076,7 @@ export default function App() {
                     localStorage.setItem('pwa_install_dismissed', 'true');
                     localStorage.setItem('pwa_install_dismissed_time', Date.now().toString());
                   }}
-                  className="w-full py-2 text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] hover:text-gray-600 transition-colors"
+                  className="w-full py-2 text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] hover:text-gray-600 dark:text-gray-300 transition-colors"
                 >
                   Agora não, obrigado
                 </button>
