@@ -2450,6 +2450,38 @@ export default function App() {
     
     const totalActiveForFunctions = members.filter(m => m.isActive !== false).length;
     
+    // Age Distribution Logic
+    const ageDistribution: { name: string, count: number, percentage: string }[] = [];
+    const rhActiveMembers = members.filter(m => m.isActive !== false);
+
+    ageClassifications.forEach(cls => {
+      const count = rhActiveMembers.filter(m => {
+        if (!m.birthDate) return false;
+        const birth = new Date(m.birthDate);
+        const today = new Date();
+        let age = today.getFullYear() - birth.getFullYear();
+        const mOffset = today.getMonth() - birth.getMonth();
+        if (mOffset < 0 || (mOffset === 0 && today.getDate() < birth.getDate())) {
+          age--;
+        }
+        return age >= cls.minAge && age <= cls.maxAge;
+      }).length;
+      
+      const percentage = totalActiveForFunctions > 0 ? ((count / totalActiveForFunctions) * 100).toFixed(1) : '0';
+      ageDistribution.push({ name: cls.name, count, percentage });
+    });
+
+    // Calculate "Other/Undefined" to make sure we show the displacement if any
+    const classifiedCount = ageDistribution.reduce((acc, curr) => acc + curr.count, 0);
+    const unclassifiedCount = totalActiveForFunctions - classifiedCount;
+    if (unclassifiedCount > 0) {
+      ageDistribution.push({ 
+        name: 'Não Classificado / Sem Data', 
+        count: unclassifiedCount, 
+        percentage: totalActiveForFunctions > 0 ? ((unclassifiedCount / totalActiveForFunctions) * 100).toFixed(1) : '0' 
+      });
+    }
+
     // Group by function (excluding Inactive members)
     const functionsDetails: Record<string, { members: Member[], count: number, percentage: string }> = {};
     members.filter(m => m.isActive !== false).forEach(m => {
@@ -2491,9 +2523,10 @@ export default function App() {
       statusChartData,
       activePercentage,
       COLORS,
-      functionsDetails
+      functionsDetails,
+      ageDistribution
     };
-  }, [members]);
+  }, [members, ageClassifications]);
 
   // Data Fetching
   useEffect(() => {
@@ -6039,6 +6072,45 @@ export default function App() {
                           <Legend verticalAlign="bottom" height={36} iconSize={8} wrapperStyle={{ fontSize: '10px' }}/>
                         </PieChart>
                       </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Age Distribution Card */}
+                  <div className="glass-card p-4 sm:p-8 rounded-[3rem] border border-white/40 shadow-sm">
+                    <div className="flex items-center space-x-3 mb-6 sm:mb-8">
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center">
+                        <Users className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                      </div>
+                      <h4 className="text-xs sm:text-sm font-black text-gray-900 dark:text-gray-50 uppercase tracking-widest">Distribuição por Idade</h4>
+                    </div>
+                    <div className="space-y-4">
+                      {reportData.ageDistribution.map((item, index) => (
+                        <div key={index} className="flex flex-col space-y-1">
+                          <div className="flex items-center justify-between text-[10px] sm:text-xs font-black uppercase tracking-widest">
+                            <span className="text-gray-700 dark:text-gray-200">{item.name}</span>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-gray-400">{item.count} membros</span>
+                              <span className="text-ibc-teal">{item.percentage}%</span>
+                            </div>
+                          </div>
+                          <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${item.percentage}%` }}
+                              transition={{ duration: 1, ease: "easeOut" }}
+                              className="h-full bg-ibc-teal rounded-full"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                      
+                      <div className="pt-4 border-t border-gray-100 dark:border-[#222] flex items-center justify-between text-[10px] sm:text-xs font-black uppercase tracking-widest">
+                        <span className="text-gray-900 dark:text-gray-50">Total</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-gray-400">{reportData.ageDistribution.reduce((acc, curr) => acc + curr.count, 0)} membros</span>
+                          <span className="text-ibc-teal">100%</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
