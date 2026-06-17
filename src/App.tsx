@@ -70,8 +70,6 @@ import {
   BookOpen,
   Cake,
   FileUp,
-  Home,
-  Award,
   GripVertical,
   ShieldCheck
 } from 'lucide-react';
@@ -733,7 +731,7 @@ export default function App() {
   const [isMemberFunctionsCollapsed, setIsMemberFunctionsCollapsed] = useState(true);
   const [isRelationshipTypesCollapsed, setIsRelationshipTypesCollapsed] = useState(true);
   const [isRHFilterCollapsed, setIsRHFilterCollapsed] = useState(true);
-  const [rhFilterType, setRhFilterType] = useState<'all' | 'relationship' | 'function' | 'couples' | 'birthdays'>('all');
+  const [rhFilterType, setRhFilterType] = useState<'all' | 'relationship' | 'function' | 'couples' | 'birthdays' | 'families' | 'elders'>('all');
   const [rhSelectedValue, setRhSelectedValue] = useState<string>('');
   const [rhBirthdayMonth, setRhBirthdayMonth] = useState(new Date().getMonth());
   
@@ -1361,7 +1359,7 @@ export default function App() {
   const [isAddingNewMinistryRole, setIsAddingNewMinistryRole] = useState(false);
   const [newMinistryRoleValue, setNewMinistryRoleValue] = useState("");
 
-  const [memberStatusFilter, setMemberStatusFilter] = useState<'all' | 'active' | 'inactive' | 'absent' | 'seniors' | 'families'>('all');
+  const [memberStatusFilter, setMemberStatusFilter] = useState<'all' | 'active' | 'inactive' | 'absent'>('all');
 
   // Ata Roles State for "Nova Ata"
   const [signer1Role, setSigner1Role] = useState('Pastor Presidente');
@@ -1460,7 +1458,118 @@ export default function App() {
         });
     }
 
+    if (rhFilterType === 'elders') {
+      return activeMembers.filter(m => {
+        if (!m.birthDate) return false;
+        const parts = m.birthDate.split('-');
+        if (parts.length < 3) return false;
+        const birthYear = parseInt(parts[0], 10);
+        const birthMonth = parseInt(parts[1], 10) - 1;
+        const birthDay = parseInt(parts[2], 10);
+        
+        const today = new Date();
+        let age = today.getFullYear() - birthYear;
+        const monthDiff = today.getMonth() - birthMonth;
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDay)) {
+          age--;
+        }
+        return age >= 60;
+      }).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    }
+
     return [];
+  };
+
+  const getFamilies = () => {
+    const activeMembers = members.filter(m => m.isActive);
+    const processedIds = new Set<string>();
+    const families: { type: 'constituted' | 'origin', members: Member[], title: string }[] = [];
+
+    // 1. Prioritize Constituted Families (Couples + Children)
+    activeMembers.forEach(m => {
+      if (processedIds.has(m.id)) return;
+
+      const spouseRel = m.relationships?.find(r => 
+        ['esposo', 'esposa', 'cônjuge'].includes(r.type.toLowerCase().trim())
+      );
+
+      const parentRel = m.relationships?.find(r => 
+        ['pai', 'mãe', 'filho', 'filha'].includes(r.type.toLowerCase().trim())
+      );
+
+      // Check if this member is a parent or spouse
+      if (spouseRel || (m.relationships?.some(r => ['pai', 'mãe'].includes(r.type.toLowerCase().trim())))) {
+        const familyUnit: Member[] = [m];
+        processedIds.add(m.id);
+
+        if (spouseRel) {
+          const spouse = activeMembers.find(sm => sm.id === spouseRel.memberId);
+          if (spouse && !processedIds.has(spouse.id)) {
+            familyUnit.push(spouse);
+            processedIds.add(spouse.id);
+          }
+        }
+
+        // Add children linked to either parent
+        familyUnit.forEach(parent => {
+          activeMembers.forEach(potentialChild => {
+            if (processedIds.has(potentialChild.id)) return;
+            const isChild = potentialChild.relationships?.some(r => 
+              (r.memberId === parent.id && ['pai', 'mãe'].includes(r.type.toLowerCase().trim())) ||
+              (parent.relationships?.some(pr => pr.memberId === potentialChild.id && ['filho', 'filha'].includes(pr.type.toLowerCase().trim())))
+            );
+            if (isChild) {
+              familyUnit.push(potentialChild);
+              processedIds.add(potentialChild.id);
+            }
+          });
+        });
+
+        // Determine title
+        const maleHead = familyUnit.find(fm => fm.gender === 'Homem');
+        const femaleHead = familyUnit.find(fm => fm.gender === 'Mulher' && fm.relationships?.some(r => ['esposa', 'esposo'].includes(r.type.toLowerCase().trim())));
+        
+        let title = "Núcleo Familiar";
+        if (maleHead && femaleHead) title = `Família de ${maleHead.name.split(' ')[0]} & ${femaleHead.name.split(' ')[0]}`;
+        else if (maleHead) title = `Família de ${maleHead.name}`;
+        else if (femaleHead) title = `Família de ${femaleHead.name}`;
+        else title = `Família de ${familyUnit[0].name}`;
+
+        families.push({ type: 'constituted', members: familyUnit, title });
+      }
+    });
+
+    // 2. Origin Families (Remaining siblings linked to each other)
+    activeMembers.forEach(m => {
+      if (processedIds.has(m.id)) return;
+
+      const siblingRels = m.relationships?.filter(r => ['irmão', 'irmã', 'irmão(ã)'].includes(r.type.toLowerCase().trim()));
+      
+      if (siblingRels && siblingRels.length > 0) {
+        const familyUnit: Member[] = [m];
+        processedIds.add(m.id);
+
+        const findSiblings = (member: Member) => {
+          member.relationships?.filter(r => ['irmão', 'irmã', 'irmão(ã)'].includes(r.type.toLowerCase().trim())).forEach(r => {
+            const sib = activeMembers.find(sm => sm.id === r.memberId);
+            if (sib && !processedIds.has(sib.id)) {
+              familyUnit.push(sib);
+              processedIds.add(sib.id);
+              findSiblings(sib);
+            }
+          });
+        };
+        findSiblings(m);
+
+        families.push({ 
+          type: 'origin', 
+          members: familyUnit, 
+          title: `Família dos Irmãos ${familyUnit.map(sm => sm.name.split(' ')[0]).join(', ')}` 
+        });
+      }
+    });
+
+    return families;
   };
 
   const sortedCouples = useMemo(() => {
@@ -1615,6 +1724,8 @@ export default function App() {
     if (rhFilterType === 'relationship') filterTitle = `Filtro: Parentesco - ${rhSelectedValue}`;
     else if (rhFilterType === 'function') filterTitle = `Filtro: Função - ${rhSelectedValue}`;
     else if (rhFilterType === 'couples') filterTitle = `Filtro: Casais`;
+    else if (rhFilterType === 'families') filterTitle = `Filtro: Agrupamento de Famílias`;
+    else if (rhFilterType === 'elders') filterTitle = `Filtro: Idosos (60+ anos)`;
     else if (rhFilterType === 'birthdays') filterTitle = `Filtro: Aniversariantes de ${['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][rhBirthdayMonth]}`;
     
     doc.text(filterTitle, 45, 28);
@@ -1639,11 +1750,48 @@ export default function App() {
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.text(`Total: ${couples.length} Casais encontrados`, 15, lastY + 15);
+    } else if (rhFilterType === 'families') {
+      const families = getFamilies();
+      
+      let currentY = 50;
+      families.forEach((f, idx) => {
+        if (currentY > 250) {
+          doc.addPage();
+          currentY = 20;
+        }
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(6, 74, 143);
+        doc.text(f.title, 15, currentY);
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100);
+        doc.text(f.type === 'constituted' ? 'Núcleo Familiar Constituído' : 'Família de Origem', 15, currentY + 6);
+
+        autoTable(doc, {
+          startY: currentY + 10,
+          head: [['Nome', 'Função']],
+          body: f.members.map(m => [m.name, m.function]),
+          theme: 'grid',
+          headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+        });
+        
+        currentY = (doc as any).lastAutoTable.finalY + 15;
+      });
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0);
+      doc.text(`Total: ${families.length} Famílias identificadas`, 15, currentY);
     } else {
       const filtered = getFilteredMembers();
       
       const tableHead = rhFilterType === 'birthdays' 
         ? [['#', 'Nome', 'Data', 'Idade Completa']]
+        : rhFilterType === 'elders'
+        ? [['#', 'Nome', 'Função', 'Idade']]
         : [['#', 'Nome', 'Função', 'Gênero']];
       
       const tableBody = filtered.map((m, i) => {
@@ -1656,6 +1804,16 @@ export default function App() {
             age = (new Date().getFullYear() - parseInt(birthdayParts[0], 10)).toString();
           }
           return [i + 1, m.name, `${day}/${month}`, age];
+        }
+        if (rhFilterType === 'elders') {
+          let age = '-';
+          if (m.birthDate) {
+            const parts = m.birthDate.split('-');
+            if (parts.length === 3) {
+              age = (new Date().getFullYear() - parseInt(parts[0], 10)).toString();
+            }
+          }
+          return [i + 1, m.name, m.function, age];
         }
         return [i + 1, m.name, m.function, m.gender || '-'];
       });
@@ -3794,146 +3952,13 @@ export default function App() {
   const activeMembersCount = useMemo(() => members.filter(m => m.isActive !== false && !m.isAbsent).length, [members]);
   const absentMembersCount = useMemo(() => members.filter(m => m.isActive !== false && m.isAbsent).length, [members]);
   const inactiveMembersCount = useMemo(() => members.filter(m => m.isActive === false).length, [members]);
-
-  const seniorsMembers = useMemo(() => {
-    const activeMembers = members.filter(m => m.isActive !== false);
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    const currentDay = now.getDate();
-
-    return activeMembers.filter(m => {
-      if (!m.birthDate) return false;
-      const parts = m.birthDate.split('-'); // YYYY-MM-DD
-      if (parts.length < 3) return false;
-      
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const day = parseInt(parts[2], 10);
-      
-      let age = currentYear - year;
-      if (currentMonth < month || (currentMonth === month && currentDay < day)) {
-        age--;
-      }
-      return age >= 60;
-    });
-  }, [members]);
-
-  const familiesData = useMemo(() => {
-    const activeMembers = members.filter(m => m.isActive !== false);
-    const activeMemberIds = new Set<string>(activeMembers.map(m => m.id));
-    
-    const isProgenitor = new Set<string>();
-    const hasSpouse = new Set<string>();
-    
-    const nuclearTypes = ['filho', 'filha'];
-    const spouseTypes = ['esposo', 'esposa', 'esposo(a)'];
-    const parentalTypes = ['pai', 'mãe'];
-    const siblingTypes = ['irmão', 'irmã', 'irmão(ã)'];
-
-    for (const m of activeMembers) {
-      if (m.relationships) {
-        for (const r of m.relationships) {
-          const type = r.type.toLowerCase().trim();
-          if (nuclearTypes.includes(type)) isProgenitor.add(m.id);
-          if (spouseTypes.includes(type)) hasSpouse.add(m.id);
-        }
-      }
-    }
-
-    const isHead = (id: string) => isProgenitor.has(id) || hasSpouse.has(id);
-    
-    const adjacency = new Map<string, Set<string>>();
-    const addEdge = (u: string, v: string) => {
-      if (!activeMemberIds.has(u) || !activeMemberIds.has(v)) return;
-      if (!adjacency.has(u)) adjacency.set(u, new Set());
-      if (!adjacency.has(v)) adjacency.set(v, new Set());
-      adjacency.get(u)!.add(v);
-      adjacency.get(v)!.add(u);
-    };
-
-    for (const m of activeMembers) {
-      if (isHead(m.id) && m.relationships) {
-        for (const r of m.relationships) {
-          const type = r.type.toLowerCase().trim();
-          if (spouseTypes.includes(type)) {
-            addEdge(m.id, r.memberId);
-          }
-          if (nuclearTypes.includes(type)) {
-            // Target is my child. Pull them if they are NOT heads themselves
-            if (!isHead(r.memberId)) {
-              addEdge(m.id, r.memberId);
-            }
-          }
-          if (parentalTypes.includes(type)) {
-            // Target is my parent. If target is a head (most likely), they pull ME.
-            // So we only add edge if target is NOT a head? 
-            if (!isHead(r.memberId)) {
-               addEdge(m.id, r.memberId);
-            }
-          }
-        }
-      }
-    }
-
-    // Siblings phase for those not attached to heads
-    const attachedToHead = new Set<string>();
-    for (const [id, neighbors] of adjacency) {
-      attachedToHead.add(id);
-      for (const n of neighbors) {
-        attachedToHead.add(n);
-      }
-    }
-
-    for (const m of activeMembers) {
-      if (!isHead(m.id) && !attachedToHead.has(m.id) && m.relationships) {
-        for (const r of m.relationships) {
-          const type = r.type.toLowerCase().trim();
-          if (siblingTypes.includes(type)) {
-            if (!isHead(r.memberId) && !attachedToHead.has(r.memberId)) {
-              addEdge(m.id, r.memberId);
-            }
-          }
-        }
-      }
-    }
-
-    const visited = new Set<string>();
-    const components: string[][] = [];
-
-    for (const id of activeMemberIds) {
-      if (!visited.has(id)) {
-        const comp: string[] = [];
-        const stack = [id];
-        visited.add(id);
-        while(stack.length > 0) {
-          const u = stack.pop()!;
-          comp.push(u);
-          const neighbors = adjacency.get(u);
-          if (neighbors) {
-            for (const v of neighbors) {
-              if (!visited.has(v)) {
-                visited.add(v);
-                stack.push(v);
-              }
-            }
-          }
-        }
-        components.push(comp);
-      }
-    }
-
-    return { total: components.length, groups: components };
-  }, [members]);
   
   const memberStats = useMemo(() => {
     const categories: Record<string, { members: Member[], prevMembers: Member[], label: string, id: string, color: string, icon: any, tag: string }> = {
       absents: { members: [], prevMembers: [], label: 'Ausentes', id: 'absents', color: '#F97316', icon: Clock, tag: 'Ausentes' },
       returns: { members: [], prevMembers: [], label: 'Voltaram', id: 'returns', color: '#10B981', icon: RefreshCcw, tag: 'Retornos' },
       inactives: { members: [], prevMembers: [], label: 'Inativos', id: 'inactives', color: '#EF4444', icon: UserMinus, tag: 'Inativos' },
-      news: { members: [], prevMembers: [], label: 'Novos Cadastros', id: 'news', color: '#3B82F6', icon: UserPlus, tag: 'Novos' },
-      families: { members: [], prevMembers: [], label: 'Famílias', id: 'families', color: '#3B82F6', icon: Home, tag: 'Famílias' },
-      seniors: { members: [], prevMembers: [], label: 'Idosos', id: 'seniors', color: '#A855F7', icon: Award, tag: 'Idosos' }
+      news: { members: [], prevMembers: [], label: 'Novos Cadastros', id: 'news', color: '#3B82F6', icon: UserPlus, tag: 'Novos' }
     };
 
     const currentStart = selectedMonth === -1 
@@ -3978,32 +4003,6 @@ export default function App() {
       if (m.isActive !== false && !m.isAbsent) {
         if (checkInPeriod(updated, currentStart, currentEnd)) categories.returns.members.push(m);
         if (checkInPeriod(updated, prevStart, prevEnd)) categories.returns.prevMembers.push(m);
-      }
-
-      // Add to Families and Seniors (just as active pools for viewing details if clicked)
-      if (m.isActive !== false) {
-        // Seniors
-        if (!m.birthDate) {
-          // No birthdate, can't be senior
-        } else {
-          const parts = m.birthDate.split('-');
-          if (parts.length === 3) {
-            const year = parseInt(parts[0], 10);
-            const month = parseInt(parts[1], 10) - 1;
-            const day = parseInt(parts[2], 10);
-            const today = new Date();
-            let age = today.getFullYear() - year;
-            if (today.getMonth() < month || (today.getMonth() === month && today.getDate() < day)) {
-              age--;
-            }
-            if (age >= 60) {
-              categories.seniors.members.push(m);
-            }
-          }
-        }
-        
-        // Families: We don't have a specific "period" for families, but we show the pool
-        categories.families.members.push(m);
       }
     });
 
@@ -4065,9 +4064,7 @@ export default function App() {
       const matchesStatus = memberStatusFilter === 'all' || 
                            (memberStatusFilter === 'active' && isActive && !isAbsent) || 
                            (memberStatusFilter === 'absent' && isActive && isAbsent) ||
-                           (memberStatusFilter === 'inactive' && !isActive) ||
-                           (memberStatusFilter === 'seniors' && isActive && seniorsMembers.some(s => s.id === m.id)) ||
-                           (memberStatusFilter === 'families' && isActive);
+                           (memberStatusFilter === 'inactive' && !isActive);
       
       return matchesSearch && matchesStatus;
     });
@@ -4969,42 +4966,6 @@ export default function App() {
                         <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{inactiveMembersCount}</p>
                       </div>
                     </button>
-                    <button 
-                       onClick={() => setMemberStatusFilter(memberStatusFilter === 'families' ? 'all' : 'families')}
-                      className={cn(
-                        "glass-card p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
-                        memberStatusFilter === 'families' ? "border-blue-500 ring-4 ring-blue-50 bg-blue-50/50" : "hover:border-blue-200"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0",
-                        memberStatusFilter === 'families' ? "bg-blue-500 text-white" : "bg-blue-50 text-blue-500"
-                      )}>
-                        <Home className="w-4 h-4 sm:w-6 sm:h-6" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[7px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Famílias</p>
-                        <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{familiesData.total}</p>
-                      </div>
-                    </button>
-                    <button 
-                       onClick={() => setMemberStatusFilter(memberStatusFilter === 'seniors' ? 'all' : 'seniors')}
-                      className={cn(
-                        "glass-card p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
-                        memberStatusFilter === 'seniors' ? "border-purple-500 ring-4 ring-purple-50 bg-purple-50/50" : "hover:border-purple-200"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0",
-                        memberStatusFilter === 'seniors' ? "bg-purple-500 text-white" : "bg-purple-50 text-purple-500"
-                      )}>
-                        <Award className="w-4 h-4 sm:w-6 sm:h-6" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[7px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Idosos</p>
-                        <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{seniorsMembers.length}</p>
-                      </div>
-                    </button>
                   </div>
 
                   {/* Expandable Search bar */}
@@ -5058,7 +5019,7 @@ export default function App() {
                 <div className="flex items-center justify-between px-4 py-2 bg-ibc-teal/5 border border-ibc-teal/10 rounded-2xl max-w-5xl mx-auto">
                   <div className="flex items-center space-x-2">
                     <span className="text-xs font-bold text-ibc-teal uppercase tracking-widest">
-                      Filtrando por: {memberStatusFilter === 'active' ? 'Ativos' : memberStatusFilter === 'absent' ? 'Ausentes' : memberStatusFilter === 'inactive' ? 'Inativos' : memberStatusFilter === 'seniors' ? 'Idosos' : 'Famílias'}
+                      Filtrando por: {memberStatusFilter === 'active' ? 'Ativos' : memberStatusFilter === 'absent' ? 'Ausentes' : 'Inativos'}
                     </span>
                     <span className="text-xs text-gray-400">({filteredMembers.length} encontrados)</span>
                   </div>
@@ -5618,7 +5579,7 @@ export default function App() {
                           
                           <div className="flex items-baseline space-x-2">
                              <div className="text-xl sm:text-3xl font-black text-gray-900 dark:text-gray-50 leading-tight">
-                               {category.id === 'families' ? familiesData.total : category.members.length}
+                               {category.members.length}
                              </div>
                              <div className={`flex items-center text-[9px] sm:text-[11px] font-black ${isGrowing ? (category.id === 'absents' || category.id === 'inactives' ? 'text-red-500' : 'text-green-500') : (category.id === 'absents' || category.id === 'inactives' ? 'text-green-500' : 'text-red-500')}`}>
                                 {isGrowing ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -5991,6 +5952,8 @@ export default function App() {
                               <option value="relationship">Grau de Parentesco</option>
                               <option value="function">Função de Membro</option>
                               <option value="couples">Casais</option>
+                              <option value="families">Famílias</option>
+                              <option value="elders">Idosos</option>
                               <option value="birthdays">Aniversariantes</option>
                             </select>
                           </div>
@@ -6042,7 +6005,7 @@ export default function App() {
                             </motion.div>
                           )}
 
-                          {((rhFilterType !== 'all' && (rhSelectedValue || rhFilterType === 'couples' || rhFilterType === 'birthdays'))) && (
+                          {((rhFilterType !== 'all' && (rhSelectedValue || rhFilterType === 'couples' || rhFilterType === 'birthdays' || rhFilterType === 'families' || rhFilterType === 'elders'))) && (
                             <div className="flex items-end">
                               <button 
                                 onClick={handleExportRHFilterPDF}
@@ -6134,6 +6097,107 @@ export default function App() {
                                     <p className="text-xs text-gray-400 font-medium">Nenhum aniversariante encontrado neste mês.</p>
                                   </div>
                                 )}
+                              </div>
+                            </div>
+                          ) : rhFilterType === 'elders' ? (
+                            <div className="space-y-6">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Idosos (60+ anos)</h4>
+                                <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
+                                  <User className="w-3.5 h-3.5 mr-2" />
+                                  <span className="text-xs font-black uppercase tracking-tight">
+                                    {getFilteredMembers().length} {getFilteredMembers().length === 1 ? 'Idoso' : 'Idosos'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {getFilteredMembers().map((member, index) => {
+                                  let age = '-';
+                                  if (member.birthDate) {
+                                    const parts = member.birthDate.split('-');
+                                    if (parts.length === 3) {
+                                      const birthYear = parseInt(parts[0], 10);
+                                      age = (new Date().getFullYear() - birthYear).toString();
+                                    }
+                                  }
+                                  return (
+                                    <motion.div 
+                                      key={member.id} 
+                                      initial={{ opacity: 0, y: 10 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      transition={{ delay: index * 0.05 }}
+                                      className="p-4 bg-white dark:bg-[#0a0a0a] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group transition-all flex items-center space-x-4"
+                                    >
+                                      <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-black overflow-hidden shrink-0 border border-gray-100 dark:border-[#222] flex items-center justify-center text-lg font-bold text-gray-400">
+                                        {member.photoUrl ? (
+                                          <img src={member.photoUrl} className="w-full h-full object-cover" alt={member.name} referrerPolicy="no-referrer" />
+                                        ) : (
+                                          member.name.charAt(0)
+                                        )}
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="font-extrabold text-gray-900 dark:text-gray-50 text-sm truncate">{member.name}</div>
+                                        <div className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">{member.function} • {age} Anos</div>
+                                      </div>
+                                    </motion.div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ) : rhFilterType === 'families' ? (
+                            <div className="space-y-8">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Agrupamento de Famílias</h4>
+                                <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
+                                  <Users className="w-3.5 h-3.5 mr-2" />
+                                  <span className="text-xs font-black uppercase tracking-tight">
+                                    {getFamilies().length} {getFamilies().length === 1 ? 'Família' : 'Famílias'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="space-y-6">
+                                {getFamilies().map((family, familyIdx) => (
+                                  <motion.div 
+                                    key={familyIdx}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: familyIdx * 0.1 }}
+                                    className="bg-gray-50/50 dark:bg-black/20 rounded-[40px] p-6 border border-gray-100 dark:border-[#222]"
+                                  >
+                                    <div className="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-[#222] pb-4">
+                                      <div className="flex items-center">
+                                        <div className={cn(
+                                          "w-10 h-10 rounded-2xl flex items-center justify-center mr-3",
+                                          family.type === 'constituted' ? "bg-red-500/10 text-red-500" : "bg-blue-500/10 text-blue-500"
+                                        )}>
+                                          {family.type === 'constituted' ? <Heart className="w-5 h-5 fill-current" /> : <Users className="w-5 h-5" />}
+                                        </div>
+                                        <div>
+                                          <h5 className="font-black text-gray-900 dark:text-gray-50 text-sm">{family.title}</h5>
+                                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">
+                                            {family.type === 'constituted' ? 'Núcleo Familiar Constituído' : 'Família de Origem (Grupo de Irmãos)'}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <div className="px-3 py-1 bg-white dark:bg-black rounded-full border border-gray-100 dark:border-[#222] text-[10px] font-black text-gray-400">
+                                        {family.members.length} {family.members.length === 1 ? 'MEMBRO' : 'MEMBROS'}
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                      {family.members.map((m, mIdx) => (
+                                        <div key={mIdx} className="flex items-center space-x-3 p-3 bg-white dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#222] shadow-sm">
+                                          <div className="w-8 h-8 rounded-xl bg-gray-50 dark:bg-black overflow-hidden flex items-center justify-center text-[10px] font-black text-gray-400 border border-gray-100 dark:border-[#222]">
+                                            {m.photoUrl ? <img src={m.photoUrl} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" /> : m.name.charAt(0)}
+                                          </div>
+                                          <div className="min-w-0 flex-1">
+                                            <div className="font-extrabold text-xs text-gray-900 dark:text-gray-50 truncate">{m.name}</div>
+                                            <div className="text-[10px] text-gray-400 font-bold uppercase truncate">{m.function}</div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                ))}
                               </div>
                             </div>
                           ) : rhFilterType === 'couples' ? (
