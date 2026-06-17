@@ -1408,11 +1408,14 @@ export default function App() {
   const getFilteredMembers = () => {
     if (rhFilterType === 'all') return [];
     
+    // Work only with active members for RH tab
+    const activeMembers = members.filter(m => m.isActive);
+
     if (rhFilterType === 'relationship' && rhSelectedValue) {
       // Find all members who ARE the target of this relationship type
       // A member is a "Son" if someone else lists them as "Son"
       const targetIds = new Set<string>();
-      members.forEach(m => {
+      activeMembers.forEach(m => {
         m.relationships?.forEach(r => {
           if (r.type === rhSelectedValue) {
             targetIds.add(r.memberId);
@@ -1420,7 +1423,7 @@ export default function App() {
         });
       });
       
-      let filtered = members.filter(m => targetIds.has(m.id));
+      let filtered = activeMembers.filter(m => targetIds.has(m.id));
       
       // Enforce gender constraints based on relationship name to prevent data entry inconsistencies
       const selectedLower = rhSelectedValue.toLowerCase().trim();
@@ -1434,16 +1437,19 @@ export default function App() {
     }
     
     if (rhFilterType === 'function' && rhSelectedValue) {
-      return members.filter(m => m.function === rhSelectedValue);
+      return activeMembers.filter(m => m.function === rhSelectedValue);
     }
     return [];
   };
 
-  const getCouples = () => {
+  const sortedCouples = useMemo(() => {
     const couples: { names: string, ids: string[], husband?: Member, wife?: Member, raw: [Member, Member] }[] = [];
     const processedIds = new Set<string>();
+    
+    // Work only with active members for RH tab
+    const activeMembers = members.filter(m => m.isActive);
 
-    members.forEach(member => {
+    activeMembers.forEach(member => {
       if (processedIds.has(member.id)) return;
 
       const spouseRel = member.relationships?.find(r => 
@@ -1451,7 +1457,7 @@ export default function App() {
       );
 
       if (spouseRel) {
-        const partner = members.find(m => m.id === spouseRel.memberId);
+        const partner = activeMembers.find(m => m.id === spouseRel.memberId);
         if (partner && !processedIds.has(partner.id)) {
           let husband, wife;
           if (member.gender === 'Homem' && partner.gender === 'Mulher') {
@@ -1487,22 +1493,30 @@ export default function App() {
     });
 
     return couples.sort((a, b) => {
-      const nameA = a.husband?.name || a.raw[0]?.name || "";
-      const nameB = b.husband?.name || b.raw[0]?.name || "";
-      return nameA.localeCompare(nameB, 'pt-BR');
+      const nameA = (a.husband?.name || a.raw[0]?.name || "").trim();
+      const nameB = (b.husband?.name || b.raw[0]?.name || "").trim();
+      return nameA.localeCompare(nameB, 'pt-BR', { numeric: true });
     });
-  };
+  }, [members]);
+
+  const getCouples = () => sortedCouples;
 
   const getSiblingGroups = () => {
     const siblingTypes = ['irmão', 'irmã', 'irmão(ã)'];
+    
+    const activeMembers = members.filter(m => m.isActive);
     
     // Adjacency list for sibling relationships
     const adjList = new Map<string, string[]>();
     
     // Build the graph using members relationships
-    members.forEach(member => {
+    activeMembers.forEach(member => {
       member.relationships?.forEach(rel => {
         if (siblingTypes.includes(rel.type.toLowerCase().trim())) {
+          // Both must be active for the relationship to count in RH
+          const partnerFound = activeMembers.find(m => m.id === rel.memberId);
+          if (!partnerFound) return;
+
           if (!adjList.has(member.id)) adjList.set(member.id, []);
           if (!adjList.has(rel.memberId)) adjList.set(rel.memberId, []);
           
@@ -1521,7 +1535,7 @@ export default function App() {
 
     const dfs = (startId: string, currentGroup: Member[]) => {
       visited.add(startId);
-      const memberObj = members.find(m => m.id === startId);
+      const memberObj = activeMembers.find(m => m.id === startId);
       if (memberObj) {
         if (!currentGroup.find(m => m.id === memberObj.id)) {
           currentGroup.push(memberObj);
