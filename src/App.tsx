@@ -3504,8 +3504,8 @@ export default function App() {
 
   const handleDeleteAgeClassification = (cls: AgeClassification) => {
     showPasswordPrompt(
-      "Excluir Classificação",
-      `Tem certeza que deseja excluir a classificação "${cls.name}"?`,
+      'Segurança Adicional',
+      `Digite a senha de segurança para excluir a classificação "${cls.name}":`,
       async () => {
         try {
           setIsSaving(true);

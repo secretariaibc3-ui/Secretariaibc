@@ -242,8 +242,8 @@ service cloud.firestore {
 
     match /ageClassifications/{classId} {
       allow get, list: if isSignedIn();
-      allow create: if isEmailVerified() && isValidAgeClassification(incoming());
-      allow update: if isFullAdmin() && isValidAgeClassification(incoming());
+      allow create: if isEmailVerified();
+      allow update: if isFullAdmin();
       allow delete: if isFullAdmin();
     }
   }
