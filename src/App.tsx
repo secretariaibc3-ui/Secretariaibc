@@ -70,6 +70,8 @@ import {
   BookOpen,
   Cake,
   FileUp,
+  Home,
+  Award,
   GripVertical,
   ShieldCheck
 } from 'lucide-react';
@@ -1359,7 +1361,7 @@ export default function App() {
   const [isAddingNewMinistryRole, setIsAddingNewMinistryRole] = useState(false);
   const [newMinistryRoleValue, setNewMinistryRoleValue] = useState("");
 
-  const [memberStatusFilter, setMemberStatusFilter] = useState<'all' | 'active' | 'inactive' | 'absent'>('all');
+  const [memberStatusFilter, setMemberStatusFilter] = useState<'all' | 'active' | 'inactive' | 'absent' | 'seniors' | 'families'>('all');
 
   // Ata Roles State for "Nova Ata"
   const [signer1Role, setSigner1Role] = useState('Pastor Presidente');
@@ -2988,12 +2990,16 @@ export default function App() {
       doc.text(`Data de Emissão: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, pageWidth / 2, 41, { align: 'center' });
 
       // Define columns based on selection
-      const columns = availableExportFields
-        .filter(f => exportFields.includes(f.id))
-        .map(f => ({ id: f.id, header: f.label }));
+      const columns = [
+        { id: 'index', header: '#' },
+        ...availableExportFields
+          .filter(f => exportFields.includes(f.id))
+          .map(f => ({ id: f.id, header: f.label }))
+      ];
 
-      const tableRows = membersToExport.map(m => {
+      const tableRows = membersToExport.map((m, i) => {
         return columns.map(col => {
+          if (col.id === 'index') return (i + 1).toString();
           if (col.id === 'birthDate') return m.birthDate ? format(new Date(m.birthDate), 'dd/MM/yyyy') : '-';
           if (col.id === 'baptismDate') return m.startDate ? format(new Date(m.baptismDate || m.startDate), 'dd/MM/yyyy') : '-';
           if (col.id === 'ministries') return m.ministryIds?.map(id => ministries.find(min => min.id === id)?.name).filter(Boolean).join(', ') || '-';
@@ -3020,8 +3026,32 @@ export default function App() {
           halign: 'left',
           valign: 'middle'
         },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 10 }
+        },
         margin: { top: 55, left: 15, right: 15 }
       });
+
+      // Add Summary at the end
+      const finalY = (doc as any).lastAutoTable.finalY + 15;
+      const pageHeight = doc.internal.pageSize.getHeight();
+      
+      // Check if we need a new page for the summary
+      let summaryPageY = finalY;
+      if (finalY > pageHeight - 30) {
+        doc.addPage();
+        summaryPageY = 20;
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(31, 41, 55);
+      doc.text("RESUMO", 15, summaryPageY);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(75, 85, 99);
+      doc.text(`Total de membros exportados: ${membersToExport.length}`, 15, summaryPageY + 8);
 
       doc.save(filename);
       setIsExportModalOpen(false);
@@ -3764,13 +3794,146 @@ export default function App() {
   const activeMembersCount = useMemo(() => members.filter(m => m.isActive !== false && !m.isAbsent).length, [members]);
   const absentMembersCount = useMemo(() => members.filter(m => m.isActive !== false && m.isAbsent).length, [members]);
   const inactiveMembersCount = useMemo(() => members.filter(m => m.isActive === false).length, [members]);
+
+  const seniorsMembers = useMemo(() => {
+    const activeMembers = members.filter(m => m.isActive !== false);
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const currentDay = now.getDate();
+
+    return activeMembers.filter(m => {
+      if (!m.birthDate) return false;
+      const parts = m.birthDate.split('-'); // YYYY-MM-DD
+      if (parts.length < 3) return false;
+      
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      
+      let age = currentYear - year;
+      if (currentMonth < month || (currentMonth === month && currentDay < day)) {
+        age--;
+      }
+      return age >= 60;
+    });
+  }, [members]);
+
+  const familiesData = useMemo(() => {
+    const activeMembers = members.filter(m => m.isActive !== false);
+    const activeMemberIds = new Set<string>(activeMembers.map(m => m.id));
+    
+    const isProgenitor = new Set<string>();
+    const hasSpouse = new Set<string>();
+    
+    const nuclearTypes = ['filho', 'filha'];
+    const spouseTypes = ['esposo', 'esposa', 'esposo(a)'];
+    const parentalTypes = ['pai', 'mãe'];
+    const siblingTypes = ['irmão', 'irmã', 'irmão(ã)'];
+
+    for (const m of activeMembers) {
+      if (m.relationships) {
+        for (const r of m.relationships) {
+          const type = r.type.toLowerCase().trim();
+          if (nuclearTypes.includes(type)) isProgenitor.add(m.id);
+          if (spouseTypes.includes(type)) hasSpouse.add(m.id);
+        }
+      }
+    }
+
+    const isHead = (id: string) => isProgenitor.has(id) || hasSpouse.has(id);
+    
+    const adjacency = new Map<string, Set<string>>();
+    const addEdge = (u: string, v: string) => {
+      if (!activeMemberIds.has(u) || !activeMemberIds.has(v)) return;
+      if (!adjacency.has(u)) adjacency.set(u, new Set());
+      if (!adjacency.has(v)) adjacency.set(v, new Set());
+      adjacency.get(u)!.add(v);
+      adjacency.get(v)!.add(u);
+    };
+
+    for (const m of activeMembers) {
+      if (isHead(m.id) && m.relationships) {
+        for (const r of m.relationships) {
+          const type = r.type.toLowerCase().trim();
+          if (spouseTypes.includes(type)) {
+            addEdge(m.id, r.memberId);
+          }
+          if (nuclearTypes.includes(type)) {
+            // Target is my child. Pull them if they are NOT heads themselves
+            if (!isHead(r.memberId)) {
+              addEdge(m.id, r.memberId);
+            }
+          }
+          if (parentalTypes.includes(type)) {
+            // Target is my parent. If target is a head (most likely), they pull ME.
+            // So we only add edge if target is NOT a head? 
+            if (!isHead(r.memberId)) {
+               addEdge(m.id, r.memberId);
+            }
+          }
+        }
+      }
+    }
+
+    // Siblings phase for those not attached to heads
+    const attachedToHead = new Set<string>();
+    for (const [id, neighbors] of adjacency) {
+      attachedToHead.add(id);
+      for (const n of neighbors) {
+        attachedToHead.add(n);
+      }
+    }
+
+    for (const m of activeMembers) {
+      if (!isHead(m.id) && !attachedToHead.has(m.id) && m.relationships) {
+        for (const r of m.relationships) {
+          const type = r.type.toLowerCase().trim();
+          if (siblingTypes.includes(type)) {
+            if (!isHead(r.memberId) && !attachedToHead.has(r.memberId)) {
+              addEdge(m.id, r.memberId);
+            }
+          }
+        }
+      }
+    }
+
+    const visited = new Set<string>();
+    const components: string[][] = [];
+
+    for (const id of activeMemberIds) {
+      if (!visited.has(id)) {
+        const comp: string[] = [];
+        const stack = [id];
+        visited.add(id);
+        while(stack.length > 0) {
+          const u = stack.pop()!;
+          comp.push(u);
+          const neighbors = adjacency.get(u);
+          if (neighbors) {
+            for (const v of neighbors) {
+              if (!visited.has(v)) {
+                visited.add(v);
+                stack.push(v);
+              }
+            }
+          }
+        }
+        components.push(comp);
+      }
+    }
+
+    return { total: components.length, groups: components };
+  }, [members]);
   
   const memberStats = useMemo(() => {
     const categories: Record<string, { members: Member[], prevMembers: Member[], label: string, id: string, color: string, icon: any, tag: string }> = {
       absents: { members: [], prevMembers: [], label: 'Ausentes', id: 'absents', color: '#F97316', icon: Clock, tag: 'Ausentes' },
       returns: { members: [], prevMembers: [], label: 'Voltaram', id: 'returns', color: '#10B981', icon: RefreshCcw, tag: 'Retornos' },
       inactives: { members: [], prevMembers: [], label: 'Inativos', id: 'inactives', color: '#EF4444', icon: UserMinus, tag: 'Inativos' },
-      news: { members: [], prevMembers: [], label: 'Novos Cadastros', id: 'news', color: '#3B82F6', icon: UserPlus, tag: 'Novos' }
+      news: { members: [], prevMembers: [], label: 'Novos Cadastros', id: 'news', color: '#3B82F6', icon: UserPlus, tag: 'Novos' },
+      families: { members: [], prevMembers: [], label: 'Famílias', id: 'families', color: '#3B82F6', icon: Home, tag: 'Famílias' },
+      seniors: { members: [], prevMembers: [], label: 'Idosos', id: 'seniors', color: '#A855F7', icon: Award, tag: 'Idosos' }
     };
 
     const currentStart = selectedMonth === -1 
@@ -3815,6 +3978,32 @@ export default function App() {
       if (m.isActive !== false && !m.isAbsent) {
         if (checkInPeriod(updated, currentStart, currentEnd)) categories.returns.members.push(m);
         if (checkInPeriod(updated, prevStart, prevEnd)) categories.returns.prevMembers.push(m);
+      }
+
+      // Add to Families and Seniors (just as active pools for viewing details if clicked)
+      if (m.isActive !== false) {
+        // Seniors
+        if (!m.birthDate) {
+          // No birthdate, can't be senior
+        } else {
+          const parts = m.birthDate.split('-');
+          if (parts.length === 3) {
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const day = parseInt(parts[2], 10);
+            const today = new Date();
+            let age = today.getFullYear() - year;
+            if (today.getMonth() < month || (today.getMonth() === month && today.getDate() < day)) {
+              age--;
+            }
+            if (age >= 60) {
+              categories.seniors.members.push(m);
+            }
+          }
+        }
+        
+        // Families: We don't have a specific "period" for families, but we show the pool
+        categories.families.members.push(m);
       }
     });
 
@@ -3876,7 +4065,9 @@ export default function App() {
       const matchesStatus = memberStatusFilter === 'all' || 
                            (memberStatusFilter === 'active' && isActive && !isAbsent) || 
                            (memberStatusFilter === 'absent' && isActive && isAbsent) ||
-                           (memberStatusFilter === 'inactive' && !isActive);
+                           (memberStatusFilter === 'inactive' && !isActive) ||
+                           (memberStatusFilter === 'seniors' && isActive && seniorsMembers.some(s => s.id === m.id)) ||
+                           (memberStatusFilter === 'families' && isActive);
       
       return matchesSearch && matchesStatus;
     });
@@ -4778,6 +4969,42 @@ export default function App() {
                         <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{inactiveMembersCount}</p>
                       </div>
                     </button>
+                    <button 
+                       onClick={() => setMemberStatusFilter(memberStatusFilter === 'families' ? 'all' : 'families')}
+                      className={cn(
+                        "glass-card p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
+                        memberStatusFilter === 'families' ? "border-blue-500 ring-4 ring-blue-50 bg-blue-50/50" : "hover:border-blue-200"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0",
+                        memberStatusFilter === 'families' ? "bg-blue-500 text-white" : "bg-blue-50 text-blue-500"
+                      )}>
+                        <Home className="w-4 h-4 sm:w-6 sm:h-6" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[7px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Famílias</p>
+                        <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{familiesData.total}</p>
+                      </div>
+                    </button>
+                    <button 
+                       onClick={() => setMemberStatusFilter(memberStatusFilter === 'seniors' ? 'all' : 'seniors')}
+                      className={cn(
+                        "glass-card p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
+                        memberStatusFilter === 'seniors' ? "border-purple-500 ring-4 ring-purple-50 bg-purple-50/50" : "hover:border-purple-200"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0",
+                        memberStatusFilter === 'seniors' ? "bg-purple-500 text-white" : "bg-purple-50 text-purple-500"
+                      )}>
+                        <Award className="w-4 h-4 sm:w-6 sm:h-6" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[7px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Idosos</p>
+                        <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{seniorsMembers.length}</p>
+                      </div>
+                    </button>
                   </div>
 
                   {/* Expandable Search bar */}
@@ -4831,7 +5058,7 @@ export default function App() {
                 <div className="flex items-center justify-between px-4 py-2 bg-ibc-teal/5 border border-ibc-teal/10 rounded-2xl max-w-5xl mx-auto">
                   <div className="flex items-center space-x-2">
                     <span className="text-xs font-bold text-ibc-teal uppercase tracking-widest">
-                      Filtrando por: {memberStatusFilter === 'active' ? 'Ativos' : memberStatusFilter === 'absent' ? 'Ausentes' : 'Inativos'}
+                      Filtrando por: {memberStatusFilter === 'active' ? 'Ativos' : memberStatusFilter === 'absent' ? 'Ausentes' : memberStatusFilter === 'inactive' ? 'Inativos' : memberStatusFilter === 'seniors' ? 'Idosos' : 'Famílias'}
                     </span>
                     <span className="text-xs text-gray-400">({filteredMembers.length} encontrados)</span>
                   </div>
@@ -5391,7 +5618,7 @@ export default function App() {
                           
                           <div className="flex items-baseline space-x-2">
                              <div className="text-xl sm:text-3xl font-black text-gray-900 dark:text-gray-50 leading-tight">
-                               {category.members.length}
+                               {category.id === 'families' ? familiesData.total : category.members.length}
                              </div>
                              <div className={`flex items-center text-[9px] sm:text-[11px] font-black ${isGrowing ? (category.id === 'absents' || category.id === 'inactives' ? 'text-red-500' : 'text-green-500') : (category.id === 'absents' || category.id === 'inactives' ? 'text-green-500' : 'text-red-500')}`}>
                                 {isGrowing ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
