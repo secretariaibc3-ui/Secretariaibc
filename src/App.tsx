@@ -1425,7 +1425,18 @@ export default function App() {
           }
         });
       });
-      return members.filter(m => targetIds.has(m.id));
+      
+      let filtered = members.filter(m => targetIds.has(m.id));
+      
+      // Enforce gender constraints based on relationship name to prevent data entry inconsistencies
+      const selectedLower = rhSelectedValue.toLowerCase().trim();
+      if (['pai', 'irmão', 'esposo', 'filho', 'tio', 'avô', 'sobrinho', 'neto', 'sogro', 'genro', 'cunhado'].includes(selectedLower)) {
+        filtered = filtered.filter(m => m.gender === 'Homem');
+      } else if (['mãe', 'irmã', 'esposa', 'filha', 'tia', 'avó', 'sobrinha', 'neta', 'sogra', 'nora', 'cunhada'].includes(selectedLower)) {
+        filtered = filtered.filter(m => m.gender === 'Mulher');
+      }
+      
+      return filtered;
     }
     
     if (rhFilterType === 'function' && rhSelectedValue) {
@@ -1435,7 +1446,7 @@ export default function App() {
   };
 
   const getCouples = () => {
-    const couples: { names: string, ids: string[] }[] = [];
+    const couples: { names: string, ids: string[], husband?: Member, wife?: Member, raw: [Member, Member] }[] = [];
     const processedIds = new Set<string>();
 
     members.forEach(member => {
@@ -1448,9 +1459,32 @@ export default function App() {
       if (spouseRel) {
         const partner = members.find(m => m.id === spouseRel.memberId);
         if (partner && !processedIds.has(partner.id)) {
+          let husband, wife;
+          if (member.gender === 'Homem' && partner.gender === 'Mulher') {
+            husband = member; wife = partner;
+          } else if (member.gender === 'Mulher' && partner.gender === 'Homem') {
+            husband = partner; wife = member;
+          } else if (member.gender === 'Homem') {
+            husband = member;
+          } else if (member.gender === 'Mulher') {
+            wife = member;
+          } else {
+            husband = member;
+          }
+
+          let nameLabel = '';
+          if (husband && wife) {
+             nameLabel = `${husband.name} e ${wife.name}`;
+          } else {
+             nameLabel = `${member.name} e ${partner.name}`;
+          }
+
           couples.push({
-            names: `${member.name} + ${partner.name}`,
-            ids: [member.id, partner.id]
+            names: nameLabel,
+            ids: [member.id, partner.id],
+            husband,
+            wife,
+            raw: [member, partner]
           });
           processedIds.add(member.id);
           processedIds.add(partner.id);
@@ -2124,6 +2158,25 @@ export default function App() {
       saveToCache('ministries', ministriesData);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'ministries'));
 
+    // Real-time synchronization and automatic seeding of relationship types
+    const unsubscribeRelationshipTypes = onSnapshot(collection(db, 'relationshipTypes'), (snapshot) => {
+      const relTypesData = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as RelationshipType));
+      if (relTypesData.length === 0) {
+        console.log("Empty relationship types, seeding default values...");
+        const defaults = ['Pai', 'Mãe', 'Filho(a)', 'Irmão', 'Irmã', 'Esposo(a)'];
+        const batch = writeBatch(db);
+        defaults.forEach(d => {
+          const docRef = doc(collection(db, 'relationshipTypes'));
+          batch.set(docRef, { name: d });
+        });
+        batch.commit().catch(err => console.error("Error seeding relationship types:", err));
+      } else {
+        const sorted = relTypesData.sort((a, b) => a.name.localeCompare(b.name));
+        setRelationshipTypes(sorted);
+        saveToCache('relationshipTypes', sorted);
+      }
+    }, (error) => handleFirestoreError(error, OperationType.LIST, 'relationshipTypes'));
+
     const fetchData = async () => {
       try {
         const atasSnapshot = await getDocs(query(collection(db, 'atas'), orderBy('createdAt', 'desc')));
@@ -2141,16 +2194,6 @@ export default function App() {
         const finalRoles = rolesData.length === 0 ? [{ id: '1', name: 'Líder' }, { id: '2', name: 'Liderado' }] : rolesData.sort((a,b) => a.name.localeCompare(b.name));
         setMinistryRoles(finalRoles);
         saveToCache('ministryRoles', finalRoles);
-
-        const relTypesSnapshot = await getDocs(collection(db, 'relationshipTypes'));
-        const relTypesData = relTypesSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name } as RelationshipType));
-        if (relTypesData.length === 0) {
-          console.log("Empty relationship types, needs seeding logic - keeping as is for now");
-        } else {
-          const sorted = relTypesData.sort((a, b) => a.name.localeCompare(b.name));
-          setRelationshipTypes(sorted);
-          saveToCache('relationshipTypes', sorted);
-        }
 
       } catch (error) {
         handleFirestoreError(error, OperationType.LIST, 'data-fetching');
@@ -2170,6 +2213,7 @@ export default function App() {
       unsubscribeMembers();
       unsubscribeFunctions();
       unsubscribeMinistries();
+      unsubscribeRelationshipTypes();
       unsubscribeSettings();
     };
   }, [user?.uid]);
@@ -2340,6 +2384,15 @@ export default function App() {
     const photoEntry = formData.get('photo');
     const photoFile = (photoEntry instanceof File && photoEntry.size > 0) ? photoEntry : null;
 
+    let finalTempRelationships = [...tempRelationships];
+    const unsavedRelTypeElem = document.getElementById('kinship-type') as HTMLSelectElement;
+    const unsavedRelIdElem = document.getElementById('kinship-member') as HTMLSelectElement;
+    if (unsavedRelTypeElem && unsavedRelIdElem && unsavedRelIdElem.value) {
+      if (!finalTempRelationships.some(r => r.memberId === unsavedRelIdElem.value)) {
+        finalTempRelationships.push({ memberId: unsavedRelIdElem.value, type: unsavedRelTypeElem.value });
+      }
+    }
+
     try {
       setIsSaving(true);
       console.log("Status: isSaving = true");
@@ -2376,7 +2429,7 @@ export default function App() {
           function: func,
           ministryIds: tempMemberMinistries.map(m => m.ministryId),
           ministries: tempMemberMinistries,
-          relationships: tempRelationships,
+          relationships: finalTempRelationships,
           gender,
           birthDate,
           startDate,
@@ -2396,9 +2449,9 @@ export default function App() {
         });
 
         // Sincronizar parentesco bidirecional
-        if (tempRelationships.length > 0) {
-          console.log(`Sincronizando ${tempRelationships.length} parentescos...`);
-          const relPromises = tempRelationships.map(async (rel) => {
+        if (finalTempRelationships.length > 0) {
+          console.log(`Sincronizando ${finalTempRelationships.length} parentescos...`);
+          const relPromises = finalTempRelationships.map(async (rel) => {
             const bRef = doc(db, 'members', rel.memberId);
             const bSnap = await getDoc(bRef);
             if (bSnap.exists()) {
@@ -2527,6 +2580,15 @@ export default function App() {
     const photoEntry = formData.get('photo');
     const photoFile = (photoEntry instanceof File && photoEntry.size > 0) ? photoEntry : null;
 
+    let finalTempRelationships = [...tempRelationships];
+    const unsavedRelTypeElem = document.getElementById('kinship-type-edit') as HTMLSelectElement;
+    const unsavedRelIdElem = document.getElementById('kinship-member-edit') as HTMLSelectElement;
+    if (unsavedRelTypeElem && unsavedRelIdElem && unsavedRelIdElem.value) {
+      if (!finalTempRelationships.some(r => r.memberId === unsavedRelIdElem.value)) {
+        finalTempRelationships.push({ memberId: unsavedRelIdElem.value, type: unsavedRelTypeElem.value });
+      }
+    }
+
     try {
       setIsSaving(true);
       console.log("Status Edit: isSaving = true");
@@ -2573,7 +2635,7 @@ export default function App() {
           function: func,
           ministryIds: tempMemberMinistries.map(m => m.ministryId),
           ministries: tempMemberMinistries,
-          relationships: tempRelationships,
+          relationships: finalTempRelationships,
           gender,
           birthDate,
           startDate,
@@ -2596,7 +2658,7 @@ export default function App() {
         const memberRef = doc(db, 'members', selectedMember.id);
 
         const oldRels = selectedMember.relationships || [];
-        const removedRels = oldRels.filter(old => !tempRelationships.some(curr => curr.memberId === old.memberId));
+        const removedRels = oldRels.filter(old => !finalTempRelationships.some(curr => curr.memberId === old.memberId));
         
         // Optimize relationship updates using shared logic to avoid multiple independent getDoc calls if possible
         // but for safety in this complex logic, we'll keep them but add more logging and better error handling
@@ -2624,9 +2686,9 @@ export default function App() {
           await Promise.all(removedPromises);
         }
 
-        if (tempRelationships.length > 0) {
-          console.log(`Sincronizando ${tempRelationships.length} vínculos atuais nos parentes...`);
-          const currentPromises = tempRelationships.map(async (rel) => {
+        if (finalTempRelationships.length > 0) {
+          console.log(`Sincronizando ${finalTempRelationships.length} vínculos atuais nos parentes...`);
+          const currentPromises = finalTempRelationships.map(async (rel) => {
             try {
               const bRef = doc(db, 'members', rel.memberId);
               const bSnap = await getDoc(bRef);
@@ -5616,20 +5678,48 @@ export default function App() {
                                   </span>
                                 </div>
                               </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {getCouples().map((couple, index) => (
                                   <motion.div 
                                     key={index} 
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.05 }}
-                                    className="p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] flex items-center justify-between group hover:border-ibc-teal/30 transition-all"
+                                    className="p-4 bg-white dark:bg-[#0a0a0a] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group hover:border-red-200 dark:hover:border-red-900/30 transition-all flex flex-col items-center relative overflow-hidden"
                                   >
-                                    <div className="flex items-center space-x-3">
-                                      <div className="bg-white dark:bg-[#111] p-2 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
-                                        <Heart className="w-4 h-4 text-red-400" />
+                                    <div className="flex items-center justify-center w-full mb-3 relative z-10">
+                                      {/* Left Person */}
+                                      <div className="relative">
+                                        <div className="w-14 h-14 rounded-full bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-2 border-white dark:border-[#0a0a0a] shadow-sm z-10 relative">
+                                          {(couple.husband || couple.raw[0])?.photoUrl ? (
+                                            <img src={(couple.husband || couple.raw[0])!.photoUrl} alt="" className="w-full h-full object-cover" />
+                                          ) : (
+                                            <User className="w-6 h-6 text-gray-300 dark:text-gray-600" />
+                                          )}
+                                        </div>
                                       </div>
-                                      <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{couple.names}</span>
+
+                                      {/* Heart Center */}
+                                      <div className="mx-2 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/10 p-2 rounded-full z-20 shadow-sm border border-red-100 dark:border-red-900/30 group-hover:scale-110 group-hover:rotate-12 transition-transform -mt-2">
+                                        <Heart className="w-4 h-4 text-red-500 fill-current" />
+                                      </div>
+
+                                      {/* Right Person */}
+                                      <div className="relative">
+                                        <div className="w-14 h-14 rounded-full bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-2 border-white dark:border-[#0a0a0a] shadow-sm z-10 relative">
+                                          {(couple.wife || couple.raw[1])?.photoUrl ? (
+                                            <img src={(couple.wife || couple.raw[1])!.photoUrl} alt="" className="w-full h-full object-cover" />
+                                          ) : (
+                                            <User className="w-6 h-6 text-gray-300 dark:text-gray-600" />
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="text-center w-full">
+                                      <p className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate px-2">
+                                        {(couple.husband || couple.raw[0]).name.split(' ')[0]} <span className="text-red-400 dark:text-red-600/50 font-normal mx-0.5">&</span> {(couple.wife || couple.raw[1]).name.split(' ')[0]}
+                                      </p>
                                     </div>
                                   </motion.div>
                                 ))}
