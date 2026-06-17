@@ -71,7 +71,8 @@ import {
   Cake,
   FileUp,
   GripVertical,
-  ShieldCheck
+  ShieldCheck,
+  Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'motion/react';
 import SplashScreen from './components/SplashScreen';
@@ -3502,7 +3503,7 @@ export default function App() {
   };
 
   const handleDeleteAgeClassification = (cls: AgeClassification) => {
-    showConfirmationDialog(
+    showConfirm(
       "Excluir Classificação",
       `Tem certeza que deseja excluir a classificação "${cls.name}"?`,
       async () => {
