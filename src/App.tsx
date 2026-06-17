@@ -1487,91 +1487,141 @@ export default function App() {
 
   const getFamilies = () => {
     const activeMembers = members.filter(m => m.isActive);
-    const processedIds = new Set<string>();
-    const families: { type: 'constituted' | 'origin', members: Member[], title: string }[] = [];
 
-    // 1. Prioritize Constituted Families (Couples + Children)
+    const isMarried = new Map<string, boolean>();
+    activeMembers.forEach(m => isMarried.set(m.id, false));
+
+    const spousalTypes = new Set(['esposo', 'esposa', 'esposo(a)', 'cônjuge', 'marido', 'mulher']);
+    const upTypes = new Set(['pai', 'mãe', 'avô', 'avó', 'bisavô', 'bisavó', 'tio', 'tia', 'sogro', 'sogra', 'padrasto', 'madrasta']);
+    const downTypes = new Set(['filho', 'filha', 'filho(a)', 'neto', 'neta', 'bisneto', 'bisneta', 'sobrinho', 'sobrinha', 'genro', 'nora', 'enteado', 'enteada']);
+    const peerTypes = new Set(['irmão', 'irmã', 'irmão(ã)', 'primo', 'prima', 'cunhado', 'cunhada']);
+
+    const normalizeType = (type: string) => type.toLowerCase().trim();
+
+    // 1. Identify married members explicitly
     activeMembers.forEach(m => {
-      if (processedIds.has(m.id)) return;
+      m.relationships?.forEach(r => {
+        const t = normalizeType(r.type);
+        if (spousalTypes.has(t) && activeMembers.some(am => am.id === r.memberId)) {
+          isMarried.set(m.id, true);
+          isMarried.set(r.memberId, true);
+        }
+      });
+    });
 
-      const spouseRel = m.relationships?.find(r => 
-        ['esposo', 'esposa', 'cônjuge', 'esposo(a)'].includes(r.type.toLowerCase().trim())
-      );
+    // 2. Build adjacency list of ONLY valid grouping edges
+    const adj = new Map<string, Set<string>>();
+    activeMembers.forEach(m => adj.set(m.id, new Set()));
 
-      const parentRel = m.relationships?.find(r => 
-        ['pai', 'mãe', 'filho', 'filha', 'filho(a)'].includes(r.type.toLowerCase().trim())
-      );
+    activeMembers.forEach(m => {
+      m.relationships?.forEach(r => {
+        const targetId = r.memberId;
+        if (!adj.has(targetId)) return;
 
-      // Check if this member is a parent or spouse
-      if (spouseRel || (m.relationships?.some(r => ['pai', 'mãe'].includes(r.type.toLowerCase().trim())))) {
-        const familyUnit: Member[] = [m];
-        processedIds.add(m.id);
+        const t = normalizeType(r.type);
+        let validEdge = false;
 
-        if (spouseRel) {
-          const spouse = activeMembers.find(sm => sm.id === spouseRel.memberId);
-          if (spouse && !processedIds.has(spouse.id)) {
-            familyUnit.push(spouse);
-            processedIds.add(spouse.id);
-          }
+        if (spousalTypes.has(t)) {
+          validEdge = true; // Spouses always group together
+        } else if (upTypes.has(t)) {
+          // m is younger (e.g. child points to parent). Child stays with parent IF child is not married.
+          if (!isMarried.get(m.id)) validEdge = true;
+        } else if (downTypes.has(t)) {
+          // m is older (e.g. parent points to child). Child stays with parent IF child is not married.
+          if (!isMarried.get(targetId)) validEdge = true;
+        } else {
+          // peerTypes or unknown. Siblings stay together IF BOTH are not married.
+          if (!isMarried.get(m.id) && !isMarried.get(targetId)) validEdge = true;
         }
 
-        // Add children linked to either parent
-        familyUnit.forEach(parent => {
-          activeMembers.forEach(potentialChild => {
-            if (processedIds.has(potentialChild.id)) return;
-            const isChild = potentialChild.relationships?.some(r => 
-              (r.memberId === parent.id && ['pai', 'mãe'].includes(r.type.toLowerCase().trim())) ||
-              (parent.relationships?.some(pr => pr.memberId === potentialChild.id && ['filho', 'filha', 'filho(a)'].includes(pr.type.toLowerCase().trim())))
-            );
-            if (isChild) {
-              familyUnit.push(potentialChild);
-              processedIds.add(potentialChild.id);
+        if (validEdge) {
+          adj.get(m.id)!.add(targetId);
+          adj.get(targetId)!.add(m.id);
+        }
+      });
+    });
+
+    const visited = new Set<string>();
+    const families: { type: 'constituted' | 'origin', members: Member[], title: string }[] = [];
+
+    // 3. Find connected components (Families)
+    activeMembers.forEach(m => {
+      if (!visited.has(m.id)) {
+        const comp: Member[] = [];
+        const queue = [m.id];
+        visited.add(m.id);
+        
+        while (queue.length > 0) {
+          const currId = queue.shift()!;
+          const member = activeMembers.find(am => am.id === currId);
+          if (member) comp.push(member);
+          
+          adj.get(currId)?.forEach(neighborId => {
+            if (!visited.has(neighborId)) {
+              visited.add(neighborId);
+              queue.push(neighborId);
             }
           });
-        });
-
-        // Determine title
-        const maleHead = familyUnit.find(fm => fm.gender === 'Homem');
-        const femaleHead = familyUnit.find(fm => fm.gender === 'Mulher' && fm.relationships?.some(r => ['esposa', 'esposo', 'esposo(a)'].includes(r.type.toLowerCase().trim())));
+        }
         
-        let title = "Núcleo Familiar";
-        if (maleHead && femaleHead) title = `Família de ${maleHead.name.split(' ')[0]} & ${femaleHead.name.split(' ')[0]}`;
-        else if (maleHead) title = `Família de ${maleHead.name}`;
-        else if (femaleHead) title = `Família de ${femaleHead.name}`;
-        else title = `Família de ${familyUnit[0].name}`;
+        // Exclude single persons without family links defined for the "Famílias" visual grouping
+        if (comp.length > 1) {
+          let type: 'constituted' | 'origin' = 'origin';
+          
+          const marriedInComp = comp.filter(member => isMarried.get(member.id));
+          const parentsInComp = comp.filter(member => 
+            member.relationships?.some(r => downTypes.has(normalizeType(r.type)) && comp.some(c => c.id === r.memberId)) ||
+            comp.some(c => c.relationships?.some(r => upTypes.has(normalizeType(r.type)) && r.memberId === member.id))
+          );
 
-        families.push({ type: 'constituted', members: familyUnit, title });
+          if (marriedInComp.length > 0 || parentsInComp.length > 0) {
+            type = 'constituted';
+          }
+
+          let title = "Família";
+
+          if (marriedInComp.length > 0) {
+            const husband = marriedInComp.find(member => member.gender === 'Homem');
+            const wife = marriedInComp.find(member => member.gender === 'Mulher');
+            if (husband && wife) {
+               title = `Família de ${husband.name.split(' ')[0]} & ${wife.name.split(' ')[0]}`;
+            } else if (marriedInComp.length >= 2) {
+               title = `Família de ${marriedInComp[0].name.split(' ')[0]} & ${marriedInComp[1].name.split(' ')[0]}`;
+            } else {
+               title = `Família de ${marriedInComp[0].name.split(' ')[0]}`;
+            }
+          } else if (parentsInComp.length > 0) {
+            title = `Família de ${parentsInComp[0].name.split(' ')[0]}`;
+          } else {
+            if (comp.length === 2) {
+              title = `Família dos Irmãos ${comp[0].name.split(' ')[0]} e ${comp[1].name.split(' ')[0]}`;
+            } else {
+              title = `Família dos Irmãos ${comp[0].name.split(' ')[0]}, ${comp[1].name.split(' ')[0]} e outros`;
+            }
+          }
+
+          // Visual sorting inside the family card
+          comp.sort((a, b) => {
+             const aMarried = isMarried.get(a.id) ? 1 : 0;
+             const bMarried = isMarried.get(b.id) ? 1 : 0;
+             if (aMarried !== bMarried) return bMarried - aMarried;
+
+             const aParent = parentsInComp.some(p => p.id === a.id) ? 1 : 0;
+             const bParent = parentsInComp.some(p => p.id === b.id) ? 1 : 0;
+             if (aParent !== bParent) return bParent - aParent;
+
+             return a.name.localeCompare(b.name, 'pt-BR');
+          });
+
+          families.push({ type, members: comp, title });
+        }
       }
     });
 
-    // 2. Origin Families (Remaining siblings linked to each other)
-    activeMembers.forEach(m => {
-      if (processedIds.has(m.id)) return;
-
-      const siblingRels = m.relationships?.filter(r => ['irmão', 'irmã', 'irmão(ã)'].includes(r.type.toLowerCase().trim()));
-      
-      if (siblingRels && siblingRels.length > 0) {
-        const familyUnit: Member[] = [m];
-        processedIds.add(m.id);
-
-        const findSiblings = (member: Member) => {
-          member.relationships?.filter(r => ['irmão', 'irmã', 'irmão(ã)'].includes(r.type.toLowerCase().trim())).forEach(r => {
-            const sib = activeMembers.find(sm => sm.id === r.memberId);
-            if (sib && !processedIds.has(sib.id)) {
-              familyUnit.push(sib);
-              processedIds.add(sib.id);
-              findSiblings(sib);
-            }
-          });
-        };
-        findSiblings(m);
-
-        families.push({ 
-          type: 'origin', 
-          members: familyUnit, 
-          title: `Família dos Irmãos ${familyUnit.map(sm => sm.name.split(' ')[0]).join(', ')}` 
-        });
-      }
+    // Final sorting among all families
+    families.sort((a, b) => {
+       if (a.type !== b.type) return a.type === 'constituted' ? -1 : 1;
+       return a.title.localeCompare(b.title, 'pt-BR');
     });
 
     return families;
