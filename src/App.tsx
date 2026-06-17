@@ -68,6 +68,7 @@ import {
   BarChart3,
   Scale,
   BookOpen,
+  Cake,
   FileUp,
   GripVertical,
   ShieldCheck
@@ -730,8 +731,9 @@ export default function App() {
   const [isMemberFunctionsCollapsed, setIsMemberFunctionsCollapsed] = useState(true);
   const [isRelationshipTypesCollapsed, setIsRelationshipTypesCollapsed] = useState(true);
   const [isRHFilterCollapsed, setIsRHFilterCollapsed] = useState(true);
-  const [rhFilterType, setRhFilterType] = useState<'all' | 'relationship' | 'function' | 'couples'>('all');
+  const [rhFilterType, setRhFilterType] = useState<'all' | 'relationship' | 'function' | 'couples' | 'birthdays'>('all');
   const [rhSelectedValue, setRhSelectedValue] = useState<string>('');
+  const [rhBirthdayMonth, setRhBirthdayMonth] = useState(new Date().getMonth());
   
   const [isEditFunctionModalOpen, setIsEditFunctionModalOpen] = useState(false);
   const [isAddFunctionModalOpen, setIsAddFunctionModalOpen] = useState(false);
@@ -1439,6 +1441,23 @@ export default function App() {
     if (rhFilterType === 'function' && rhSelectedValue) {
       return activeMembers.filter(m => m.function === rhSelectedValue);
     }
+
+    if (rhFilterType === 'birthdays') {
+      return activeMembers
+        .filter(m => {
+          if (!m.birthDate) return false;
+          // Format expected YYYY-MM-DD
+          const parts = m.birthDate.split('-');
+          if (parts.length < 2) return false;
+          return parseInt(parts[1], 10) === rhBirthdayMonth + 1;
+        })
+        .sort((a, b) => {
+          const dayA = parseInt(a.birthDate.split('-')[2], 10) || 0;
+          const dayB = parseInt(b.birthDate.split('-')[2], 10) || 0;
+          return dayA - dayB;
+        });
+    }
+
     return [];
   };
 
@@ -1594,6 +1613,7 @@ export default function App() {
     if (rhFilterType === 'relationship') filterTitle = `Filtro: Parentesco - ${rhSelectedValue}`;
     else if (rhFilterType === 'function') filterTitle = `Filtro: Função - ${rhSelectedValue}`;
     else if (rhFilterType === 'couples') filterTitle = `Filtro: Casais`;
+    else if (rhFilterType === 'birthdays') filterTitle = `Filtro: Aniversariantes de ${['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][rhBirthdayMonth]}`;
     
     doc.text(filterTitle, 45, 28);
     doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 45, 34);
@@ -1619,10 +1639,29 @@ export default function App() {
       doc.text(`Total: ${couples.length} Casais encontrados`, 15, lastY + 15);
     } else {
       const filtered = getFilteredMembers();
+      
+      const tableHead = rhFilterType === 'birthdays' 
+        ? [['#', 'Nome', 'Data', 'Idade Completa']]
+        : [['#', 'Nome', 'Função', 'Gênero']];
+      
+      const tableBody = filtered.map((m, i) => {
+        if (rhFilterType === 'birthdays') {
+          const birthdayParts = m.birthDate.split('-');
+          const day = birthdayParts[2] ? birthdayParts[2].padStart(2, '0') : '--';
+          const month = birthdayParts[1] ? birthdayParts[1].padStart(2, '0') : '--';
+          let age = '-';
+          if (birthdayParts.length === 3 && birthdayParts[0].length === 4) {
+            age = (new Date().getFullYear() - parseInt(birthdayParts[0], 10)).toString();
+          }
+          return [i + 1, m.name, `${day}/${month}`, age];
+        }
+        return [i + 1, m.name, m.function, m.gender || '-'];
+      });
+
       autoTable(doc, {
         startY: 50,
-        head: [['#', 'Nome', 'Função', 'Gênero']],
-        body: filtered.map((m, i) => [i + 1, m.name, m.function, m.gender || '-']),
+        head: tableHead,
+        body: tableBody,
         theme: 'striped',
         headStyles: { fillColor: [6, 74, 143], textColor: [255, 255, 255] },
         styles: { fontSize: 10, cellPadding: 5 }
@@ -5725,8 +5764,24 @@ export default function App() {
                               <option value="relationship">Grau de Parentesco</option>
                               <option value="function">Função de Membro</option>
                               <option value="couples">Casais</option>
+                              <option value="birthdays">Aniversariantes</option>
                             </select>
                           </div>
+
+                          {rhFilterType === 'birthdays' && (
+                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex-1">
+                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Selecionar Mês</label>
+                              <select 
+                                value={rhBirthdayMonth}
+                                onChange={(e) => setRhBirthdayMonth(Number(e.target.value))}
+                                className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
+                              >
+                                {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
+                                  <option key={i} value={i}>{m}</option>
+                                ))}
+                              </select>
+                            </motion.div>
+                          )}
 
                           {rhFilterType === 'relationship' && (
                             <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex-1">
@@ -5760,7 +5815,7 @@ export default function App() {
                             </motion.div>
                           )}
 
-                          {((rhFilterType !== 'all' && (rhSelectedValue || rhFilterType === 'couples'))) && (
+                          {((rhFilterType !== 'all' && (rhSelectedValue || rhFilterType === 'couples' || rhFilterType === 'birthdays'))) && (
                             <div className="flex items-end">
                               <button 
                                 onClick={handleExportRHFilterPDF}
@@ -5775,7 +5830,86 @@ export default function App() {
 
                         {/* Resultados */}
                         <div className="mt-8 pt-6 border-t border-gray-50">
-                          {rhFilterType === 'couples' ? (
+                          {rhFilterType === 'birthdays' ? (
+                            <div className="space-y-6">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                  Aniversariantes de {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][rhBirthdayMonth]}
+                                </h4>
+                                <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
+                                  <Cake className="w-3.5 h-3.5 mr-2" />
+                                  <span className="text-xs font-black uppercase tracking-tight">
+                                    {getFilteredMembers().length} {getFilteredMembers().length === 1 ? 'Aniversariante' : 'Aniversariantes'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {getFilteredMembers().map((member, index) => {
+                                  const birthdayParts = member.birthDate.split('-');
+                                  const day = birthdayParts[2] ? parseInt(birthdayParts[2], 10) : 0;
+                                  const monthIdx = birthdayParts[1] ? parseInt(birthdayParts[1], 10) - 1 : 0;
+                                  
+                                  // Calculate approximate age if birthdate is full
+                                  let ageDisplay = null;
+                                  if (birthdayParts.length === 3 && birthdayParts[0].length === 4) {
+                                    const birthYear = parseInt(birthdayParts[0], 10);
+                                    const currentYear = new Date().getFullYear();
+                                    ageDisplay = currentYear - birthYear;
+                                  }
+
+                                  return (
+                                    <motion.div 
+                                      key={member.id} 
+                                      initial={{ opacity: 0, y: 10 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      transition={{ delay: index * 0.05 }}
+                                      className="p-4 bg-white dark:bg-[#0a0a0a] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group transition-all flex items-center space-x-4 relative overflow-hidden"
+                                    >
+                                      <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-black overflow-hidden shrink-0 border border-gray-100 dark:border-[#222] flex items-center justify-center text-lg font-bold text-gray-400">
+                                        {member.photoUrl ? (
+                                          <img src={member.photoUrl} className="w-full h-full object-cover" alt={member.name} referrerPolicy="no-referrer" />
+                                        ) : (
+                                          member.name.charAt(0)
+                                        )}
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="font-extrabold text-gray-900 dark:text-gray-50 text-sm truncate group-hover:text-ibc-teal transition-colors">
+                                          {member.name}
+                                        </div>
+                                        <div className="flex flex-col mt-0.5">
+                                          <span className="text-[10px] text-ibc-teal font-black uppercase tracking-widest">
+                                            {day.toString().padStart(2, '0')}/{ (monthIdx + 1).toString().padStart(2, '0')}
+                                          </span>
+                                          {ageDisplay !== null && (
+                                            <span className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">
+                                              Completa {ageDisplay} anos
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      {member.celular && (
+                                        <a 
+                                          href={`https://wa.me/${getWhatsAppNumber(member.celular)}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="w-10 h-10 bg-green-500/10 text-green-500 rounded-xl flex items-center justify-center hover:bg-green-500/20 transition-all active:scale-95 shrink-0"
+                                          title="Enviar mensagem de aniversário"
+                                        >
+                                          <MessageSquare className="w-5 h-5 fill-current" />
+                                        </a>
+                                      )}
+                                    </motion.div>
+                                  );
+                                })}
+                                {getFilteredMembers().length === 0 && (
+                                  <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
+                                    <Cake className="w-8 h-8 text-gray-200 mx-auto mb-3" />
+                                    <p className="text-xs text-gray-400 font-medium">Nenhum aniversariante encontrado neste mês.</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ) : rhFilterType === 'couples' ? (
                             <div className="space-y-6">
                               <div className="flex items-center justify-between">
                                 <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Casais Identificados</h4>
