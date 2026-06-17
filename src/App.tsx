@@ -977,7 +977,9 @@ export default function App() {
   const [showUpdateBanner, setShowUpdateBanner] = useState(false);
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [newVersion, setNewVersion] = useState<string | null>(null);
   const runningVersionRef = useRef<string | null>(null);
+  const ignoredVersionRef = useRef<string | null>(null);
   
   const [isStandalone, setIsStandalone] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -1183,7 +1185,10 @@ export default function App() {
           console.log('App initial version loaded:', data.version);
         } else {
           if (runningVersionRef.current && data.version && data.version !== runningVersionRef.current) {
+            if (data.version === ignoredVersionRef.current) return;
+            
             console.log('New update detected! Current:', runningVersionRef.current, 'New:', data.version);
+            setNewVersion(data.version);
             setShowUpdateBanner(true);
             
             // Also trigger a SwRegistration update check to download sw.js if available
@@ -1200,13 +1205,13 @@ export default function App() {
     // Initial check
     checkVersion(true);
 
-    // Check version every 1 hour for background update detection without disrupting user flow
+    // Check version every 2 minutes for background update detection without disrupting user flow
     checkInterval = setInterval(() => {
       if (isMounted) checkVersion(false);
       if (swRegistration) {
         swRegistration.update().catch(err => console.debug("Auto SW update call:", err));
       }
-    }, 3600000);
+    }, 120000);
 
     return () => {
       isMounted = false;
@@ -9820,15 +9825,20 @@ export default function App() {
                   <RefreshCcw className={`w-5 h-5 text-ibc-teal ${isUpdating ? 'animate-spin' : ''}`} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900 dark:text-gray-50 leading-tight">Uma nova atualização está disponível.</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium leading-normal mt-0.5">Versão mais recente pronta para uso.</p>
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-gray-50 leading-tight">Nova atualização disponível</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium leading-normal mt-0.5">Uma nova versão do sistema foi publicada. Atualize para utilizar as melhorias mais recentes.</p>
                 </div>
               </div>
               
               <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
                 <button
                   disabled={isUpdating}
-                  onClick={() => setShowUpdateBanner(false)}
+                  onClick={() => {
+                    if (newVersion) {
+                      ignoredVersionRef.current = newVersion;
+                    }
+                    setShowUpdateBanner(false);
+                  }}
                   className="px-3 py-2 bg-gray-50 dark:bg-black hover:bg-gray-100 dark:bg-[#1a1a1a] disabled:opacity-50 text-gray-500 dark:text-gray-400 rounded-xl text-xs font-bold active:scale-95 transition-all text-center"
                 >
                   Depois
@@ -9844,7 +9854,7 @@ export default function App() {
                       Atualizando...
                     </>
                   ) : (
-                    'Atualizar agora'
+                    'Atualizar Agora'
                   )}
                 </button>
               </div>
