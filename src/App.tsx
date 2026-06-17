@@ -6010,70 +6010,97 @@ export default function App() {
                 {/* Charts Area */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
                   {/* Functions Bar Chart */}
-                  <div className="glass-card p-4 sm:p-8 rounded-[3rem] border border-white/40 shadow-sm overflow-x-auto">
+                  <div className="glass-card p-4 sm:p-8 rounded-[3rem] border border-white/40 shadow-sm">
                     <div className="flex items-center space-x-3 mb-6 sm:mb-8">
                       <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center">
                         <LayoutGrid className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       </div>
                       <h4 className="text-xs sm:text-sm font-black text-gray-900 dark:text-gray-50 uppercase tracking-widest">Membros por Função</h4>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                        {Object.entries(reportData.functionsDetails)
                          .sort(([nameA], [nameB]) => nameA.localeCompare(nameB))
                          .map(([name, data]: [string, any]) => (
-                         <div key={name}>
+                         <div key={name} className="group">
                              <button
                                onClick={() => setExpandedFunction(name)}
-                               className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] hover:border-ibc-teal/50 transition-all group"
+                               className="w-full flex flex-col space-y-1 text-left"
                              >
-                                <div className="flex items-center space-x-3">
-                                  <div className="w-8 h-8 rounded-lg bg-white dark:bg-[#111] flex items-center justify-center text-ibc-teal shadow-sm text-xs font-bold">
-                                    {data.count}
+                                <div className="flex items-center justify-between text-[10px] sm:text-xs font-black uppercase tracking-widest">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-gray-700 dark:text-gray-200">{name}</span>
+                                    <ChevronRight className="w-3 h-3 text-gray-300 group-hover:text-ibc-teal transition-colors" />
                                   </div>
-                                  <span className="text-xs font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest">{name}</span>
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-gray-400">{data.count} membros</span>
+                                    <span className="text-ibc-teal">{data.percentage}%</span>
+                                  </div>
                                 </div>
-                                <div className="flex items-center space-x-3">
-                                  <span className="text-[10px] font-black text-gray-400">{data.percentage}%</span>
-                                  <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-ibc-teal transition-colors" />
+                                <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                  <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${data.percentage}%` }}
+                                    transition={{ duration: 1, ease: "easeOut" }}
+                                    className="h-full bg-ibc-teal rounded-full"
+                                  />
                                 </div>
                              </button>
                          </div>
                        ))}
+
+                      <div className="pt-4 border-t border-gray-100 dark:border-[#222] flex items-center justify-between text-[10px] sm:text-xs font-black uppercase tracking-widest">
+                        <span className="text-gray-900 dark:text-gray-50">Total</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-gray-400">{Object.values(reportData.functionsDetails).reduce((acc: number, curr: any) => acc + curr.count, 0)} membros</span>
+                          <span className="text-ibc-teal">100%</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Status Pie Chart */}
-                  <div className="glass-card p-4 sm:p-8 rounded-[3rem] border border-white/40 shadow-sm overflow-x-auto">
+                  {/* Status Progress Board */}
+                  <div className="glass-card p-4 sm:p-8 rounded-[3rem] border border-white/40 shadow-sm">
                     <div className="flex items-center space-x-3 mb-6 sm:mb-8">
                       <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center">
                         <LucidePieChart className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       </div>
                       <h4 className="text-xs sm:text-sm font-black text-gray-900 dark:text-gray-50 uppercase tracking-widest">Distribuição por Status</h4>
                     </div>
-                    <div className="h-64 sm:h-80 w-full flex flex-col items-center">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={reportData.statusChartData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={50}
-                            outerRadius={80}
-                            paddingAngle={5}
-                            dataKey="value"
-                          >
-                            {reportData.statusChartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={reportData.COLORS[index % reportData.COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip 
-                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                          />
-                          <Legend verticalAlign="bottom" height={36} iconSize={8} wrapperStyle={{ fontSize: '10px' }}/>
-                        </PieChart>
-                      </ResponsiveContainer>
+                    <div className="space-y-4">
+                      {reportData.statusChartData.map((item, index) => {
+                        const percentage = reportData.total > 0 ? ((item.value / reportData.total) * 100).toFixed(1) : '0';
+                        return (
+                          <div key={index} className="flex flex-col space-y-1">
+                            <div className="flex items-center justify-between text-[10px] sm:text-xs font-black uppercase tracking-widest">
+                              <span className="text-gray-700 dark:text-gray-200">{item.name}</span>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-gray-400">{item.value} membros</span>
+                                <span className="text-ibc-teal">{percentage}%</span>
+                              </div>
+                            </div>
+                            <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                              <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${percentage}%` }}
+                                transition={{ duration: 1, ease: "easeOut" }}
+                                className="h-full bg-ibc-teal rounded-full"
+                                style={{ backgroundColor: reportData.COLORS[index] }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      <div className="pt-4 border-t border-gray-100 dark:border-[#222] flex items-center justify-between text-[10px] sm:text-xs font-black uppercase tracking-widest">
+                        <span className="text-gray-900 dark:text-gray-50">Total Geral</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-gray-400">{reportData.total} membros</span>
+                          <span className="text-ibc-teal">100%</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
+
 
                   {/* Age Distribution Card */}
                   <div className="glass-card p-4 sm:p-8 rounded-[3rem] border border-white/40 shadow-sm">
