@@ -6149,9 +6149,9 @@ export default function App() {
                               </div>
                             </div>
                           ) : rhFilterType === 'families' ? (
-                            <div className="space-y-8">
+                            <div className="space-y-6">
                               <div className="flex items-center justify-between">
-                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Agrupamento de Famílias</h4>
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Famílias da Igreja 👨‍👩‍👧‍👦</h4>
                                 <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
                                   <Users className="w-3.5 h-3.5 mr-2" />
                                   <span className="text-xs font-black uppercase tracking-tight">
@@ -6159,49 +6159,78 @@ export default function App() {
                                   </span>
                                 </div>
                               </div>
-                              <div className="space-y-6">
-                                {getFamilies().map((family, familyIdx) => (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {getFamilies().map((family, index) => (
                                   <motion.div 
-                                    key={familyIdx}
+                                    key={index} 
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: familyIdx * 0.1 }}
-                                    className="bg-gray-50/50 dark:bg-black/20 rounded-[40px] p-6 border border-gray-100 dark:border-[#222]"
+                                    transition={{ delay: index * 0.05 }}
+                                    className="p-6 bg-white dark:bg-[#0a0a0a] rounded-[40px] border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group transition-all flex flex-col relative overflow-hidden"
                                   >
-                                    <div className="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-[#222] pb-4">
-                                      <div className="flex items-center">
-                                        <div className={cn(
-                                          "w-10 h-10 rounded-2xl flex items-center justify-center mr-3",
-                                          family.type === 'constituted' ? "bg-red-500/10 text-red-500" : "bg-blue-500/10 text-blue-500"
-                                        )}>
-                                          {family.type === 'constituted' ? <Heart className="w-5 h-5 fill-current" /> : <Users className="w-5 h-5" />}
-                                        </div>
-                                        <div>
-                                          <h5 className="font-black text-gray-900 dark:text-gray-50 text-sm">{family.title}</h5>
-                                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">
-                                            {family.type === 'constituted' ? 'Núcleo Familiar Constituído' : 'Família de Origem (Grupo de Irmãos)'}
-                                          </p>
-                                        </div>
+                                    {/* Header Section */}
+                                    <div className="flex items-center mb-6">
+                                      <div className={cn(
+                                        "w-12 h-12 rounded-full flex items-center justify-center mr-4 shrink-0",
+                                        family.type === 'constituted' ? "bg-red-500/10 text-red-500" : "bg-blue-500/10 text-blue-500"
+                                      )}>
+                                        {family.type === 'constituted' ? <Heart className="w-6 h-6 fill-current" /> : <Users className="w-6 h-6" />}
                                       </div>
-                                      <div className="px-3 py-1 bg-white dark:bg-black rounded-full border border-gray-100 dark:border-[#222] text-[10px] font-black text-gray-400">
-                                        {family.members.length} {family.members.length === 1 ? 'MEMBRO' : 'MEMBROS'}
+                                      <div className="min-w-0">
+                                        <h5 className="font-black text-gray-900 dark:text-gray-50 text-base leading-tight truncate">
+                                          {family.title}
+                                        </h5>
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">
+                                          {family.type === 'constituted' ? 'NÚCLEO FAMILIAR CONSTITUÍDO' : 'FAMÍLIA DE ORIGEM'}
+                                        </p>
                                       </div>
                                     </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                      {family.members.map((m, mIdx) => (
-                                        <div key={mIdx} className="flex items-center space-x-3 p-3 bg-white dark:bg-[#0a0a0a] rounded-2xl border border-gray-100 dark:border-[#222] shadow-sm">
-                                          <div className="w-8 h-8 rounded-xl bg-gray-50 dark:bg-black overflow-hidden flex items-center justify-center text-[10px] font-black text-gray-400 border border-gray-100 dark:border-[#222]">
-                                            {m.photoUrl ? <img src={m.photoUrl} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" /> : m.name.charAt(0)}
-                                          </div>
-                                          <div className="min-w-0 flex-1">
-                                            <div className="font-extrabold text-xs text-gray-900 dark:text-gray-50 truncate">{m.name}</div>
-                                            <div className="text-[10px] text-gray-400 font-bold uppercase truncate">{m.function}</div>
+
+                                    {/* Separator */}
+                                    <div className="w-full h-px bg-gray-100 dark:border-[#222] mb-8" />
+
+                                    {/* Photos Section - Overlapping circles as in the image */}
+                                    <div className="flex items-center justify-center w-full mb-8 relative z-10 -space-x-6">
+                                      {family.members.slice(0, 5).map((m, mIdx) => (
+                                        <div 
+                                          key={m.id} 
+                                          className="relative transition-transform hover:scale-110 hover:z-30 z-10" 
+                                          style={{ zIndex: family.members.length - mIdx }}
+                                          onClick={() => { setSelectedMember(m); setIsViewMemberModalOpen(true); }}
+                                        >
+                                          <div className="w-20 h-20 rounded-full cursor-pointer bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-4 border-white dark:border-[#0a0a0a] shadow-md hover:border-ibc-teal transition-all">
+                                            {m.photoUrl ? (
+                                              <img src={m.photoUrl} alt="" className="w-full h-full object-cover" />
+                                            ) : (
+                                              <div className="text-xl font-black text-gray-300">{m.name.charAt(0)}</div>
+                                            )}
                                           </div>
                                         </div>
                                       ))}
+                                      {family.members.length > 5 && (
+                                        <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-[#222] border-4 border-white dark:border-[#0a0a0a] flex items-center justify-center text-gray-500 font-black z-0 -ml-6 shadow-md">
+                                          +{family.members.length - 5}
+                                        </div>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Footer Section */}
+                                    <div className="text-center w-full space-y-1">
+                                      <p className="text-2xl font-black text-gray-900 dark:text-gray-50 leading-tight">
+                                        Grupo de {family.members.length} {family.members.length === 1 ? 'membro' : 'membros'}
+                                      </p>
+                                      <p className="text-sm font-bold text-gray-400">
+                                        {family.members.map(s => s.name.split(' ')[0]).join(', ').replace(/, ([^,]*)$/, ' e $1')}
+                                      </p>
                                     </div>
                                   </motion.div>
                                 ))}
+                                {getFamilies().length === 0 && (
+                                  <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
+                                    <Users className="w-8 h-8 text-gray-200 mx-auto mb-3" />
+                                    <p className="text-xs text-gray-400 font-medium">Nenhuma família identificada nos vínculos atuais.</p>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           ) : rhFilterType === 'couples' ? (
