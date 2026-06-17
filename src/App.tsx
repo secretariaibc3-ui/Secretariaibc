@@ -6055,6 +6055,10 @@ export default function App() {
                                       transition={{ delay: index * 0.05 }}
                                       className="p-4 bg-white dark:bg-[#0a0a0a] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group transition-all flex items-center space-x-4 relative overflow-hidden"
                                     >
+                                      {/* Birthday Icon indicator */}
+                                      <div className="absolute top-0 left-0 w-8 h-8 bg-ibc-teal/10 flex items-center justify-center rounded-br-2xl">
+                                        <Cake className="w-3.5 h-3.5 text-ibc-teal" />
+                                      </div>
                                       <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-black overflow-hidden shrink-0 border border-gray-100 dark:border-[#222] flex items-center justify-center text-lg font-bold text-gray-400">
                                         {member.photoUrl ? (
                                           <img src={member.photoUrl} className="w-full h-full object-cover" alt={member.name} referrerPolicy="no-referrer" />
