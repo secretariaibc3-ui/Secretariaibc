@@ -1495,11 +1495,11 @@ export default function App() {
       if (processedIds.has(m.id)) return;
 
       const spouseRel = m.relationships?.find(r => 
-        ['esposo', 'esposa', 'cônjuge'].includes(r.type.toLowerCase().trim())
+        ['esposo', 'esposa', 'cônjuge', 'esposo(a)'].includes(r.type.toLowerCase().trim())
       );
 
       const parentRel = m.relationships?.find(r => 
-        ['pai', 'mãe', 'filho', 'filha'].includes(r.type.toLowerCase().trim())
+        ['pai', 'mãe', 'filho', 'filha', 'filho(a)'].includes(r.type.toLowerCase().trim())
       );
 
       // Check if this member is a parent or spouse
@@ -1521,7 +1521,7 @@ export default function App() {
             if (processedIds.has(potentialChild.id)) return;
             const isChild = potentialChild.relationships?.some(r => 
               (r.memberId === parent.id && ['pai', 'mãe'].includes(r.type.toLowerCase().trim())) ||
-              (parent.relationships?.some(pr => pr.memberId === potentialChild.id && ['filho', 'filha'].includes(pr.type.toLowerCase().trim())))
+              (parent.relationships?.some(pr => pr.memberId === potentialChild.id && ['filho', 'filha', 'filho(a)'].includes(pr.type.toLowerCase().trim())))
             );
             if (isChild) {
               familyUnit.push(potentialChild);
@@ -1532,7 +1532,7 @@ export default function App() {
 
         // Determine title
         const maleHead = familyUnit.find(fm => fm.gender === 'Homem');
-        const femaleHead = familyUnit.find(fm => fm.gender === 'Mulher' && fm.relationships?.some(r => ['esposa', 'esposo'].includes(r.type.toLowerCase().trim())));
+        const femaleHead = familyUnit.find(fm => fm.gender === 'Mulher' && fm.relationships?.some(r => ['esposa', 'esposo', 'esposo(a)'].includes(r.type.toLowerCase().trim())));
         
         let title = "Núcleo Familiar";
         if (maleHead && femaleHead) title = `Família de ${maleHead.name.split(' ')[0]} & ${femaleHead.name.split(' ')[0]}`;
