@@ -6155,7 +6155,7 @@ export default function App() {
                         <ChevronUp className="w-5 h-5 ml-2 text-gray-400" />
                       )}
                     </h3>
-                    <p className="text-xs sm:text-sm text-gray-400 font-medium mt-1">Filtre membros por parentesco, função ou veja os casais.</p>
+                    <p className="text-xs sm:text-sm text-gray-400 font-medium mt-1">Filtre membros por parentesco, função, idade ou veja os casais.</p>
                   </div>
                 </div>
 
@@ -6182,7 +6182,7 @@ export default function App() {
                               <option value="all">Selecione um filtro...</option>
                               <option value="relationship">Grau de Parentesco</option>
                               <option value="function">Função de Membro</option>
-                              <option value="age">Faixa Etária</option>
+                              <option value="age">Classificação por Idade</option>
                               <option value="couples">Casais</option>
                               <option value="families">Famílias</option>
                               <option value="elders">Idosos</option>
@@ -6192,13 +6192,13 @@ export default function App() {
 
                           {rhFilterType === 'age' && (
                             <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex-1">
-                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Selecionar Faixa Etária</label>
+                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Selecionar Classificação</label>
                               <select 
                                 value={rhSelectedValue}
                                 onChange={(e) => setRhSelectedValue(e.target.value)}
                                 className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
                               >
-                                <option value="">Todas as faixas etárias...</option>
+                                <option value="">Todas as classificações...</option>
                                 {ageClassifications.map(c => (
                                   <option key={c.id} value={c.id}>{c.name}</option>
                                 ))}
