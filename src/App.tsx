@@ -3214,15 +3214,26 @@ export default function App() {
     const name = formData.get('name') as string;
     const color = formData.get('color') as string;
     const description = formData.get('description') as string;
+    const photoEntry = formData.get('photo');
+    const photoFile = (photoEntry instanceof File && photoEntry.size > 0) ? photoEntry : null;
 
     try {
       setIsSaving(true);
+      
+      let photoUrl = '';
+      if (photoPreview && photoPreview.startsWith('data:image')) {
+        photoUrl = photoPreview;
+      } else if (photoFile) {
+        console.log("Iniciando upload de foto do ministério...");
+        const fileName = photoFile.name || "ministry";
+        photoUrl = await uploadFile(`ministries/${Date.now()}_${fileName}`, photoFile);
+      }
 
       const docRef = await addDoc(collection(db, 'ministries'), {
         name,
         color,
         description: description?.trim() || "",
-        photoUrl: '',
+        photoUrl,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -3231,7 +3242,7 @@ export default function App() {
         type: 'add',
         collection: 'ministries',
         id: docRef.id,
-        data: { name, color, description: description?.trim() || "" },
+        data: { name, color, description: description?.trim() || "", photoUrl },
         message: `Ministério ${name} cadastrado.`
       });
 
@@ -3252,9 +3263,20 @@ export default function App() {
     const name = formData.get('name') as string;
     const color = formData.get('color') as string;
     const description = formData.get('description') as string;
+    const photoEntry = formData.get('photo');
+    const photoFile = (photoEntry instanceof File && photoEntry.size > 0) ? photoEntry : null;
 
     try {
       setIsSaving(true);
+      
+      let photoUrl = selectedMinistry.photoUrl || '';
+      if (photoPreview && photoPreview.startsWith('data:image')) {
+        photoUrl = photoPreview;
+      } else if (photoFile) {
+        console.log("Iniciando upload de nova foto do ministério...");
+        const fileName = photoFile.name || "ministry";
+        photoUrl = await uploadFile(`ministries/${Date.now()}_${fileName}`, photoFile);
+      }
       
       console.log("Atualizando ministério no Firestore...");
       const oldData = { ...selectedMinistry, updatedAt: serverTimestamp() };
@@ -3262,6 +3284,7 @@ export default function App() {
         name,
         color,
         description: description?.trim() || "",
+        photoUrl,
         updatedAt: serverTimestamp()
       });
       
@@ -4927,17 +4950,21 @@ export default function App() {
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.2, delay: idx * 0.02 }}
                       onClick={() => { setSelectedMinistry(m); setIsMinistryMembersModalOpen(true); }}
-                      className="p-3 sm:p-6 rounded-3xl border border-white/20 shadow-lg hover:shadow-2xl hover:shadow-gray-200/50 transition-all duration-500 group relative overflow-hidden cursor-pointer h-32 sm:h-48 flex flex-col justify-end active:scale-[0.98]"
-                      style={{ backgroundColor: `${m.color}cc`, backdropFilter: 'blur(20px)' }}
+                      className="p-4 sm:p-6 rounded-3xl shadow-lg hover:shadow-2xl hover:shadow-gray-200/50 transition-all duration-500 group relative overflow-hidden cursor-pointer h-32 sm:h-48 flex flex-col justify-end active:scale-[0.98]"
+                      style={
+                        m.photoUrl 
+                          ? { backgroundImage: `url(${m.photoUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } 
+                          : { backgroundColor: `${m.color}cc`, backdropFilter: 'blur(20px)' }
+                      }
                     >
-                      <div className="relative z-10 overflow-hidden">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center text-white bg-white/20 backdrop-blur-md shadow-lg mb-2 sm:mb-3">
-                          <LayoutGrid className="w-5 h-5 sm:w-6 sm:h-6" />
-                        </div>
+                      {/* Dark overlay for better text readability, especially over images */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
+
+                      <div className="relative z-10 w-full">
                         <h3 className="text-lg sm:text-xl font-black text-white leading-tight tracking-tight drop-shadow-md truncate">
                           {m.name}
                         </h3>
-                        <p className="text-[8px] sm:text-[10px] text-white/80 font-black uppercase tracking-widest mt-1 drop-shadow-sm">
+                        <p className="text-[8px] sm:text-[10px] text-white/90 font-black uppercase tracking-widest mt-1 drop-shadow-sm">
                           {members.filter(mem => mem.isActive !== false && ((mem.ministryIds?.includes(m.id)) || (mem.ministryId === m.id))).length} Participantes
                         </p>
                       </div>
@@ -4947,10 +4974,11 @@ export default function App() {
                           <button 
                             onClick={(e) => { 
                               e.stopPropagation(); 
-                              setSelectedMinistry(m); 
+                              setSelectedMinistry(m);
+                              setPhotoPreview(m.photoUrl || null);
                               setIsEditMinistryModalOpen(true); 
                             }}
-                            className="p-2 text-white hover:bg-white/20 rounded-xl transition-all backdrop-blur-md bg-white/10"
+                            className="p-2 text-white hover:bg-white/30 rounded-xl transition-all backdrop-blur-md bg-black/20 hover:text-white"
                             title="Editar Ministério"
                           >
                             <Edit2 className="w-4 h-4" />
@@ -7277,25 +7305,56 @@ export default function App() {
         fullscreen={true}
       >
         <form onSubmit={handleAddMinistry} onInput={() => setIsFormDirty(true)} className="space-y-6 pb-6">
-          <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Nome do Ministério</label>
-            <input required name="name" type="text" className="w-full p-3 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Descrição do Ministério (Opcional)</label>
-            <textarea 
-              name="description" 
-              placeholder="Descreva as responsabilidades, propósitos e atividades deste ministério..."
-              rows={12}
-              className="w-full p-4 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-80 sm:h-[28rem] min-h-[16rem] custom-scrollbar" 
-            />
-          </div>
-          
-          <div className="pt-6 border-t border-gray-100 dark:border-[#222]">
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Cor de Identificação</label>
-            <div className="flex items-center space-x-3 bg-gray-50 dark:bg-black p-4 rounded-2xl border border-gray-100 dark:border-[#222]">
-              <input required name="color" type="color" defaultValue="#064a8f" className="w-12 h-12 rounded-xl border-none cursor-pointer" />
-              <p className="text-xs text-gray-400 font-medium">Escolha uma cor para representar este ministério.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Nome do Ministério</label>
+                <input required name="name" type="text" className="w-full p-3 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" />
+              </div>
+              
+              <div className="pt-6 border-t border-gray-100 dark:border-[#222]">
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Cor de Identificação</label>
+                <div className="flex items-center space-x-3 bg-gray-50 dark:bg-black p-4 rounded-2xl border border-gray-100 dark:border-[#222]">
+                  <input required name="color" type="color" defaultValue="#064a8f" className="w-12 h-12 rounded-xl border-none cursor-pointer" />
+                  <p className="text-xs text-gray-400 font-medium">Escolha uma cor para representar este ministério.</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Imagem de Capa (Opcional)</label>
+                <div className="relative group">
+                  <input 
+                    name="photo" 
+                    type="file" 
+                    accept="image/*"
+                    className="hidden" 
+                    id="add-ministry-photo"
+                    onChange={handlePhotoChange}
+                  />
+                  <label 
+                    htmlFor="add-ministry-photo"
+                    className="flex flex-col items-center justify-center w-full aspect-[21/9] border-2 border-dashed border-gray-200 dark:border-[#333] rounded-2xl cursor-pointer hover:border-ibc-teal/40 hover:bg-ibc-teal/5 transition-all overflow-hidden"
+                  >
+                    {photoPreview ? (
+                      <img src={photoPreview} className="w-full h-full object-cover" alt="Preview" referrerPolicy="no-referrer" />
+                    ) : (
+                      <>
+                        <Camera className="w-8 h-8 text-gray-400 group-hover:text-ibc-teal mb-2" />
+                        <span className="text-sm font-bold text-gray-400 group-hover:text-ibc-teal">Escolher uma imagem</span>
+                      </>
+                    )}
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Descrição do Ministério (Opcional)</label>
+              <textarea 
+                name="description" 
+                placeholder="Descreva as responsabilidades, propósitos e atividades deste ministério..."
+                className="w-full p-4 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-full min-h-[16rem] custom-scrollbar" 
+              />
             </div>
           </div>
           
@@ -7323,26 +7382,57 @@ export default function App() {
         fullscreen={true}
       >
         <form onSubmit={handleEditMinistry} onInput={() => setIsFormDirty(true)} className="space-y-6 pb-6">
-          <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Nome do Ministério</label>
-            <input required name="name" type="text" defaultValue={selectedMinistry?.name} className="w-full p-3 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Descrição do Ministério (Opcional)</label>
-            <textarea 
-              name="description" 
-              defaultValue={selectedMinistry?.description || ''}
-              placeholder="Descreva as responsabilidades, propósitos e atividades deste ministério..."
-              rows={12}
-              className="w-full p-4 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-80 sm:h-[28rem] min-h-[16rem] custom-scrollbar" 
-            />
-          </div>
-          
-          <div className="pt-6 border-t border-gray-100 dark:border-[#222]">
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Cor de Identificação</label>
-            <div className="flex items-center space-x-3 bg-gray-50 dark:bg-black p-4 rounded-2xl border border-gray-100 dark:border-[#222]">
-              <input required name="color" type="color" defaultValue={selectedMinistry?.color} className="w-12 h-12 rounded-xl border-none cursor-pointer" />
-              <p className="text-xs text-gray-400 font-medium">Escolha uma cor para representar este ministério.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Nome do Ministério</label>
+                <input required name="name" type="text" defaultValue={selectedMinistry?.name} className="w-full p-3 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm" />
+              </div>
+              
+              <div className="pt-6 border-t border-gray-100 dark:border-[#222]">
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Cor de Identificação</label>
+                <div className="flex items-center space-x-3 bg-gray-50 dark:bg-black p-4 rounded-2xl border border-gray-100 dark:border-[#222]">
+                  <input required name="color" type="color" defaultValue={selectedMinistry?.color} className="w-12 h-12 rounded-xl border-none cursor-pointer" />
+                  <p className="text-xs text-gray-400 font-medium">Escolha uma cor para representar este ministério.</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Imagem de Capa (Opcional)</label>
+                <div className="relative group">
+                  <input 
+                    name="photo" 
+                    type="file" 
+                    accept="image/*"
+                    className="hidden" 
+                    id="edit-ministry-photo"
+                    onChange={handlePhotoChange}
+                  />
+                  <label 
+                    htmlFor="edit-ministry-photo"
+                    className="flex flex-col items-center justify-center w-full aspect-[21/9] border-2 border-dashed border-gray-200 dark:border-[#333] rounded-2xl cursor-pointer hover:border-ibc-teal/40 hover:bg-ibc-teal/5 transition-all overflow-hidden"
+                  >
+                    {photoPreview ? (
+                      <img src={photoPreview} className="w-full h-full object-cover" alt="Preview" referrerPolicy="no-referrer" />
+                    ) : (
+                      <>
+                        <Camera className="w-8 h-8 text-gray-400 group-hover:text-ibc-teal mb-2" />
+                        <span className="text-sm font-bold text-gray-400 group-hover:text-ibc-teal">Escolher uma imagem</span>
+                      </>
+                    )}
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">Descrição do Ministério (Opcional)</label>
+              <textarea 
+                name="description" 
+                defaultValue={selectedMinistry?.description || ''}
+                placeholder="Descreva as responsabilidades, propósitos e atividades deste ministério..."
+                className="w-full p-4 border border-gray-200 dark:border-[#333] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal resize-y text-sm h-full min-h-[16rem] custom-scrollbar" 
+              />
             </div>
           </div>
           
