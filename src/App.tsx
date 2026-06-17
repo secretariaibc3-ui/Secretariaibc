@@ -6185,7 +6185,6 @@ export default function App() {
                               <option value="age">Classificação por Idade</option>
                               <option value="couples">Casais</option>
                               <option value="families">Famílias</option>
-                              <option value="elders">Idosos</option>
                               <option value="birthdays">Aniversariantes</option>
                             </select>
                           </div>
