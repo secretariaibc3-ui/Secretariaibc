@@ -1198,24 +1198,17 @@ export default function App() {
     // Initial check
     checkVersion(true);
 
-    // Check version every 30 seconds for fast update detection
+    // Check version every 1 hour for background update detection without disrupting user flow
     checkInterval = setInterval(() => {
       if (isMounted) checkVersion(false);
-    }, 30000);
-
-    // Check version & sw registration when window/tab returns to focus
-    const handleFocus = () => {
-      if (isMounted) checkVersion(false);
       if (swRegistration) {
-        swRegistration.update().catch(err => console.debug("Failed SW update on focus:", err));
+        swRegistration.update().catch(err => console.debug("Auto SW update call:", err));
       }
-    };
-    window.addEventListener('focus', handleFocus);
+    }, 3600000);
 
     return () => {
       isMounted = false;
       if (checkInterval) clearInterval(checkInterval);
-      window.removeEventListener('focus', handleFocus);
     };
   }, [swRegistration]);
 
@@ -4964,7 +4957,8 @@ export default function App() {
                       style={{
                         backgroundColor: m.photoUrl ? m.color : `${m.color}cc`,
                         backgroundImage: m.photoUrl ? `url(${m.photoUrl})` : 'none',
-                        backgroundSize: 'cover',
+                        backgroundSize: 'contain',
+                        backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'center',
                         backdropFilter: m.photoUrl ? 'none' : 'blur(20px)'
                       }}
