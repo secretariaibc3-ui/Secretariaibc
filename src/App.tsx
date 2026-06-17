@@ -42,6 +42,7 @@ import {
   ChevronDown,
   Edit2,
   ExternalLink,
+  Eye,
   Camera,
   RotateCcw,
   RefreshCcw,
@@ -2355,7 +2356,14 @@ export default function App() {
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
         
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        let dataUrl;
+        if (file.type === 'image/png') {
+          dataUrl = canvas.toDataURL('image/png');
+        } else if (file.type === 'image/webp') {
+          dataUrl = canvas.toDataURL('image/webp', 0.8);
+        } else {
+          dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        }
         setPhotoPreview(dataUrl);
       };
       img.src = event.target?.result as string;
@@ -3270,7 +3278,9 @@ export default function App() {
       setIsSaving(true);
       
       let photoUrl = selectedMinistry.photoUrl || '';
-      if (photoPreview && photoPreview.startsWith('data:image')) {
+      if (photoPreview === null && !photoFile) {
+        photoUrl = '';
+      } else if (photoPreview && photoPreview.startsWith('data:image')) {
         photoUrl = photoPreview;
       } else if (photoFile) {
         console.log("Iniciando upload de nova foto do ministério...");
@@ -4951,11 +4961,13 @@ export default function App() {
                       transition={{ duration: 0.2, delay: idx * 0.02 }}
                       onClick={() => { setSelectedMinistry(m); setIsMinistryMembersModalOpen(true); }}
                       className="p-4 sm:p-6 rounded-3xl shadow-lg hover:shadow-2xl hover:shadow-gray-200/50 transition-all duration-500 group relative overflow-hidden cursor-pointer h-32 sm:h-48 flex flex-col justify-end active:scale-[0.98]"
-                      style={
-                        m.photoUrl 
-                          ? { backgroundImage: `url(${m.photoUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } 
-                          : { backgroundColor: `${m.color}cc`, backdropFilter: 'blur(20px)' }
-                      }
+                      style={{
+                        backgroundColor: m.photoUrl ? m.color : `${m.color}cc`,
+                        backgroundImage: m.photoUrl ? `url(${m.photoUrl})` : 'none',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backdropFilter: m.photoUrl ? 'none' : 'blur(20px)'
+                      }}
                     >
                       {/* Dark overlay for better text readability, especially over images */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
@@ -7331,19 +7343,63 @@ export default function App() {
                     id="add-ministry-photo"
                     onChange={handlePhotoChange}
                   />
-                  <label 
-                    htmlFor="add-ministry-photo"
-                    className="flex flex-col items-center justify-center w-full aspect-[21/9] border-2 border-dashed border-gray-200 dark:border-[#333] rounded-2xl cursor-pointer hover:border-ibc-teal/40 hover:bg-ibc-teal/5 transition-all overflow-hidden"
-                  >
-                    {photoPreview ? (
+                  {photoPreview ? (
+                    <div className="relative w-full aspect-[21/9] border-2 border-gray-100 dark:border-[#333] rounded-2xl overflow-hidden group">
                       <img src={photoPreview} className="w-full h-full object-cover" alt="Preview" referrerPolicy="no-referrer" />
-                    ) : (
-                      <>
-                        <Camera className="w-8 h-8 text-gray-400 group-hover:text-ibc-teal mb-2" />
-                        <span className="text-sm font-bold text-gray-400 group-hover:text-ibc-teal">Escolher uma imagem</span>
-                      </>
-                    )}
-                  </label>
+                      
+                      {/* Interaction Overlay */}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-2 sm:space-x-4">
+                        
+                        <label 
+                          htmlFor="add-ministry-photo"
+                          className="p-3 bg-white/20 hover:bg-white/30 rounded-xl text-white backdrop-blur-md cursor-pointer transition-all flex flex-col items-center justify-center min-w-[70px]"
+                          title="Alterar Foto"
+                        >
+                          <Camera className="w-5 h-5 mb-1" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Alterar</span>
+                        </label>
+                        
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            window.open(photoPreview, '_blank');
+                          }}
+                          className="p-3 bg-white/20 hover:bg-white/30 rounded-xl text-white backdrop-blur-md transition-all flex flex-col items-center justify-center min-w-[70px]"
+                          title="Visualizar Foto"
+                        >
+                          <Eye className="w-5 h-5 mb-1" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Visualizar</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (window.confirm('Tem certeza que deseja remover esta imagem?')) {
+                              setPhotoPreview(null);
+                              setIsFormDirty(true);
+                              const fileInput = document.getElementById('add-ministry-photo') as HTMLInputElement;
+                              if (fileInput) fileInput.value = '';
+                            }
+                          }}
+                          className="p-3 bg-red-500/80 hover:bg-red-500 rounded-xl text-white backdrop-blur-md transition-all flex flex-col items-center justify-center min-w-[70px]"
+                          title="Remover Foto"
+                        >
+                          <Trash2 className="w-5 h-5 mb-1" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Remover</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label 
+                      htmlFor="add-ministry-photo"
+                      className="flex flex-col items-center justify-center w-full aspect-[21/9] border-2 border-dashed border-gray-200 dark:border-[#333] rounded-2xl cursor-pointer hover:border-ibc-teal/40 hover:bg-ibc-teal/5 transition-all overflow-hidden"
+                    >
+                      <Camera className="w-8 h-8 text-gray-400 group-hover:text-ibc-teal mb-2" />
+                      <span className="text-sm font-bold text-gray-400 group-hover:text-ibc-teal">Escolher uma imagem</span>
+                    </label>
+                  )}
                 </div>
               </div>
             </div>
@@ -7408,19 +7464,63 @@ export default function App() {
                     id="edit-ministry-photo"
                     onChange={handlePhotoChange}
                   />
-                  <label 
-                    htmlFor="edit-ministry-photo"
-                    className="flex flex-col items-center justify-center w-full aspect-[21/9] border-2 border-dashed border-gray-200 dark:border-[#333] rounded-2xl cursor-pointer hover:border-ibc-teal/40 hover:bg-ibc-teal/5 transition-all overflow-hidden"
-                  >
-                    {photoPreview ? (
+                  {photoPreview ? (
+                    <div className="relative w-full aspect-[21/9] border-2 border-gray-100 dark:border-[#333] rounded-2xl overflow-hidden group">
                       <img src={photoPreview} className="w-full h-full object-cover" alt="Preview" referrerPolicy="no-referrer" />
-                    ) : (
-                      <>
-                        <Camera className="w-8 h-8 text-gray-400 group-hover:text-ibc-teal mb-2" />
-                        <span className="text-sm font-bold text-gray-400 group-hover:text-ibc-teal">Escolher uma imagem</span>
-                      </>
-                    )}
-                  </label>
+                      
+                      {/* Interaction Overlay */}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-2 sm:space-x-4">
+                        
+                        <label 
+                          htmlFor="edit-ministry-photo"
+                          className="p-3 bg-white/20 hover:bg-white/30 rounded-xl text-white backdrop-blur-md cursor-pointer transition-all flex flex-col items-center justify-center min-w-[70px]"
+                          title="Alterar Foto"
+                        >
+                          <Camera className="w-5 h-5 mb-1" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Alterar</span>
+                        </label>
+                        
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            window.open(photoPreview, '_blank');
+                          }}
+                          className="p-3 bg-white/20 hover:bg-white/30 rounded-xl text-white backdrop-blur-md transition-all flex flex-col items-center justify-center min-w-[70px]"
+                          title="Visualizar Foto"
+                        >
+                          <Eye className="w-5 h-5 mb-1" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Visualizar</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (window.confirm('Tem certeza que deseja remover esta imagem?')) {
+                              setPhotoPreview(null);
+                              setIsFormDirty(true);
+                              const fileInput = document.getElementById('edit-ministry-photo') as HTMLInputElement;
+                              if (fileInput) fileInput.value = '';
+                            }
+                          }}
+                          className="p-3 bg-red-500/80 hover:bg-red-500 rounded-xl text-white backdrop-blur-md transition-all flex flex-col items-center justify-center min-w-[70px]"
+                          title="Remover Foto"
+                        >
+                          <Trash2 className="w-5 h-5 mb-1" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Remover</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label 
+                      htmlFor="edit-ministry-photo"
+                      className="flex flex-col items-center justify-center w-full aspect-[21/9] border-2 border-dashed border-gray-200 dark:border-[#333] rounded-2xl cursor-pointer hover:border-ibc-teal/40 hover:bg-ibc-teal/5 transition-all overflow-hidden"
+                    >
+                      <Camera className="w-8 h-8 text-gray-400 group-hover:text-ibc-teal mb-2" />
+                      <span className="text-sm font-bold text-gray-400 group-hover:text-ibc-teal">Escolher uma imagem</span>
+                    </label>
+                  )}
                 </div>
               </div>
             </div>
