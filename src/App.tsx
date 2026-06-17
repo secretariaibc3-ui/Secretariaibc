@@ -3503,7 +3503,7 @@ export default function App() {
   };
 
   const handleDeleteAgeClassification = (cls: AgeClassification) => {
-    showConfirm(
+    showPasswordPrompt(
       "Excluir Classificação",
       `Tem certeza que deseja excluir a classificação "${cls.name}"?`,
       async () => {
