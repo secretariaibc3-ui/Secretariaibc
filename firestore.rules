@@ -221,28 +221,28 @@ service cloud.firestore {
 
     match /memberFunctions/{functionId} {
       allow get, list: if isSignedIn();
-      allow create: if isEmailVerified() && isValidMemberFunction(incoming());
+      allow create: if isFullAdmin() && isValidMemberFunction(incoming());
       allow update: if isFullAdmin() && isValidMemberFunction(incoming());
       allow delete: if isFullAdmin();
     }
 
     match /relationshipTypes/{typeId} {
       allow get, list: if isSignedIn();
-      allow create: if isEmailVerified() && isValidRelationshipType(incoming());
+      allow create: if isFullAdmin() && isValidRelationshipType(incoming());
       allow update: if isFullAdmin() && isValidRelationshipType(incoming());
       allow delete: if isFullAdmin();
     }
 
     match /ministryRoles/{roleId} {
       allow get, list: if isSignedIn();
-      allow create: if isEmailVerified() && isValidMinistryRole(incoming());
+      allow create: if isFullAdmin() && isValidMinistryRole(incoming());
       allow update: if isFullAdmin() && isValidMinistryRole(incoming());
       allow delete: if isFullAdmin();
     }
 
     match /ageClassifications/{classId} {
       allow get, list: if isSignedIn();
-      allow create: if isEmailVerified() && isValidAgeClassification(incoming());
+      allow create: if isFullAdmin() && isValidAgeClassification(incoming());
       allow update: if isFullAdmin() && isValidAgeClassification(incoming());
       allow delete: if isFullAdmin();
     }
