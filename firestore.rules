@@ -152,14 +152,6 @@ service cloud.firestore {
              (!('createdAt' in data) || data.createdAt is timestamp);
     }
 
-    function isValidAgeClassification(data) {
-      return data.keys().hasAll(['name', 'minAge', 'maxAge']) &&
-             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
-             data.minAge is number &&
-             data.maxAge is number &&
-             (!('createdAt' in data) || data.createdAt is timestamp);
-    }
-
     // ===============================================================
     // Rules Matching
     // ===============================================================
@@ -221,29 +213,22 @@ service cloud.firestore {
 
     match /memberFunctions/{functionId} {
       allow get, list: if isSignedIn();
-      allow create: if isFullAdmin() && isValidMemberFunction(incoming());
+      allow create: if isEmailVerified() && isValidMemberFunction(incoming());
       allow update: if isFullAdmin() && isValidMemberFunction(incoming());
       allow delete: if isFullAdmin();
     }
 
     match /relationshipTypes/{typeId} {
       allow get, list: if isSignedIn();
-      allow create: if isFullAdmin() && isValidRelationshipType(incoming());
+      allow create: if isEmailVerified() && isValidRelationshipType(incoming());
       allow update: if isFullAdmin() && isValidRelationshipType(incoming());
       allow delete: if isFullAdmin();
     }
 
     match /ministryRoles/{roleId} {
       allow get, list: if isSignedIn();
-      allow create: if isFullAdmin() && isValidMinistryRole(incoming());
+      allow create: if isEmailVerified() && isValidMinistryRole(incoming());
       allow update: if isFullAdmin() && isValidMinistryRole(incoming());
-      allow delete: if isFullAdmin();
-    }
-
-    match /ageClassifications/{classId} {
-      allow get, list: if isSignedIn();
-      allow create: if isFullAdmin() && isValidAgeClassification(incoming());
-      allow update: if isFullAdmin() && isValidAgeClassification(incoming());
       allow delete: if isFullAdmin();
     }
   }

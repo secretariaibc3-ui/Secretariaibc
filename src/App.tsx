@@ -362,13 +362,6 @@ interface MemberFunction {
   description?: string;
 }
 
-interface AgeClassification {
-  id: string;
-  name: string;
-  minAge: number;
-  maxAge: number;
-}
-
 interface Member {
   id: string;
   name: string;
@@ -735,14 +728,10 @@ export default function App() {
   const [members, setMembers] = useState<Member[]>(() => loadFromCache<Member[]>('members', []));
   const [memberFunctions, setMemberFunctions] = useState<MemberFunction[]>(() => loadFromCache<MemberFunction[]>('memberFunctions', []));
   const [relationshipTypes, setRelationshipTypes] = useState<RelationshipType[]>(() => loadFromCache<RelationshipType[]>('relationshipTypes', []));
-  const [ageClassifications, setAgeClassifications] = useState<AgeClassification[]>(() => loadFromCache<AgeClassification[]>('ageClassifications', []));
-  
   const [isMemberFunctionsCollapsed, setIsMemberFunctionsCollapsed] = useState(true);
   const [isRelationshipTypesCollapsed, setIsRelationshipTypesCollapsed] = useState(true);
-  const [isAgeClassificationsCollapsed, setIsAgeClassificationsCollapsed] = useState(true);
-  
   const [isRHFilterCollapsed, setIsRHFilterCollapsed] = useState(true);
-  const [rhFilterType, setRhFilterType] = useState<'all' | 'relationship' | 'function' | 'couples' | 'birthdays' | 'families' | 'age'>('all');
+  const [rhFilterType, setRhFilterType] = useState<'all' | 'relationship' | 'function' | 'couples' | 'birthdays' | 'families' | 'elders'>('all');
   const [rhSelectedValue, setRhSelectedValue] = useState<string>('');
   const [rhBirthdayMonth, setRhBirthdayMonth] = useState(new Date().getMonth());
   
@@ -751,9 +740,6 @@ export default function App() {
   const [isViewFunctionDetailsModalOpen, setIsViewFunctionDetailsModalOpen] = useState(false);
   const [isEditRelationshipTypeModalOpen, setIsEditRelationshipTypeModalOpen] = useState(false);
   const [isAddRelationshipTypeModalOpen, setIsAddRelationshipTypeModalOpen] = useState(false);
-  const [isAddAgeClassificationModalOpen, setIsAddAgeClassificationModalOpen] = useState(false);
-  const [isEditAgeClassificationModalOpen, setIsEditAgeClassificationModalOpen] = useState(false);
-  const [selectedAgeClassification, setSelectedAgeClassification] = useState<AgeClassification | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportStep, setExportStep] = useState<'selection' | 'fields'>('selection');
   const [exportFilter, setExportFilter] = useState<'ativos' | 'ausentes' | 'inativos' | 'todos' | 'unico'>('todos');
@@ -796,8 +782,6 @@ export default function App() {
     setIsViewFunctionDetailsModalOpen(false);
     setIsEditRelationshipTypeModalOpen(false);
     setIsAddRelationshipTypeModalOpen(false);
-    setIsAddAgeClassificationModalOpen(false);
-    setIsEditAgeClassificationModalOpen(false);
     setIsExportModalOpen(false);
     setExportStep('selection');
     setExportFilter('todos');
@@ -1479,10 +1463,7 @@ export default function App() {
         });
     }
 
-    if (rhFilterType === 'age' && rhSelectedValue) {
-      const cls = ageClassifications.find(c => c.id === rhSelectedValue);
-      if (!cls) return [];
-      
+    if (rhFilterType === 'elders') {
       return activeMembers.filter(m => {
         if (!m.birthDate) return false;
         const parts = m.birthDate.split('-');
@@ -1497,7 +1478,7 @@ export default function App() {
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDay)) {
           age--;
         }
-        return age >= cls.minAge && age <= cls.maxAge;
+        return age >= 60;
       }).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
     }
 
@@ -1797,9 +1778,9 @@ export default function App() {
     let filterTitle = "";
     if (rhFilterType === 'relationship') filterTitle = `Filtro: Parentesco - ${rhSelectedValue}`;
     else if (rhFilterType === 'function') filterTitle = `Filtro: Função - ${rhSelectedValue}`;
-    else if (rhFilterType === 'age') filterTitle = `Filtro: Idade - ${ageClassifications.find(c => c.id === rhSelectedValue)?.name || rhSelectedValue}`;
     else if (rhFilterType === 'couples') filterTitle = `Filtro: Casais`;
     else if (rhFilterType === 'families') filterTitle = `Filtro: Agrupamento de Famílias`;
+    else if (rhFilterType === 'elders') filterTitle = `Filtro: Idosos (60+ anos)`;
     else if (rhFilterType === 'birthdays') filterTitle = `Filtro: Aniversariantes de ${['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][rhBirthdayMonth]}`;
     
     doc.text(filterTitle, 45, 28);
@@ -1864,7 +1845,7 @@ export default function App() {
       
       const tableHead = rhFilterType === 'birthdays' 
         ? [['#', 'Nome', 'Data', 'Idade Completa']]
-        : (rhFilterType === 'age')
+        : rhFilterType === 'elders'
         ? [['#', 'Nome', 'Função', 'Idade']]
         : [['#', 'Nome', 'Função', 'Gênero']];
       
@@ -1873,30 +1854,21 @@ export default function App() {
           const birthdayParts = m.birthDate.split('-');
           const day = birthdayParts[2] ? birthdayParts[2].padStart(2, '0') : '--';
           const month = birthdayParts[1] ? birthdayParts[1].padStart(2, '0') : '--';
-          let ageObj = '-';
+          let age = '-';
           if (birthdayParts.length === 3 && birthdayParts[0].length === 4) {
-            ageObj = (new Date().getFullYear() - parseInt(birthdayParts[0], 10)).toString();
+            age = (new Date().getFullYear() - parseInt(birthdayParts[0], 10)).toString();
           }
-          return [i + 1, m.name, `${day}/${month}`, ageObj];
+          return [i + 1, m.name, `${day}/${month}`, age];
         }
-        if (rhFilterType === 'age') {
-          let ageObj = '-';
+        if (rhFilterType === 'elders') {
+          let age = '-';
           if (m.birthDate) {
             const parts = m.birthDate.split('-');
             if (parts.length === 3) {
-              const birthYear = parseInt(parts[0], 10);
-              const birthMonth = parseInt(parts[1], 10) - 1;
-              const birthDay = parseInt(parts[2], 10);
-              const today = new Date();
-              let calcAge = today.getFullYear() - birthYear;
-              const monthDiff = today.getMonth() - birthMonth;
-              if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDay)) {
-                calcAge--;
-              }
-              ageObj = calcAge.toString();
+              age = (new Date().getFullYear() - parseInt(parts[0], 10)).toString();
             }
           }
-          return [i + 1, m.name, m.function, ageObj];
+          return [i + 1, m.name, m.function, age];
         }
         return [i + 1, m.name, m.function, m.gender || '-'];
       });
@@ -2010,7 +1982,6 @@ export default function App() {
                          isEditPresencaModalOpen || isViewPresencaModalOpen || isMinistryMembersModalOpen || 
                          isGalleryPickerOpen || isAddFunctionModalOpen || isEditFunctionModalOpen || 
                          isViewFunctionDetailsModalOpen || isAddRelationshipTypeModalOpen || isEditRelationshipTypeModalOpen || 
-                         isAddAgeClassificationModalOpen || isEditAgeClassificationModalOpen ||
                          isExportModalOpen ||
                          (alertConfig?.isOpen ?? false) || (confirmConfig?.isOpen ?? false) || 
                          (passwordPromptConfig?.isOpen ?? false);
@@ -2528,31 +2499,6 @@ export default function App() {
       }
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'relationshipTypes'));
 
-    const unsubscribeAgeClassifications = onSnapshot(collection(db, 'ageClassifications'), (snapshot) => {
-      const classData = snapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        name: doc.data().name, 
-        minAge: doc.data().minAge, 
-        maxAge: doc.data().maxAge 
-      } as AgeClassification));
-      if (classData.length === 0) {
-        console.log("Empty age classifications, seeding default values...");
-        const defaults = [
-          { name: 'Idosos', minAge: 60, maxAge: 120 }
-        ];
-        const batch = writeBatch(db);
-        defaults.forEach(d => {
-          const docRef = doc(collection(db, 'ageClassifications'));
-          batch.set(docRef, { ...d, createdAt: serverTimestamp() });
-        });
-        batch.commit().catch(err => console.error("Error seeding age classifications:", err));
-      } else {
-        const sorted = classData.sort((a, b) => a.minAge - b.minAge);
-        setAgeClassifications(sorted);
-        saveToCache('ageClassifications', sorted);
-      }
-    }, (error) => handleFirestoreError(error, OperationType.LIST, 'ageClassifications'));
-
     const fetchData = async () => {
       try {
         const atasSnapshot = await getDocs(query(collection(db, 'atas'), orderBy('createdAt', 'desc')));
@@ -2590,7 +2536,6 @@ export default function App() {
       unsubscribeFunctions();
       unsubscribeMinistries();
       unsubscribeRelationshipTypes();
-      unsubscribeAgeClassifications();
       unsubscribeSettings();
     };
   }, [user?.uid]);
@@ -3393,119 +3338,6 @@ export default function App() {
         } catch (error) {
           console.error("Delete Function Error:", error);
           showAlert("Erro", "Não foi possível excluir a função.");
-        } finally {
-          setIsSaving(false);
-        }
-      }
-    );
-  };
-
-  const handleAddAgeClassification = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (isSaving) return;
-    const formData = new FormData(e.currentTarget);
-    const name = formData.get('name') as string;
-    const minAge = parseInt(formData.get('minAge') as string, 10);
-    const maxAge = parseInt(formData.get('maxAge') as string, 10);
-    
-    if (!name || isNaN(minAge) || isNaN(maxAge)) return;
-    
-    if (minAge > maxAge) {
-      showAlert("Erro", "A idade inicial não pode ser maior que a idade final.");
-      return;
-    }
-    
-    if (ageClassifications.some(ac => ac.name.toLowerCase() === name.toLowerCase())) {
-      showAlert("Aviso", "Já existe uma classificação com este nome.");
-      return;
-    }
-    
-    // Check for overlap
-    const hasOverlap = ageClassifications.some(ac => 
-      (minAge >= ac.minAge && minAge <= ac.maxAge) ||
-      (maxAge >= ac.minAge && maxAge <= ac.maxAge) ||
-      (minAge <= ac.minAge && maxAge >= ac.maxAge)
-    );
-    
-    if (hasOverlap) {
-      showAlert("Aviso", "A faixa etária definida entra em conflito com outra classificação já existente.");
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      await addDoc(collection(db, 'ageClassifications'), {
-        name,
-        minAge,
-        maxAge,
-        createdAt: serverTimestamp()
-      });
-      resetModalStates();
-    } catch (error) {
-       console.error("Add Age Classification Error:", error);
-       showAlert("Erro", "Não foi possível cadastrar a classificação.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleEditAgeClassification = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (isSaving || !selectedAgeClassification) return;
-    const formData = new FormData(e.currentTarget);
-    const name = formData.get('name') as string;
-    const minAge = parseInt(formData.get('minAge') as string, 10);
-    const maxAge = parseInt(formData.get('maxAge') as string, 10);
-    
-    if (!name || isNaN(minAge) || isNaN(maxAge)) return;
-    
-    if (minAge > maxAge) {
-      showAlert("Erro", "A idade inicial não pode ser maior que a idade final.");
-      return;
-    }
-    
-    if (ageClassifications.some(ac => ac.id !== selectedAgeClassification.id && ac.name.toLowerCase() === name.toLowerCase())) {
-      showAlert("Aviso", "Já existe uma classificação com este nome.");
-      return;
-    }
-    
-    // Check for overlap
-    const hasOverlap = ageClassifications.some(ac => ac.id !== selectedAgeClassification.id && (
-      (minAge >= ac.minAge && minAge <= ac.maxAge) ||
-      (maxAge >= ac.minAge && maxAge <= ac.maxAge) ||
-      (minAge <= ac.minAge && maxAge >= ac.maxAge)
-    ));
-    
-    if (hasOverlap) {
-      showAlert("Aviso", "A faixa etária definida entra em conflito com outra classificação já existente.");
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const docRef = doc(db, 'ageClassifications', selectedAgeClassification.id);
-      await updateDoc(docRef, { name, minAge, maxAge });
-      resetModalStates();
-    } catch (error) {
-      console.error("Edit Age Classification Error:", error);
-      showAlert("Erro", "Não foi possível atualizar a classificação.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDeleteAgeClassification = (cls: AgeClassification) => {
-    showConfirmationDialog(
-      "Excluir Classificação",
-      `Tem certeza que deseja excluir a classificação "${cls.name}"?`,
-      async () => {
-        try {
-          setIsSaving(true);
-          await deleteDoc(doc(db, 'ageClassifications', cls.id));
-          showAlert("Sucesso", "Classificação excluída com sucesso!");
-        } catch (error) {
-          console.error("Delete Age Classification Error:", error);
-          showAlert("Erro", "Não foi possível excluir a classificação.");
         } finally {
           setIsSaving(false);
         }
@@ -6174,28 +6006,12 @@ export default function App() {
                               <option value="all">Selecione um filtro...</option>
                               <option value="relationship">Grau de Parentesco</option>
                               <option value="function">Função de Membro</option>
-                              <option value="age">Faixa Etária</option>
                               <option value="couples">Casais</option>
                               <option value="families">Famílias</option>
+                              <option value="elders">Idosos</option>
                               <option value="birthdays">Aniversariantes</option>
                             </select>
                           </div>
-
-                          {rhFilterType === 'age' && (
-                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex-1">
-                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Selecionar Faixa Etária</label>
-                              <select 
-                                value={rhSelectedValue}
-                                onChange={(e) => setRhSelectedValue(e.target.value)}
-                                className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
-                              >
-                                <option value="">Todas as faixas etárias...</option>
-                                {ageClassifications.map(c => (
-                                  <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
-                              </select>
-                            </motion.div>
-                          )}
 
                           {rhFilterType === 'birthdays' && (
                             <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex-1">
@@ -6244,7 +6060,7 @@ export default function App() {
                             </motion.div>
                           )}
 
-                          {((rhFilterType !== 'all' && (rhSelectedValue || rhFilterType === 'couples' || rhFilterType === 'birthdays' || rhFilterType === 'families'))) && (
+                          {((rhFilterType !== 'all' && (rhSelectedValue || rhFilterType === 'couples' || rhFilterType === 'birthdays' || rhFilterType === 'families' || rhFilterType === 'elders'))) && (
                             <div className="flex items-end">
                               <button 
                                 onClick={handleExportRHFilterPDF}
@@ -6342,16 +6158,14 @@ export default function App() {
                                 )}
                               </div>
                             </div>
-                          ) : (rhFilterType === 'age') ? (
+                          ) : rhFilterType === 'elders' ? (
                             <div className="space-y-6">
                               <div className="flex items-center justify-between">
-                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                  {`Idade: ${ageClassifications.find(c => c.id === rhSelectedValue)?.name || rhSelectedValue}`}
-                                </h4>
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Idosos (60+ anos)</h4>
                                 <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
                                   <User className="w-3.5 h-3.5 mr-2" />
                                   <span className="text-xs font-black uppercase tracking-tight">
-                                    {getFilteredMembers().length} {getFilteredMembers().length === 1 ? 'Membro' : 'Membros'}
+                                    {getFilteredMembers().length} {getFilteredMembers().length === 1 ? 'Idoso' : 'Idosos'}
                                   </span>
                                 </div>
                               </div>
@@ -6362,15 +6176,7 @@ export default function App() {
                                     const parts = member.birthDate.split('-');
                                     if (parts.length === 3) {
                                       const birthYear = parseInt(parts[0], 10);
-                                      const birthMonth = parseInt(parts[1], 10) - 1;
-                                      const birthDay = parseInt(parts[2], 10);
-                                      const today = new Date();
-                                      let calcAge = today.getFullYear() - birthYear;
-                                      const monthDiff = today.getMonth() - birthMonth;
-                                      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDay)) {
-                                        calcAge--;
-                                      }
-                                      age = calcAge.toString();
+                                      age = (new Date().getFullYear() - birthYear).toString();
                                     }
                                   }
                                   return (
@@ -6814,89 +6620,6 @@ export default function App() {
                                   </div>
                                 </div>
                               ))}
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </section>
-
-                  {/* Classificações por Idade */}
-                  <section className="bg-white dark:bg-[#111] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm overflow-hidden">
-                    <div 
-                      onClick={() => setIsAgeClassificationsCollapsed(!isAgeClassificationsCollapsed)}
-                      className="flex items-center justify-between p-4 sm:p-8 cursor-pointer hover:bg-gray-50 dark:bg-black transition-colors"
-                    >
-                      <div>
-                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight flex items-center">
-                          Classificação por Idade
-                          {isAgeClassificationsCollapsed ? (
-                            <ChevronDown className="w-5 h-5 ml-2 text-gray-400" />
-                          ) : (
-                            <ChevronUp className="w-5 h-5 ml-2 text-gray-400" />
-                          )}
-                        </h3>
-                        <p className="text-xs sm:text-sm text-gray-400 font-medium mt-1">Gerencie as classificações etárias para filtros e relatórios.</p>
-                      </div>
-                      {!isAgeClassificationsCollapsed && (
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setIsAddAgeClassificationModalOpen(true);
-                          }}
-                          className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 sm:px-6 sm:py-3 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest flex items-center hover:bg-ibc-teal/20 transition-all shadow-sm active:scale-95"
-                        >
-                          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-                          Adicionar Classificação
-                        </button>
-                      )}
-                    </div>
-
-                    <AnimatePresence>
-                      {!isAgeClassificationsCollapsed && (
-                        <motion.div 
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.3, ease: "easeInOut" }}
-                        >
-                          <div className="px-4 sm:px-8 pb-4 sm:pb-8">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {ageClassifications.map((cls) => (
-                                <div key={cls.id} className="flex flex-col p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] hover:border-ibc-teal/30 transition-all group">
-                                  <div className="flex items-start justify-between mb-2">
-                                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200 truncate pr-2">{cls.name}</span>
-                                    <div className="flex items-center space-x-2 shrink-0">
-                                      <button 
-                                        onClick={() => {
-                                          setSelectedAgeClassification(cls);
-                                          setIsEditAgeClassificationModalOpen(true);
-                                        }}
-                                        className="p-1.5 text-gray-400 hover:text-ibc-teal hover:bg-ibc-teal/5 rounded-xl transition-all"
-                                        title="Editar"
-                                      >
-                                        <Edit2 className="w-4 h-4" />
-                                      </button>
-                                      <button 
-                                        onClick={() => handleDeleteAgeClassification(cls)}
-                                        className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                                        title="Excluir"
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                  <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-100 dark:bg-[#1a1a1a] rounded-lg px-2 py-1 self-start inline-flex items-center">
-                                    <Calendar className="w-3 h-3 mr-1" />
-                                    {cls.minAge} a {cls.maxAge} anos
-                                  </div>
-                                </div>
-                              ))}
-                              {ageClassifications.length === 0 && (
-                                <div className="col-span-full py-8 text-center border border-dashed border-gray-200 dark:border-[#333] rounded-2xl">
-                                  <p className="text-xs text-gray-400 font-medium">Nenhuma classificação cadastrada.</p>
-                                </div>
-                              )}
                             </div>
                           </div>
                         </motion.div>
@@ -10002,113 +9725,6 @@ export default function App() {
             ) : "Salvar Alterações"}
           </button>
         </form>
-      </Modal>
-
-      {/* Age Classification Modals */}
-      <Modal
-        isOpen={isAddAgeClassificationModalOpen}
-        onClose={resetModalStates}
-        title="Nova Classificação Etária"
-      >
-        <form onSubmit={handleAddAgeClassification} className="space-y-4">
-          <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Nome da Classificação</label>
-            <input 
-              name="name" 
-              type="text"
-              required
-              className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-gray-900 dark:text-white"
-              placeholder="Ex: Jovens, Crianças..."
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Idade Inicial</label>
-              <input 
-                name="minAge" 
-                type="number"
-                min="0"
-                required
-                className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-gray-900 dark:text-white"
-                placeholder="Ex: 18"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Idade Final</label>
-              <input 
-                name="maxAge" 
-                type="number"
-                min="0"
-                required
-                className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-gray-900 dark:text-white"
-                placeholder="Ex: 35"
-              />
-            </div>
-          </div>
-          <button 
-            type="submit" 
-            disabled={isSaving}
-            className="w-full bg-ibc-teal text-white py-3 rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center justify-center hover:bg-ibc-teal/90 disabled:opacity-50 mt-4"
-          >
-            {isSaving ? (
-              <RefreshCcw className="w-5 h-5 animate-spin mx-auto text-white/50" />
-            ) : "Salvar Classificação"}
-          </button>
-        </form>
-      </Modal>
-
-      <Modal
-        isOpen={isEditAgeClassificationModalOpen}
-        onClose={resetModalStates}
-        title="Editar Classificação Etária"
-      >
-        {selectedAgeClassification && (
-          <form onSubmit={handleEditAgeClassification} className="space-y-4">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Nome da Classificação</label>
-              <input 
-                name="name" 
-                type="text"
-                required
-                defaultValue={selectedAgeClassification.name}
-                className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-gray-900 dark:text-white"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Idade Inicial</label>
-                <input 
-                  name="minAge" 
-                  type="number"
-                  min="0"
-                  required
-                  defaultValue={selectedAgeClassification.minAge}
-                  className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-gray-900 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Idade Final</label>
-                <input 
-                  name="maxAge" 
-                  type="number"
-                  min="0"
-                  required
-                  defaultValue={selectedAgeClassification.maxAge}
-                  className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-gray-900 dark:text-white"
-                />
-              </div>
-            </div>
-            <button 
-              type="submit" 
-              disabled={isSaving}
-              className="w-full bg-ibc-teal text-white py-3 rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center justify-center hover:bg-ibc-teal/90 disabled:opacity-50 mt-4"
-            >
-              {isSaving ? (
-                <RefreshCcw className="w-5 h-5 animate-spin mx-auto text-white/50" />
-              ) : "Salvar Alterações"}
-            </button>
-          </form>
-        )}
       </Modal>
 
       {/* Custom Alert Modal */}
