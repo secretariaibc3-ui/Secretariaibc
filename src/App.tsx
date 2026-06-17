@@ -1486,7 +1486,67 @@ export default function App() {
       }
     });
 
-    return couples;
+    return couples.sort((a, b) => {
+      const nameA = a.husband?.name || a.raw[0]?.name || "";
+      const nameB = b.husband?.name || b.raw[0]?.name || "";
+      return nameA.localeCompare(nameB, 'pt-BR');
+    });
+  };
+
+  const getSiblingGroups = () => {
+    const siblingTypes = ['irmão', 'irmã', 'irmão(ã)'];
+    
+    // Adjacency list for sibling relationships
+    const adjList = new Map<string, string[]>();
+    
+    // Build the graph using members relationships
+    members.forEach(member => {
+      member.relationships?.forEach(rel => {
+        if (siblingTypes.includes(rel.type.toLowerCase().trim())) {
+          if (!adjList.has(member.id)) adjList.set(member.id, []);
+          if (!adjList.has(rel.memberId)) adjList.set(rel.memberId, []);
+          
+          if (!adjList.get(member.id)!.includes(rel.memberId)) {
+            adjList.get(member.id)!.push(rel.memberId);
+          }
+          if (!adjList.get(rel.memberId)!.includes(member.id)) {
+            adjList.get(rel.memberId)!.push(member.id);
+          }
+        }
+      });
+    });
+
+    const visited = new Set<string>();
+    const groups: Member[][] = [];
+
+    const dfs = (startId: string, currentGroup: Member[]) => {
+      visited.add(startId);
+      const memberObj = members.find(m => m.id === startId);
+      if (memberObj) {
+        if (!currentGroup.find(m => m.id === memberObj.id)) {
+          currentGroup.push(memberObj);
+        }
+      }
+      const neighbors = adjList.get(startId) || [];
+      for (const neighbor of neighbors) {
+        if (!visited.has(neighbor)) {
+          dfs(neighbor, currentGroup);
+        }
+      }
+    };
+
+    // Find connected components
+    for (const [memberId, _] of adjList.entries()) {
+      if (!visited.has(memberId)) {
+        const currentGroup: Member[] = [];
+        dfs(memberId, currentGroup);
+        if (currentGroup.length >= 2) {
+          groups.push(currentGroup);
+        }
+      }
+    }
+
+    return groups;
   };
 
   const handleExportRHFilterPDF = async () => {
@@ -5712,46 +5772,46 @@ export default function App() {
                                   </span>
                                 </div>
                               </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                                 {getCouples().map((couple, index) => (
                                   <motion.div 
                                     key={index} 
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.05 }}
-                                    className="p-4 bg-white dark:bg-[#0a0a0a] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group hover:border-red-200 dark:hover:border-red-900/30 transition-all flex flex-col items-center relative overflow-hidden"
+                                    className="p-3 sm:p-4 bg-white dark:bg-[#0a0a0a] rounded-2xl sm:rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group hover:border-red-200 dark:hover:border-red-900/30 transition-all flex flex-col items-center relative overflow-hidden"
                                   >
-                                    <div className="flex items-center justify-center w-full mb-3 relative z-10">
+                                    <div className="flex items-center justify-center w-full mb-2 sm:mb-3 relative z-10">
                                       {/* Left Person */}
                                       <div className="relative">
-                                        <div className="w-14 h-14 rounded-full bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-2 border-white dark:border-[#0a0a0a] shadow-sm z-10 relative">
+                                        <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-2 border-white dark:border-[#0a0a0a] shadow-sm z-10 relative">
                                           {(couple.husband || couple.raw[0])?.photoUrl ? (
                                             <img src={(couple.husband || couple.raw[0])!.photoUrl} alt="" className="w-full h-full object-cover" />
                                           ) : (
-                                            <User className="w-6 h-6 text-gray-300 dark:text-gray-600" />
+                                            <User className="w-4 h-4 sm:w-6 sm:h-6 text-gray-300 dark:text-gray-600" />
                                           )}
                                         </div>
                                       </div>
 
                                       {/* Heart Center */}
-                                      <div className="mx-2 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/10 p-2 rounded-full z-20 shadow-sm border border-red-100 dark:border-red-900/30 group-hover:scale-110 group-hover:rotate-12 transition-transform -mt-2">
-                                        <Heart className="w-4 h-4 text-red-500 fill-current" />
+                                      <div className="mx-1 sm:mx-2 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/10 p-1.5 sm:p-2 rounded-full z-20 shadow-sm border border-red-100 dark:border-red-900/30 group-hover:scale-110 group-hover:rotate-12 transition-transform -mt-2">
+                                        <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 fill-current" />
                                       </div>
 
                                       {/* Right Person */}
                                       <div className="relative">
-                                        <div className="w-14 h-14 rounded-full bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-2 border-white dark:border-[#0a0a0a] shadow-sm z-10 relative">
+                                        <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-2 border-white dark:border-[#0a0a0a] shadow-sm z-10 relative">
                                           {(couple.wife || couple.raw[1])?.photoUrl ? (
                                             <img src={(couple.wife || couple.raw[1])!.photoUrl} alt="" className="w-full h-full object-cover" />
                                           ) : (
-                                            <User className="w-6 h-6 text-gray-300 dark:text-gray-600" />
+                                            <User className="w-4 h-4 sm:w-6 sm:h-6 text-gray-300 dark:text-gray-600" />
                                           )}
                                         </div>
                                       </div>
                                     </div>
                                     
                                     <div className="text-center w-full">
-                                      <p className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate px-2">
+                                      <p className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-200 truncate px-1">
                                         {(couple.husband || couple.raw[0]).name.split(' ')[0]} <span className="text-red-400 dark:text-red-600/50 font-normal mx-0.5">&</span> {(couple.wife || couple.raw[1]).name.split(' ')[0]}
                                       </p>
                                     </div>
@@ -5761,6 +5821,61 @@ export default function App() {
                                   <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
                                     <Heart className="w-8 h-8 text-gray-200 mx-auto mb-3" />
                                     <p className="text-xs text-gray-400 font-medium">Nenhum casal identificado nos vínculos atuais.</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ) : (rhFilterType === 'relationship' && ['irmão', 'irmã', 'irmão(ã)'].includes(rhSelectedValue.toLowerCase().trim())) ? (
+                            <div className="space-y-6">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Grupos de Irmãos Identificados</h4>
+                                <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
+                                  <Users className="w-3.5 h-3.5 mr-2 text-ibc-teal" />
+                                  <span className="text-xs font-black uppercase tracking-tight">
+                                    {getSiblingGroups().length} {getSiblingGroups().length === 1 ? 'Grupo' : 'Grupos'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {getSiblingGroups().map((group, index) => (
+                                  <motion.div 
+                                    key={index} 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.05 }}
+                                    className="p-4 bg-white dark:bg-[#0a0a0a] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group transition-all flex flex-col relative overflow-hidden"
+                                  >
+                                    <div className="flex items-center justify-center w-full mb-4 relative z-10 -space-x-4">
+                                      {group.map((sibling, sIdx) => {
+                                        // Z-index trick: first ones are behind, or stack them side by side
+                                        return (
+                                          <div key={sibling.id} className="relative transition-transform hover:scale-110 hover:z-30 z-10" style={{ zIndex: group.length - sIdx }}>
+                                            <div onClick={() => { setSelectedMember(sibling); setIsViewMemberModalOpen(true); }} className="w-12 h-12 rounded-full cursor-pointer bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-2 border-white dark:border-[#0a0a0a] shadow-sm hover:border-ibc-teal transition-all">
+                                              {sibling.photoUrl ? (
+                                                <img src={sibling.photoUrl} alt="" className="w-full h-full object-cover" />
+                                              ) : (
+                                                <User className="w-5 h-5 text-gray-300 dark:text-gray-600" />
+                                              )}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                    
+                                    <div className="text-center w-full space-y-1">
+                                      <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                        Grupo de {group.length} Irmãos
+                                      </p>
+                                      <p className="text-[10px] text-gray-400 font-medium">
+                                        {group.map(s => s.name.split(' ')[0]).join(', ')}
+                                      </p>
+                                    </div>
+                                  </motion.div>
+                                ))}
+                                {getSiblingGroups().length === 0 && (
+                                  <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
+                                    <Users className="w-8 h-8 text-gray-200 mx-auto mb-3" />
+                                    <p className="text-xs text-gray-400 font-medium">Nenhum grupo de irmãos identificado nos vínculos atuais.</p>
                                   </div>
                                 )}
                               </div>
