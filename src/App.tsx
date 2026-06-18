@@ -1256,6 +1256,16 @@ export default function App() {
   };
 
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+
+  useEffect(() => {
+    if (isSearchExpanded && searchInputRef.current) {
+      // Small timeout to ensure the element is visible and transition started
+      const timer = setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isSearchExpanded]);
   const [ministries, setMinistries] = useState<Ministry[]>(() => loadFromCache<Ministry[]>('ministries', []));
   const [atas, setAtas] = useState<Ata[]>(() => loadFromCache<Ata[]>('atas', []));
   const [presencas, setPresencas] = useState<Presenca[]>(() => loadFromCache<Presenca[]>('presencas', []));
@@ -1349,6 +1359,7 @@ export default function App() {
   const [isUploadingRegimento, setIsUploadingRegimento] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const isReorderingNav = useRef(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const navSaveTimeout = useRef<NodeJS.Timeout | null>(null);
   const [isAccessControlOpen, setIsAccessControlOpen] = useState(false);
   const [approvingUser, setApprovingUser] = useState<{ id: string, email: string } | null>(null);
@@ -5266,6 +5277,7 @@ export default function App() {
                       </button>
 
                       <input
+                        ref={searchInputRef}
                         type="text"
                         placeholder="Buscar membro..."
                         value={searchQuery}
