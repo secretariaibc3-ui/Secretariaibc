@@ -55,6 +55,9 @@ import {
   Heart,
   Facebook,
   MessageSquare,
+  MessageCircle,
+  Smartphone,
+  Send,
   Phone,
   PhoneCall,
   MapPin,
@@ -936,6 +939,12 @@ export default function App() {
     return raw;
   };
 
+  const handleContactMember = (phone: string, name: string) => {
+    if (!phone) return;
+    setContactInfo({ phone, name });
+    setIsContactOptionsModalOpen(true);
+  };
+
   const getMapsUrl = (member: Member) => {
     const parts = [
       member.logradouro,
@@ -1368,6 +1377,8 @@ export default function App() {
   const [isEditPresencaModalOpen, setIsEditPresencaModalOpen] = useState(false);
   const [isViewPresencaModalOpen, setIsViewPresencaModalOpen] = useState(false);
   const [isMinistryMembersModalOpen, setIsMinistryMembersModalOpen] = useState(false);
+  const [isContactOptionsModalOpen, setIsContactOptionsModalOpen] = useState(false);
+  const [contactInfo, setContactInfo] = useState<{ phone: string, name: string } | null>(null);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [selectedMinistry, setSelectedMinistry] = useState<Ministry | null>(null);
@@ -5372,36 +5383,40 @@ export default function App() {
                       
                       <div className="flex items-center justify-between sm:justify-end gap-1 sm:gap-2 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-gray-50 mt-0.5 sm:mt-0" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 sm:py-1">
-                          <button 
-                            onClick={(e) => { 
-                              e.stopPropagation();
-                              handleToggleAbsent(member.id, !!member.isAbsent);
-                            }}
-                            className={cn(
-                              "flex items-center px-1.5 py-1 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap",
-                              member.isAbsent ? "text-orange-500 bg-orange-50" : "text-gray-400 bg-gray-50 dark:bg-black hover:bg-orange-50 hover:text-orange-500"
-                            )}
-                          >
-                            <Clock className="w-2.5 sm:w-3.5 h-2.5 sm:h-3.5 mr-1 sm:mr-1.5" />
-                            {member.isAbsent ? 'Voltou' : 'Ausente'}
-                          </button>
+                          {appUser?.role === 'admin' && (
+                            <>
+                              <button 
+                                onClick={(e) => { 
+                                  e.stopPropagation();
+                                  handleToggleAbsent(member.id, !!member.isAbsent);
+                                }}
+                                className={cn(
+                                  "flex items-center px-1.5 py-1 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap",
+                                  member.isAbsent ? "text-orange-500 bg-orange-50" : "text-gray-400 bg-gray-50 dark:bg-black hover:bg-orange-50 hover:text-orange-500"
+                                )}
+                              >
+                                <Clock className="w-2.5 sm:w-3.5 h-2.5 sm:h-3.5 mr-1 sm:mr-1.5" />
+                                {member.isAbsent ? 'Voltou' : 'Ausente'}
+                              </button>
 
-                          <button 
-                            onClick={() => { 
-                              setSelectedMember(member); 
-                              setTempMinistryIds(member.ministryIds || (member.ministryId ? [member.ministryId] : []));
-                              setTempMemberMinistries(member.ministries || []);
-                              setTempRelationships(member.relationships || []);
-                              setPhotoPreview(member.photoUrl || null);
-                              setIsAddingNewFunction(false);
-                              setNewFunctionValue("");
-                              setIsEditMemberModalOpen(true); 
-                            }}
-                            className="flex items-center px-1.5 py-1 sm:px-3 sm:py-2 bg-gray-50 dark:bg-black text-gray-400 hover:text-ibc-blue hover:bg-ibc-blue/5 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
-                          >
-                            <Edit2 className="w-2.5 sm:w-3.5 h-2.5 sm:h-3.5 mr-1 sm:mr-1.5" />
-                            <span>Editar</span>
-                          </button>
+                              <button 
+                                onClick={() => { 
+                                  setSelectedMember(member); 
+                                  setTempMinistryIds(member.ministryIds || (member.ministryId ? [member.ministryId] : []));
+                                  setTempMemberMinistries(member.ministries || []);
+                                  setTempRelationships(member.relationships || []);
+                                  setPhotoPreview(member.photoUrl || null);
+                                  setIsAddingNewFunction(false);
+                                  setNewFunctionValue("");
+                                  setIsEditMemberModalOpen(true); 
+                                }}
+                                className="flex items-center px-1.5 py-1 sm:px-3 sm:py-2 bg-gray-50 dark:bg-black text-gray-400 hover:text-ibc-blue hover:bg-ibc-blue/5 rounded-lg sm:rounded-xl transition-all font-bold text-[8px] sm:text-[10px] uppercase tracking-widest whitespace-nowrap"
+                              >
+                                <Edit2 className="w-2.5 sm:w-3.5 h-2.5 sm:h-3.5 mr-1 sm:mr-1.5" />
+                                <span>Editar</span>
+                              </button>
+                            </>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-1 sm:gap-2 border-l sm:border-none pl-1.5 sm:pl-0 border-gray-100 dark:border-[#222]">
@@ -5680,18 +5695,20 @@ export default function App() {
                       </div>
 
                       <div className="absolute top-4 right-4 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 lg:translate-y-[-10px] lg:group-hover:translate-y-0 flex items-center space-x-1">
-                        <button 
-                          onClick={(e) => { 
-                            e.stopPropagation(); 
-                            setSelectedAta(ata); 
-                            setPhotoPreview(ata.photoUrl || null);
-                            setIsEditAtaModalOpen(true); 
-                          }}
-                          className="p-2 text-gray-400 hover:text-ibc-teal hover:bg-ibc-teal/5 rounded-xl transition-all"
-                          title="Editar Ata"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
+                        {appUser?.role === 'admin' && (
+                          <button 
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              setSelectedAta(ata); 
+                              setPhotoPreview(ata.photoUrl || null);
+                              setIsEditAtaModalOpen(true); 
+                            }}
+                            className="p-2 text-gray-400 hover:text-ibc-teal hover:bg-ibc-teal/5 rounded-xl transition-all"
+                            title="Editar Ata"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
                         {appUser?.isFullAdmin && (
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleDeleteAta(ata.id, ata.number); }}
@@ -5744,13 +5761,15 @@ export default function App() {
                       </div>
 
                       <div className="absolute top-4 right-4 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 lg:translate-y-[-10px] lg:group-hover:translate-y-0 flex items-center space-x-1">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setSelectedPresenca(presenca); setIsEditPresencaModalOpen(true); }}
-                          className="p-2 text-gray-400 hover:text-ibc-teal hover:bg-ibc-teal/5 rounded-xl transition-all"
-                          title="Editar Lista"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
+                        {appUser?.role === 'admin' && (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setSelectedPresenca(presenca); setIsEditPresencaModalOpen(true); }}
+                            className="p-2 text-gray-400 hover:text-ibc-teal hover:bg-ibc-teal/5 rounded-xl transition-all"
+                            title="Editar Lista"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
                         {appUser?.isFullAdmin && (
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleDeletePresenca(presenca.id, presenca.ataNumber); }}
@@ -6428,15 +6447,13 @@ export default function App() {
                                         </div>
                                       </div>
                                       {member.celular && (
-                                        <a 
-                                          href={`https://wa.me/${getWhatsAppNumber(member.celular)}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="w-10 h-10 bg-green-500/10 text-green-500 rounded-xl flex items-center justify-center hover:bg-green-500/20 transition-all active:scale-95 shrink-0"
-                                          title="Enviar mensagem de aniversário"
+                                        <button 
+                                          onClick={() => handleContactMember(member.celular, member.name)}
+                                          className="w-10 h-10 bg-ibc-teal/10 text-ibc-teal rounded-xl flex items-center justify-center hover:bg-ibc-teal/20 transition-all active:scale-95 shrink-0"
+                                          title="Enviar mensagem"
                                         >
                                           <MessageSquare className="w-5 h-5 fill-current" />
-                                        </a>
+                                        </button>
                                       )}
                                     </motion.div>
                                   );
@@ -9567,15 +9584,13 @@ export default function App() {
                         <PhoneCall className="w-3.5 h-3.5 text-ibc-teal" />
                         Ligar
                       </a>
-                      <a
-                        href={`https://wa.me/${getWhatsAppNumber(selectedMember.celular)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 px-3 py-2 sm:py-2.5 bg-green-50 hover:bg-green-100 border border-green-200 rounded-xl text-xs font-bold text-green-600 shadow-sm transition-all"
+                      <button
+                        onClick={() => handleContactMember(selectedMember.celular, selectedMember.name)}
+                        className="flex items-center justify-center gap-2 px-3 py-2 sm:py-2.5 bg-ibc-teal/5 hover:bg-ibc-teal/10 border border-ibc-teal/20 rounded-xl text-xs font-bold text-ibc-teal shadow-sm transition-all"
                       >
-                        <MessageSquare className="w-3.5 h-3.5 text-green-500" />
-                        WhatsApp
-                      </a>
+                        <MessageSquare className="w-3.5 h-3.5 text-ibc-teal" />
+                        Mensagem
+                      </button>
                     </div>
                   </div>
                 ) : (
@@ -9648,26 +9663,125 @@ export default function App() {
             </div>
 
             <div className="flex space-x-3 pt-4 sm:pt-6 border-t border-gray-100 dark:border-[#222]">
-              <button 
-                onClick={() => { 
-                  setIsViewMemberModalOpen(false); 
-                  setTempMinistryIds(selectedMember.ministryIds || (selectedMember.ministryId ? [selectedMember.ministryId] : []));
-                  setTempMemberMinistries(selectedMember.ministries || []);
-                  setTempRelationships(selectedMember.relationships || []);
-                  setIsAddingNewFunction(false);
-                  setNewFunctionValue("");
-                  setIsEditMemberModalOpen(true); 
-                }}
-                className="flex-1 bg-ibc-blue text-white py-3 rounded-2xl font-bold flex items-center justify-center hover:bg-ibc-blue/90 transition-all shadow-lg shadow-ibc-blue/20 transform active:scale-95"
-              >
-                <Edit2 className="w-4 h-4 mr-2" />
-                Editar Dados
-              </button>
+              {appUser?.role === 'admin' && (
+                <button 
+                  onClick={() => { 
+                    setIsViewMemberModalOpen(false); 
+                    setTempMinistryIds(selectedMember.ministryIds || (selectedMember.ministryId ? [selectedMember.ministryId] : []));
+                    setTempMemberMinistries(selectedMember.ministries || []);
+                    setTempRelationships(selectedMember.relationships || []);
+                    setIsAddingNewFunction(false);
+                    setNewFunctionValue("");
+                    setIsEditMemberModalOpen(true); 
+                  }}
+                  className="flex-1 bg-ibc-blue text-white py-3 rounded-2xl font-bold flex items-center justify-center hover:bg-ibc-blue/90 transition-all shadow-lg shadow-ibc-blue/20 transform active:scale-95"
+                >
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Editar Dados
+                </button>
+              )}
               <button 
                 onClick={() => setIsViewMemberModalOpen(false)}
-                className="px-8 bg-gray-100 dark:bg-[#1a1a1a] text-gray-500 dark:text-gray-400 py-3 rounded-2xl font-bold hover:bg-gray-200 dark:bg-[#222] transition-all active:scale-95"
+                className={cn(
+                  "bg-gray-100 dark:bg-[#1a1a1a] text-gray-500 dark:text-gray-400 py-3 rounded-2xl font-bold hover:bg-gray-200 dark:bg-[#222] transition-all active:scale-95",
+                  appUser?.role === 'admin' ? "px-8" : "flex-1"
+                )}
               >
                 Fechar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Contact Options Modal */}
+      <Modal
+        isOpen={isContactOptionsModalOpen}
+        onClose={() => setIsContactOptionsModalOpen(false)}
+        title="Enviar Mensagem"
+      >
+        {contactInfo && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Escolha por onde deseja entrar em contato com <strong>{contactInfo.name}</strong>:
+            </p>
+            
+            <div className="grid grid-cols-1 gap-3">
+              {/* WhatsApp */}
+              <button
+                onClick={() => {
+                  const url = `https://wa.me/${getWhatsAppNumber(contactInfo.phone)}`;
+                  window.open(url, '_blank');
+                  setIsContactOptionsModalOpen(false);
+                }}
+                className="flex items-center space-x-4 p-4 bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-800/20 rounded-2xl hover:bg-green-100 dark:hover:bg-green-900/20 transition-all group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-500/20">
+                  <MessageCircle className="w-5 h-5 fill-current" />
+                </div>
+                <div className="flex-1 text-left">
+                  <h5 className="text-sm font-bold text-green-700 dark:text-green-400">WhatsApp</h5>
+                  <p className="text-[10px] text-green-600/60 dark:text-green-400/50 uppercase font-black tracking-widest">Abrir Conversa Direta</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-green-300 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              {/* Telegram */}
+              <button
+                onClick={() => {
+                  const raw = getRawPhoneNumber(contactInfo.phone);
+                  const url = `https://t.me/+${raw}`;
+                  window.open(url, '_blank');
+                  setIsContactOptionsModalOpen(false);
+                }}
+                className="flex items-center space-x-4 p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/20 rounded-2xl hover:bg-blue-100 dark:hover:bg-blue-900/20 transition-all group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+                  <Send className="w-5 h-5 fill-current" />
+                </div>
+                <div className="flex-1 text-left">
+                  <h5 className="text-sm font-bold text-blue-700 dark:text-blue-400">Telegram</h5>
+                  <p className="text-[10px] text-blue-600/60 dark:text-blue-400/50 uppercase font-black tracking-widest">Enviar Mensagem</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-blue-300 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              {/* SMS */}
+              <button
+                onClick={() => {
+                  const raw = getRawPhoneNumber(contactInfo.phone);
+                  window.location.href = `sms:${raw}`;
+                  setIsContactOptionsModalOpen(false);
+                }}
+                className="flex items-center space-x-4 p-4 bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-800/20 rounded-2xl hover:bg-purple-100 dark:hover:bg-purple-900/20 transition-all group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-purple-500 text-white flex items-center justify-center shadow-lg shadow-purple-500/20">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <div className="flex-1 text-left">
+                  <h5 className="text-sm font-bold text-purple-700 dark:text-purple-400">Mensagem SMS</h5>
+                  <p className="text-[10px] text-purple-600/60 dark:text-purple-400/50 uppercase font-black tracking-widest">Aplicativo Padrão</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-purple-300 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              {/* Copy */}
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(contactInfo.phone);
+                  showAlert("Copiado!", "Número de telefone copiado para a área de transferência.");
+                  setIsContactOptionsModalOpen(false);
+                }}
+                className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-[#222] rounded-2xl hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-all group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-gray-500 text-white flex items-center justify-center shadow-lg shadow-gray-500/20">
+                  <Copy className="w-5 h-5" />
+                </div>
+                <div className="flex-1 text-left">
+                  <h5 className="text-sm font-bold text-gray-700 dark:text-gray-200">Copiar Número</h5>
+                  <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest">{contactInfo.phone}</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-300 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           </div>
