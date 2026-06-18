@@ -5381,7 +5381,7 @@ export default function App() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between sm:justify-end gap-1 sm:gap-2 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-gray-50 mt-0.5 sm:mt-0" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-between sm:justify-end gap-1 sm:gap-2 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-gray-50 dark:border-black mt-0.5 sm:mt-0" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 sm:py-1">
                           {appUser?.role === 'admin' && (
                             <>
@@ -6384,7 +6384,7 @@ export default function App() {
                         </div>
 
                         {/* Resultados */}
-                        <div className="mt-8 pt-6 border-t border-gray-50">
+                        <div className="mt-8 pt-6 border-t border-gray-50 dark:border-[#222]">
                           {rhFilterType === 'birthdays' ? (
                             <div className="space-y-6">
                               <div className="flex items-center justify-between">
@@ -7039,7 +7039,7 @@ export default function App() {
           ) : activeTab === 'normativos' ? (
             <div className="max-w-6xl mx-auto space-y-6 sm:space-y-10">
               {/* Introduction Card */}
-              <section className="bg-gradient-to-br from-white to-gray-50/50 p-6 sm:p-8 rounded-3xl border border-gray-250/60 shadow-sm relative overflow-hidden">
+              <section className="bg-gradient-to-br from-white to-gray-50/50 dark:from-[#111] dark:to-[#1a1a1a] p-6 sm:p-8 rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-ibc-teal/5 rounded-full translate-x-1/3 -translate-y-1/3 blur-2xl pointer-events-none" />
                 
                 <div className="relative z-10 space-y-6">
@@ -7297,8 +7297,8 @@ export default function App() {
               </section>
 
               {/* Sharing Link Section */}
-              <section className="bg-blue-50/50 p-8 rounded-3xl border border-blue-100 shadow-sm relative overflow-hidden group">
-                <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl group-hover:bg-blue-500/10 transition-all duration-700"></div>
+              <section className="bg-blue-50/50 dark:bg-[#111] p-8 rounded-3xl border border-blue-100 dark:border-[#222] shadow-sm relative overflow-hidden group">
+                <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20 transition-all duration-700"></div>
                 
                 <div className="relative z-10">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
@@ -7378,7 +7378,7 @@ export default function App() {
                   </div>
 
                   <div className="space-y-8">
-                    <div className="flex flex-col sm:flex-row items-center gap-8 p-6 bg-gray-50/50 rounded-2xl border border-gray-100 dark:border-[#222]">
+                    <div className="flex flex-col sm:flex-row items-center gap-8 p-6 bg-gray-50/50 dark:bg-[#111] rounded-2xl border border-gray-100 dark:border-[#222]">
                       <div className="w-32 h-32 bg-white dark:bg-[#111] rounded-2xl border border-gray-200 dark:border-[#333] flex items-center justify-center overflow-hidden shadow-sm p-1">
                         <img 
                           src={currentLogo} 
@@ -7537,7 +7537,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="mt-10 p-6 bg-gray-50/50 rounded-2xl border border-gray-100 dark:border-[#222]">
+                <div className="mt-10 p-6 bg-gray-50/50 dark:bg-[#111] rounded-2xl border border-gray-100 dark:border-[#222]">
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Link de Acesso Atual (Ambiente de Desenvolvimento)</h4>
                   <div className="flex items-center space-x-3">
                     <input 
@@ -7561,7 +7561,7 @@ export default function App() {
                 {/* Table for large screens, Cards for mobile */}
                 <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full text-left">
-                      <thead className="bg-gray-50/50">
+                      <thead className="bg-gray-50/50 dark:bg-[#111]">
                         <tr>
                           <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</th>
                           <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nível</th>
@@ -7861,7 +7861,7 @@ export default function App() {
         title={selectedAta ? `Ata nº ${selectedAta.number}` : 'Ata'}
       >
         <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
-          <div className="flex justify-between items-center text-sm text-gray-400 font-bold uppercase tracking-widest border-b border-gray-50 pb-4">
+          <div className="flex justify-between items-center text-sm text-gray-400 font-bold uppercase tracking-widest border-b border-gray-50 dark:border-[#222] pb-4">
             <span>Data: {selectedAta && safeFormatDate(selectedAta.date)}</span>
             <button 
               onClick={() => selectedAta && handleExportAtaPDF(selectedAta)}
@@ -7892,7 +7892,7 @@ export default function App() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-8 pt-10 border-t border-gray-50">
+          <div className="grid grid-cols-2 gap-8 pt-10 border-t border-gray-50 dark:border-[#222]">
             <div className="text-center">
               <div className="h-px bg-gray-200 dark:bg-[#222] mb-2"></div>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{selectedAta?.signer1Role || "Pastor Presidente"}</p>
@@ -8138,7 +8138,7 @@ export default function App() {
         title={selectedPresenca ? `Lista de Presença - Ata nº ${selectedPresenca.ataNumber}` : 'Lista de Presença'}
       >
         <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
-          <div className="flex justify-between items-center text-sm text-gray-400 font-bold uppercase tracking-widest border-b border-gray-50 pb-4">
+          <div className="flex justify-between items-center text-sm text-gray-400 font-bold uppercase tracking-widest border-b border-gray-50 dark:border-[#222] pb-4">
             <span>Data: {selectedPresenca && safeFormatDate(selectedPresenca.date)}</span>
             <button 
               onClick={() => selectedPresenca && handlePrintPresenca(selectedPresenca)}
