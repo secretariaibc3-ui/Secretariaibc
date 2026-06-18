@@ -8324,17 +8324,36 @@ export default function App() {
                 <div className="space-y-2">
                   {filteredMinistryMembers.map((member) => (
                     <div key={member.id} className="flex items-center space-x-4 p-3 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222]">
-                      <div className="w-10 h-10 rounded-xl bg-ibc-blue flex items-center justify-center text-white font-bold overflow-hidden animate-fade-in">
+                      <div className="w-10 h-10 rounded-xl bg-ibc-blue flex items-center justify-center text-white font-bold overflow-hidden animate-fade-in shrink-0">
                         {member.photoUrl ? (
                           <img src={member.photoUrl} alt={member.name} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                         ) : (
                           member.name.charAt(0)
                         )}
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900 dark:text-gray-50">{member.name}</p>
-                        <p className="text-[10px] text-ibc-teal font-bold uppercase tracking-widest">{member.function}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-gray-900 dark:text-gray-50 truncate">{member.name}</p>
+                        <p className="text-[10px] text-ibc-teal font-bold uppercase tracking-widest truncate">{member.function}</p>
                       </div>
+
+                      {member.celular && (
+                        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                          <a
+                            href={`tel:${getRawPhoneNumber(member.celular)}`}
+                            className="w-8 h-8 sm:w-10 sm:h-10 bg-white dark:bg-[#111] hover:bg-gray-100 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl flex items-center justify-center transition-all shadow-sm group"
+                            title="Ligar"
+                          >
+                            <PhoneCall className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-ibc-teal group-hover:scale-110 transition-transform" />
+                          </a>
+                          <button
+                            onClick={() => handleContactMember(member.celular, member.name)}
+                            className="w-8 h-8 sm:w-10 sm:h-10 bg-ibc-teal/5 hover:bg-ibc-teal/10 border border-ibc-teal/20 rounded-xl flex items-center justify-center transition-all shadow-sm group"
+                            title="Mensagem"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-ibc-teal group-hover:scale-110 transition-transform" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
