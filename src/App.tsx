@@ -9707,11 +9707,19 @@ export default function App() {
             </p>
             
             <div className="grid grid-cols-1 gap-3">
-              {/* WhatsApp */}
+              {/* WhatsApp Messenger */}
               <button
                 onClick={() => {
-                  const url = `https://wa.me/${getWhatsAppNumber(contactInfo.phone)}`;
-                  window.open(url, '_blank');
+                  const phone = getWhatsAppNumber(contactInfo.phone);
+                  const webUrl = `https://wa.me/${phone}`;
+                  const intentUrl = `intent://send?phone=${phone}#Intent;scheme=whatsapp;package=com.whatsapp;end`;
+                  
+                  // Try Android Intent if on Android, otherwise use web link
+                  if (/Android/i.test(navigator.userAgent)) {
+                    window.location.href = intentUrl;
+                  } else {
+                    window.open(webUrl, '_blank');
+                  }
                   setIsContactOptionsModalOpen(false);
                 }}
                 className="flex items-center space-x-4 p-4 bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-800/20 rounded-2xl hover:bg-green-100 dark:hover:bg-green-900/20 transition-all group"
@@ -9721,9 +9729,36 @@ export default function App() {
                 </div>
                 <div className="flex-1 text-left">
                   <h5 className="text-sm font-bold text-green-700 dark:text-green-400">WhatsApp</h5>
-                  <p className="text-[10px] text-green-600/60 dark:text-green-400/50 uppercase font-black tracking-widest">Abrir Conversa Direta</p>
+                  <p className="text-[10px] text-green-600/60 dark:text-green-400/50 uppercase font-black tracking-widest">Versão Pessoal</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-green-300 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              {/* WhatsApp Business */}
+              <button
+                onClick={() => {
+                  const phone = getWhatsAppNumber(contactInfo.phone);
+                  const webUrl = `https://wa.me/${phone}`;
+                  const intentUrl = `intent://send?phone=${phone}#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end`;
+                  
+                  if (/Android/i.test(navigator.userAgent)) {
+                    window.location.href = intentUrl;
+                  } else {
+                    // Fallback to web link - OS usually handles choosing if not forced via intent
+                    window.open(webUrl, '_blank');
+                  }
+                  setIsContactOptionsModalOpen(false);
+                }}
+                className="flex items-center space-x-4 p-4 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/20 rounded-2xl hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-all group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/20">
+                  <MessageCircle className="w-5 h-5 fill-current" />
+                </div>
+                <div className="flex-1 text-left">
+                  <h5 className="text-sm font-bold text-emerald-700 dark:text-emerald-400">WhatsApp Business</h5>
+                  <p className="text-[10px] text-emerald-600/60 dark:text-emerald-400/50 uppercase font-black tracking-widest">Versão Comercial</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-emerald-300 group-hover:translate-x-1 transition-transform" />
               </button>
 
               {/* Telegram */}
