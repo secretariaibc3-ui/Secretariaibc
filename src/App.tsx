@@ -5178,37 +5178,6 @@ export default function App() {
           
           {activeTab === 'members' && (
             <div className="flex items-center space-x-2 sm:space-x-3 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
-              {selectedMemberIds.length > 0 && appUser?.isFullAdmin && (
-                <>
-                  <button 
-                    onClick={() => handleBulkToggleAbsent(true)}
-                    className="bg-orange-500 text-white px-3 py-2.5 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl flex items-center font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20 active:scale-95 whitespace-nowrap text-xs"
-                    title={`Marcar ${selectedMemberIds.length} como ausentes`}
-                  >
-                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                    <span className="hidden sm:inline">Ausentes ({selectedMemberIds.length})</span>
-                    <span className="sm:hidden">{selectedMemberIds.length}</span>
-                  </button>
-                  <button 
-                    onClick={() => handleBulkToggleAbsent(false)}
-                    className="bg-green-500 text-white px-3 py-2.5 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl flex items-center font-bold hover:bg-green-600 transition-all shadow-lg shadow-green-500/20 active:scale-95 whitespace-nowrap text-xs"
-                    title={`Marcar ${selectedMemberIds.length} como ativos`}
-                  >
-                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                    <span className="hidden sm:inline">Ativar ({selectedMemberIds.length})</span>
-                    <span className="sm:hidden">{selectedMemberIds.length}</span>
-                  </button>
-                  <button 
-                    onClick={handleBulkDelete}
-                    className="bg-red-500 text-white px-3 py-2.5 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl flex items-center font-bold hover:bg-red-600 transition-all shadow-lg shadow-red-500/20 active:scale-95 whitespace-nowrap text-xs"
-                    title={`Excluir ${selectedMemberIds.length} membros`}
-                  >
-                    <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                    <span className="hidden sm:inline">Excluir ({selectedMemberIds.length})</span>
-                    <span className="sm:hidden">{selectedMemberIds.length}</span>
-                  </button>
-                </>
-              )}
               {filteredMembers.length > 0 && (
                 <label className="flex items-center cursor-pointer group bg-white dark:bg-[#111] border border-ibc-teal/20 px-3 py-2.5 sm:px-4 sm:py-3.5 rounded-xl sm:rounded-2xl transition-all hover:bg-ibc-teal/5">
                   <div className="relative">
@@ -5256,6 +5225,37 @@ export default function App() {
                   <span className="hidden sm:inline">Novo Membro</span>
                   <span className="sm:hidden">Novo</span>
                 </button>
+              )}
+              {selectedMemberIds.length > 0 && appUser?.isFullAdmin && (
+                <>
+                  <button 
+                    onClick={() => handleBulkToggleAbsent(true)}
+                    className="bg-orange-500 text-white px-3 py-2.5 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl flex items-center font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20 active:scale-95 whitespace-nowrap text-xs"
+                    title={`Marcar ${selectedMemberIds.length} como ausentes`}
+                  >
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+                    <span className="hidden sm:inline">Ausentes ({selectedMemberIds.length})</span>
+                    <span className="sm:hidden">{selectedMemberIds.length}</span>
+                  </button>
+                  <button 
+                    onClick={() => handleBulkToggleAbsent(false)}
+                    className="bg-green-500 text-white px-3 py-2.5 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl flex items-center font-bold hover:bg-green-600 transition-all shadow-lg shadow-green-500/20 active:scale-95 whitespace-nowrap text-xs"
+                    title={`Marcar ${selectedMemberIds.length} como ativos`}
+                  >
+                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+                    <span className="hidden sm:inline">Ativar ({selectedMemberIds.length})</span>
+                    <span className="sm:hidden">{selectedMemberIds.length}</span>
+                  </button>
+                  <button 
+                    onClick={handleBulkDelete}
+                    className="bg-red-500 text-white px-3 py-2.5 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl flex items-center font-bold hover:bg-red-600 transition-all shadow-lg shadow-red-500/20 active:scale-95 whitespace-nowrap text-xs"
+                    title={`Excluir ${selectedMemberIds.length} membros`}
+                  >
+                    <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+                    <span className="hidden sm:inline">Excluir ({selectedMemberIds.length})</span>
+                    <span className="sm:hidden">{selectedMemberIds.length}</span>
+                  </button>
+                </>
               )}
             </div>
           )}
