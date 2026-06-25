@@ -8817,27 +8817,29 @@ export default function App() {
                 <div className="md:col-span-2 border-t border-gray-100 dark:border-[#222] pt-4">
                   <h4 className="text-xs font-black text-ibc-teal uppercase tracking-widest mb-3">Endereço</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">CEP</label>
-                      <input 
-                        name="cep" 
-                        type="text" 
-                        placeholder="50000-000" 
-                        onChange={(e) => {
-                          handleMaskedInput(e, formatCEP);
-                          handleCEPLookup(e.target.value, false);
-                        }}
-                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Logradouro (Rua/Avenida)</label>
-                      <input 
-                        name="logradouro" 
-                        type="text" 
-                        placeholder="Rua Exemplo" 
-                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                      />
+                    <div className="grid grid-cols-3 gap-4 md:col-span-3">
+                      <div className="col-span-1">
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">CEP</label>
+                        <input 
+                          name="cep" 
+                          type="text" 
+                          placeholder="50000-000" 
+                          onChange={(e) => {
+                            handleMaskedInput(e, formatCEP);
+                            handleCEPLookup(e.target.value, false);
+                          }}
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Logradouro (Rua/Avenida)</label>
+                        <input 
+                          name="logradouro" 
+                          type="text" 
+                          placeholder="Rua Exemplo" 
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4 md:col-span-1">
                       <div>
@@ -8954,78 +8956,85 @@ export default function App() {
                     );
                   })}
                   
-                  <div className="flex gap-2">
-                    <select 
-                      id="ministry-selection-add"
-                      className="flex-1 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs shadow-sm"
-                    >
-                      <option value="">Selecionar Ministério...</option>
-                      {ministries.filter(m => !tempMemberMinistries.some(mm => mm.ministryId === m.id)).map(m => (
-                        <option key={m.id} value={m.id}>{m.name}</option>
-                      ))}
-                    </select>
-                    
-                    {isAddingNewMinistryRole ? (
-                      <div className="w-1/3 flex gap-1">
-                        <input 
-                          id="ministry-role-input-add"
-                          type="text" 
-                          value={newMinistryRoleValue}
-                          onChange={(e) => setNewMinistryRoleValue(e.target.value)}
-                          className="flex-1 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm" 
-                          placeholder="Nova função..."
-                          autoFocus
-                        />
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            setIsAddingNewMinistryRole(false);
-                            setNewMinistryRoleValue("");
-                          }}
-                          className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-300"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                    <div className="sm:col-span-6">
                       <select 
-                        id="ministry-role-selection-add"
-                        onChange={(e) => {
-                          if (e.target.value === "ADD_NEW") {
-                            setIsAddingNewMinistryRole(true);
-                            setNewMinistryRoleValue("");
+                        id="ministry-selection-add"
+                        className="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs shadow-sm bg-white dark:bg-black"
+                      >
+                        <option value="">Selecionar Ministério...</option>
+                        {ministries.filter(m => !tempMemberMinistries.some(mm => mm.ministryId === m.id)).map(m => (
+                          <option key={m.id} value={m.id}>{m.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div className="sm:col-span-4">
+                      {isAddingNewMinistryRole ? (
+                        <div className="flex gap-1">
+                          <input 
+                            id="ministry-role-input-add"
+                            type="text" 
+                            value={newMinistryRoleValue}
+                            onChange={(e) => setNewMinistryRoleValue(e.target.value)}
+                            className="flex-1 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm bg-white dark:bg-black" 
+                            placeholder="Nova função..."
+                            autoFocus
+                          />
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setIsAddingNewMinistryRole(false);
+                              setNewMinistryRoleValue("");
+                            }}
+                            className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-300"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <select 
+                          id="ministry-role-selection-add"
+                          onChange={(e) => {
+                            if (e.target.value === "ADD_NEW") {
+                              setIsAddingNewMinistryRole(true);
+                              setNewMinistryRoleValue("");
+                            }
+                          }}
+                          className="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm bg-white dark:bg-black"
+                        >
+                          <option value="">Função...</option>
+                          {ministryRoles.map(r => (
+                            <option key={r.id} value={r.name}>{r.name}</option>
+                          ))}
+                          <option value="ADD_NEW">+ Nova Função...</option>
+                        </select>
+                      )}
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const ministryId = (document.getElementById('ministry-selection-add') as HTMLSelectElement).value;
+                          const role = isAddingNewMinistryRole 
+                            ? newMinistryRoleValue 
+                            : (document.getElementById('ministry-role-selection-add') as HTMLSelectElement).value;
+                          
+                          if (ministryId && role && role !== "ADD_NEW") {
+                            setTempMemberMinistries([...tempMemberMinistries, { ministryId, role }]);
+                            if (isAddingNewMinistryRole) {
+                               setNewMinistryRoleValue("");
+                               setIsAddingNewMinistryRole(false);
+                            }
                           }
                         }}
-                        className="w-1/3 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm"
+                        className="w-full bg-ibc-teal text-white p-2.5 rounded-xl shadow-md active:scale-95 transition-transform flex justify-center items-center font-bold text-xs gap-1"
                       >
-                        <option value="">Função...</option>
-                        {ministryRoles.map(r => (
-                          <option key={r.id} value={r.name}>{r.name}</option>
-                        ))}
-                        <option value="ADD_NEW">+ Nova Função...</option>
-                      </select>
-                    )}
-
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        const ministryId = (document.getElementById('ministry-selection-add') as HTMLSelectElement).value;
-                        const role = isAddingNewMinistryRole 
-                          ? newMinistryRoleValue 
-                          : (document.getElementById('ministry-role-selection-add') as HTMLSelectElement).value;
-                        
-                        if (ministryId && role && role !== "ADD_NEW") {
-                          setTempMemberMinistries([...tempMemberMinistries, { ministryId, role }]);
-                          if (isAddingNewMinistryRole) {
-                             setNewMinistryRoleValue("");
-                             setIsAddingNewMinistryRole(false);
-                          }
-                        }
-                      }}
-                      className="bg-ibc-teal text-white p-2 rounded-xl shadow-md active:scale-95 transition-transform"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
+                        <Plus className="w-4 h-4" />
+                        <span className="sm:hidden">Adicionar</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -9052,37 +9061,44 @@ export default function App() {
                     );
                   })}
                   
-                  <div className="flex gap-2">
-                    <select 
-                      id="kinship-type"
-                      className="w-1/3 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm"
-                    >
-                        {relationshipTypes.map(rt => (
-                          <option key={rt.id} value={rt.name}>{rt.name}</option>
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                    <div className="sm:col-span-4">
+                      <select 
+                        id="kinship-type"
+                        className="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm bg-white dark:bg-black"
+                      >
+                          {relationshipTypes.map(rt => (
+                            <option key={rt.id} value={rt.name}>{rt.name}</option>
+                          ))}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-6">
+                      <select 
+                        id="kinship-member"
+                        className="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs shadow-sm bg-white dark:bg-black"
+                      >
+                        <option value="">Selecionar Membro...</option>
+                        {members.filter(m => !tempRelationships.some(r => r.memberId === m.id)).sort((a,b) => a.name.localeCompare(b.name)).map(m => (
+                          <option key={m.id} value={m.id}>{m.name}</option>
                         ))}
-                    </select>
-                    <select 
-                      id="kinship-member"
-                      className="flex-1 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs shadow-sm"
-                    >
-                      <option value="">Selecionar Membro...</option>
-                      {members.filter(m => !tempRelationships.some(r => r.memberId === m.id)).sort((a,b) => a.name.localeCompare(b.name)).map(m => (
-                        <option key={m.id} value={m.id}>{m.name}</option>
-                      ))}
-                    </select>
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        const type = (document.getElementById('kinship-type') as HTMLSelectElement).value as Relationship['type'];
-                        const memberId = (document.getElementById('kinship-member') as HTMLSelectElement).value;
-                        if (memberId) {
-                          setTempRelationships([...tempRelationships, { memberId, type }]);
-                        }
-                      }}
-                      className="bg-ibc-teal text-white p-2 rounded-xl shadow-md active:scale-95 transition-transform"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const type = (document.getElementById('kinship-type') as HTMLSelectElement).value as Relationship['type'];
+                          const memberId = (document.getElementById('kinship-member') as HTMLSelectElement).value;
+                          if (memberId) {
+                            setTempRelationships([...tempRelationships, { memberId, type }]);
+                          }
+                        }}
+                        className="w-full bg-ibc-teal text-white p-2.5 rounded-xl shadow-md active:scale-95 transition-transform flex justify-center items-center font-bold text-xs gap-1"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span className="sm:hidden">Adicionar</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -9220,29 +9236,31 @@ export default function App() {
                   <div className="md:col-span-2 border-t border-gray-100 dark:border-[#222] pt-4">
                     <h4 className="text-xs font-black text-ibc-teal uppercase tracking-widest mb-3">Endereço</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">CEP</label>
-                        <input 
-                          name="cep" 
-                          type="text" 
-                          defaultValue={selectedMember?.cep || ''} 
-                          placeholder="50000-000" 
-                          onChange={(e) => {
-                            handleMaskedInput(e, formatCEP);
-                            handleCEPLookup(e.target.value, true);
-                          }}
-                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Logradouro (Rua/Avenida)</label>
-                        <input 
-                          name="logradouro" 
-                          type="text" 
-                          defaultValue={selectedMember?.logradouro || ''} 
-                          placeholder="Rua Exemplo" 
-                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                        />
+                      <div className="grid grid-cols-3 gap-4 md:col-span-3">
+                        <div className="col-span-1">
+                          <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">CEP</label>
+                          <input 
+                            name="cep" 
+                            type="text" 
+                            defaultValue={selectedMember?.cep || ''} 
+                            placeholder="50000-000" 
+                            onChange={(e) => {
+                              handleMaskedInput(e, formatCEP);
+                              handleCEPLookup(e.target.value, true);
+                            }}
+                            className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Logradouro (Rua/Avenida)</label>
+                          <input 
+                            name="logradouro" 
+                            type="text" 
+                            defaultValue={selectedMember?.logradouro || ''} 
+                            placeholder="Rua Exemplo" 
+                            className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                          />
+                        </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4 md:col-span-1">
                         <div>
@@ -9376,78 +9394,85 @@ export default function App() {
                         );
                       })}
                       
-                      <div className="flex gap-2">
-                        <select 
-                          id="ministry-selection-edit"
-                          className="flex-1 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs shadow-sm"
-                        >
-                          <option value="">Selecionar Ministério...</option>
-                          {ministries.filter(m => !tempMemberMinistries.some(mm => mm.ministryId === m.id)).map(m => (
-                            <option key={m.id} value={m.id}>{m.name}</option>
-                          ))}
-                        </select>
-                        
-                        {isAddingNewMinistryRole ? (
-                          <div className="w-1/3 flex gap-1">
-                            <input 
-                              id="ministry-role-input-edit"
-                              type="text" 
-                              value={newMinistryRoleValue}
-                              onChange={(e) => setNewMinistryRoleValue(e.target.value)}
-                              className="flex-1 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm" 
-                              placeholder="Nova função..."
-                              autoFocus
-                            />
-                            <button 
-                              type="button"
-                              onClick={() => {
-                                setIsAddingNewMinistryRole(false);
-                                setNewMinistryRoleValue("");
-                              }}
-                              className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-300"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                        <div className="sm:col-span-6">
                           <select 
-                            id="ministry-role-selection-edit"
-                            onChange={(e) => {
-                              if (e.target.value === "ADD_NEW") {
-                                setIsAddingNewMinistryRole(true);
-                                setNewMinistryRoleValue("");
+                            id="ministry-selection-edit"
+                            className="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs shadow-sm bg-white dark:bg-black"
+                          >
+                            <option value="">Selecionar Ministério...</option>
+                            {ministries.filter(m => !tempMemberMinistries.some(mm => mm.ministryId === m.id)).map(m => (
+                              <option key={m.id} value={m.id}>{m.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        
+                        <div className="sm:col-span-4">
+                          {isAddingNewMinistryRole ? (
+                            <div className="flex gap-1">
+                              <input 
+                                id="ministry-role-input-edit"
+                                type="text" 
+                                value={newMinistryRoleValue}
+                                onChange={(e) => setNewMinistryRoleValue(e.target.value)}
+                                className="flex-1 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm bg-white dark:bg-black" 
+                                placeholder="Nova função..."
+                                autoFocus
+                              />
+                              <button 
+                                type="button"
+                                onClick={() => {
+                                  setIsAddingNewMinistryRole(false);
+                                  setNewMinistryRoleValue("");
+                                }}
+                                className="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-300"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <select 
+                              id="ministry-role-selection-edit"
+                              onChange={(e) => {
+                                if (e.target.value === "ADD_NEW") {
+                                  setIsAddingNewMinistryRole(true);
+                                  setNewMinistryRoleValue("");
+                                }
+                              }}
+                              className="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm bg-white dark:bg-black"
+                            >
+                              <option value="">Função...</option>
+                              {ministryRoles.map(r => (
+                                <option key={r.id} value={r.name}>{r.name}</option>
+                              ))}
+                              <option value="ADD_NEW">+ Nova Função...</option>
+                            </select>
+                          )}
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const ministryId = (document.getElementById('ministry-selection-edit') as HTMLSelectElement).value;
+                              const role = isAddingNewMinistryRole 
+                                ? newMinistryRoleValue 
+                                : (document.getElementById('ministry-role-selection-edit') as HTMLSelectElement).value;
+                              
+                              if (ministryId && role && role !== "ADD_NEW") {
+                                setTempMemberMinistries([...tempMemberMinistries, { ministryId, role }]);
+                                if (isAddingNewMinistryRole) {
+                                   setNewMinistryRoleValue("");
+                                   setIsAddingNewMinistryRole(false);
+                                }
                               }
                             }}
-                            className="w-1/3 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm"
+                            className="w-full bg-ibc-teal text-white p-2.5 rounded-xl shadow-md active:scale-95 transition-transform flex justify-center items-center font-bold text-xs gap-1"
                           >
-                            <option value="">Função...</option>
-                            {ministryRoles.map(r => (
-                              <option key={r.id} value={r.name}>{r.name}</option>
-                            ))}
-                            <option value="ADD_NEW">+ Nova Função...</option>
-                          </select>
-                        )}
-
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            const ministryId = (document.getElementById('ministry-selection-edit') as HTMLSelectElement).value;
-                            const role = isAddingNewMinistryRole 
-                              ? newMinistryRoleValue 
-                              : (document.getElementById('ministry-role-selection-edit') as HTMLSelectElement).value;
-                            
-                            if (ministryId && role && role !== "ADD_NEW") {
-                              setTempMemberMinistries([...tempMemberMinistries, { ministryId, role }]);
-                              if (isAddingNewMinistryRole) {
-                                 setNewMinistryRoleValue("");
-                                 setIsAddingNewMinistryRole(false);
-                              }
-                            }
-                          }}
-                          className="bg-ibc-teal text-white p-2 rounded-xl shadow-md active:scale-95 transition-transform"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
+                            <Plus className="w-4 h-4" />
+                            <span className="sm:hidden">Adicionar</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -9475,37 +9500,44 @@ export default function App() {
                       );
                     })}
                     
-                    <div className="flex gap-2">
-                      <select 
-                        id="kinship-type-edit"
-                        className="w-1/3 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm"
-                      >
-                        {relationshipTypes.map(rt => (
-                          <option key={rt.id} value={rt.name}>{rt.name}</option>
-                        ))}
-                      </select>
-                      <select 
-                        id="kinship-member-edit"
-                        className="flex-1 p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs shadow-sm"
-                      >
-                        <option value="">Selecionar Membro...</option>
-                        {members.filter(m => m.id !== selectedMember?.id && !tempRelationships.some(r => r.memberId === m.id)).sort((a,b) => a.name.localeCompare(b.name)).map(m => (
-                          <option key={m.id} value={m.id}>{m.name}</option>
-                        ))}
-                      </select>
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          const type = (document.getElementById('kinship-type-edit') as HTMLSelectElement).value as Relationship['type'];
-                          const memberId = (document.getElementById('kinship-member-edit') as HTMLSelectElement).value;
-                          if (memberId) {
-                            setTempRelationships([...tempRelationships, { memberId, type }]);
-                          }
-                        }}
-                        className="bg-ibc-teal text-white p-2 rounded-xl shadow-md active:scale-95 transition-transform"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                      <div className="sm:col-span-4">
+                        <select 
+                          id="kinship-type-edit"
+                          className="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs font-bold shadow-sm bg-white dark:bg-black"
+                        >
+                          {relationshipTypes.map(rt => (
+                            <option key={rt.id} value={rt.name}>{rt.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="sm:col-span-6">
+                        <select 
+                          id="kinship-member-edit"
+                          className="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-ibc-teal text-xs shadow-sm bg-white dark:bg-black"
+                        >
+                          <option value="">Selecionar Membro...</option>
+                          {members.filter(m => m.id !== selectedMember?.id && !tempRelationships.some(r => r.memberId === m.id)).sort((a,b) => a.name.localeCompare(b.name)).map(m => (
+                            <option key={m.id} value={m.id}>{m.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            const type = (document.getElementById('kinship-type-edit') as HTMLSelectElement).value as Relationship['type'];
+                            const memberId = (document.getElementById('kinship-member-edit') as HTMLSelectElement).value;
+                            if (memberId) {
+                              setTempRelationships([...tempRelationships, { memberId, type }]);
+                            }
+                          }}
+                          className="w-full bg-ibc-teal text-white p-2.5 rounded-xl shadow-md active:scale-95 transition-transform flex justify-center items-center font-bold text-xs gap-1"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span className="sm:hidden">Adicionar</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
