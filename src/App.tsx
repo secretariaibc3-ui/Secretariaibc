@@ -5286,94 +5286,94 @@ export default function App() {
                 {/* Member Stats Cards & Search */}
                 <div className="flex flex-col lg:flex-row lg:items-center gap-2 sm:gap-4">
                   {/* Status Cards - Horizontal on Mobile */}
-                  <div className="flex flex-row overflow-x-auto pb-1 sm:pb-0 gap-2 sm:gap-4 flex-1 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+                  <div className="flex flex-row gap-1 sm:gap-4 flex-1 w-full">
                     <button 
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'active' ? 'all' : 'active')}
                       className={cn(
-                        "glass-card p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
-                        memberStatusFilter === 'active' ? "border-green-500 ring-4 ring-green-50 bg-green-50/50" : "hover:border-green-200"
+                        "glass-card p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 justify-center sm:justify-start",
+                        memberStatusFilter === 'active' ? "border-green-500 ring-2 sm:ring-4 ring-green-50 bg-green-50/50" : "hover:border-green-200"
                       )}
                     >
                       <div className={cn(
-                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0",
+                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0 hidden sm:flex",
                         memberStatusFilter === 'active' ? "bg-green-500 text-white" : "bg-green-50 text-green-500"
                       )}>
                         <Users className="w-4 h-4 sm:w-6 sm:h-6" />
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-[7px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Ativos</p>
+                      <div className="min-w-0 text-center sm:text-left">
+                        <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Ativos</p>
                         <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{activeMembersCount}</p>
                       </div>
                     </button>
                     <button 
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'absent' ? 'all' : 'absent')}
                       className={cn(
-                        "glass-card p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
-                        memberStatusFilter === 'absent' ? "border-orange-500 ring-4 ring-orange-50 bg-orange-50/50" : "hover:border-orange-200"
+                        "glass-card p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 justify-center sm:justify-start",
+                        memberStatusFilter === 'absent' ? "border-orange-500 ring-2 sm:ring-4 ring-orange-50 bg-orange-50/50" : "hover:border-orange-200"
                       )}
                     >
                       <div className={cn(
-                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0",
+                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0 hidden sm:flex",
                         memberStatusFilter === 'absent' ? "bg-orange-500 text-white" : "bg-orange-50 text-orange-500"
                       )}>
                         <Clock className="w-4 h-4 sm:w-6 sm:h-6" />
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-[7px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Ausentes</p>
+                      <div className="min-w-0 text-center sm:text-left">
+                        <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Ausentes</p>
                         <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{absentMembersCount}</p>
                       </div>
                     </button>
                     <button 
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'inactive' ? 'all' : 'inactive')}
                       className={cn(
-                        "bg-white dark:bg-[#111] p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
-                        memberStatusFilter === 'inactive' ? "border-red-500 ring-4 ring-red-50" : "border-gray-100 dark:border-[#222] hover:border-red-200"
+                        "bg-white dark:bg-[#111] p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 justify-center sm:justify-start",
+                        memberStatusFilter === 'inactive' ? "border-red-500 ring-2 sm:ring-4 ring-red-50" : "border-gray-100 dark:border-[#222] hover:border-red-200"
                       )}
                     >
                       <div className={cn(
-                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0",
+                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0 hidden sm:flex",
                         memberStatusFilter === 'inactive' ? "bg-red-500 text-white" : "bg-red-50 text-red-500"
                       )}>
                         <UserMinus className="w-4 h-4 sm:w-6 sm:h-6" />
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-[7px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Inativos</p>
+                      <div className="min-w-0 text-center sm:text-left">
+                        <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Inativos</p>
                         <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{inactiveMembersCount}</p>
                       </div>
                     </button>
                     <button 
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'homens' ? 'all' : 'homens')}
                       className={cn(
-                        "glass-card p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
-                        memberStatusFilter === 'homens' ? "border-blue-500 ring-4 ring-blue-50 bg-blue-50/50" : "hover:border-blue-200"
+                        "glass-card p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 justify-center sm:justify-start",
+                        memberStatusFilter === 'homens' ? "border-blue-500 ring-2 sm:ring-4 ring-blue-50 bg-blue-50/50" : "hover:border-blue-200"
                       )}
                     >
                       <div className={cn(
-                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0",
+                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0 hidden sm:flex",
                         memberStatusFilter === 'homens' ? "bg-blue-500 text-white" : "bg-blue-50 text-blue-500"
                       )}>
                         <User className="w-4 h-4 sm:w-6 sm:h-6" />
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-[7px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Homens</p>
+                      <div className="min-w-0 text-center sm:text-left">
+                        <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Homens</p>
                         <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{menMembersCount}</p>
                       </div>
                     </button>
                     <button 
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'mulheres' ? 'all' : 'mulheres')}
                       className={cn(
-                        "glass-card p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
-                        memberStatusFilter === 'mulheres' ? "border-pink-500 ring-4 ring-pink-50 bg-pink-50/50" : "hover:border-pink-200"
+                        "glass-card p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 justify-center sm:justify-start",
+                        memberStatusFilter === 'mulheres' ? "border-pink-500 ring-2 sm:ring-4 ring-pink-50 bg-pink-50/50" : "hover:border-pink-200"
                       )}
                     >
                       <div className={cn(
-                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0",
+                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0 hidden sm:flex",
                         memberStatusFilter === 'mulheres' ? "bg-pink-500 text-white" : "bg-pink-50 text-pink-500"
                       )}>
                         <User className="w-4 h-4 sm:w-6 sm:h-6" />
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-[7px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Mulheres</p>
+                      <div className="min-w-0 text-center sm:text-left">
+                        <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Mulheres</p>
                         <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{womenMembersCount}</p>
                       </div>
                     </button>
