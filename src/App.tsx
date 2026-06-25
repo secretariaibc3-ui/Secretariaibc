@@ -115,7 +115,8 @@ import {
   getDocs,
   setDoc,
   writeBatch,
-  getDocFromServer
+  getDocFromServer,
+  Timestamp
 } from 'firebase/firestore';
 import { 
   signInWithPopup, 
@@ -2132,13 +2133,79 @@ export default function App() {
     if (!undoAction) return;
     try {
       const { type, collection: colName, id, ids, data } = undoAction;
+
+      const isPlainObject = (val: any) => {
+        if (typeof val !== 'object' || val === null) return false;
+        const proto = Object.getPrototypeOf(val);
+        return proto === null || proto === Object.prototype;
+      };
+
+      const restoreTimestamps = (val: any): any => {
+        if (val && typeof val === 'object') {
+          if (val instanceof Timestamp) {
+            return val;
+          }
+          if (typeof val.seconds === 'number' && typeof val.nanoseconds === 'number') {
+            return new Timestamp(val.seconds, val.nanoseconds);
+          }
+          if (Array.isArray(val)) {
+            return val.map(restoreTimestamps);
+          }
+          if (isPlainObject(val)) {
+            const res: any = {};
+            for (const key of Object.keys(val)) {
+              res[key] = restoreTimestamps(val[key]);
+            }
+            return res;
+          }
+        }
+        return val;
+      };
+
+      const cleanPayload = (payload: any) => {
+        if (!payload || typeof payload !== 'object') return payload;
+        const cleaned = restoreTimestamps(payload);
+
+        // Helper to recursively remove undefined properties, as Firestore rejects them
+        const removeUndefined = (obj: any): any => {
+          if (!obj || typeof obj !== 'object') return obj;
+          if (obj instanceof Timestamp) return obj;
+          if (Array.isArray(obj)) {
+            return obj.map(removeUndefined);
+          }
+          if (isPlainObject(obj)) {
+            const res: any = {};
+            for (const key of Object.keys(obj)) {
+              if (obj[key] !== undefined) {
+                res[key] = removeUndefined(obj[key]);
+              }
+            }
+            return res;
+          }
+          return obj;
+        };
+
+        const finalPayload = removeUndefined(cleaned);
+        if (isPlainObject(finalPayload)) {
+          const res = { ...finalPayload };
+          delete res.id;
+          return res;
+        }
+        return finalPayload;
+      };
+
       if (type === 'delete' && id) {
-        await setDoc(doc(db, colName, id), data);
+        const sanitized = cleanPayload(data);
+        await setDoc(doc(db, colName, id), sanitized);
       } else if ((type === 'bulk_delete' || type === 'bulk_update') && Array.isArray(data)) {
-        const promises = data.map((item: any) => setDoc(doc(db, colName, item.id), item));
+        const promises = data.map((item: any) => {
+          const sanitized = cleanPayload(item);
+          return setDoc(doc(db, colName, item.id), sanitized);
+        });
         await Promise.all(promises);
       } else if (type === 'update' && id) {
-        await updateDoc(doc(db, colName, id), data);
+        const sanitized = cleanPayload(data);
+        await updateDoc(doc(db, colName, id), sanitized);
       } else if (type === 'add' && id) {
         await deleteDoc(doc(db, colName, id));
       }
@@ -2962,31 +3029,37 @@ export default function App() {
   const handleBulkDelete = async () => {
     if (selectedMemberIds.length === 0) return;
     
-    showPasswordPrompt(
-      'Segurança Adicional',
-      `Digite a senha de segurança para excluir ${selectedMemberIds.length} membros:`,
-      async () => {
-        try {
-          setIsSaving(true);
-          const count = selectedMemberIds.length;
-          const deletedMembers = members.filter(m => selectedMemberIds.includes(m.id));
-          const deletePromises = selectedMemberIds.map(id => deleteDoc(doc(db, 'members', id)));
-          await Promise.all(deletePromises);
-          
-          triggerUndo({
-            type: 'bulk_delete',
-            collection: 'members',
-            data: deletedMembers,
-            message: `${count} membros excluídos.`
-          });
+    showConfirm(
+      'Confirmar Exclusão em Massa',
+      `Deseja realmente excluir os ${selectedMemberIds.length} membros selecionados? Esta ação é irreversível.`,
+      () => {
+        showPasswordPrompt(
+          'Segurança Adicional',
+          `Digite a senha de segurança para excluir ${selectedMemberIds.length} membros:`,
+          async () => {
+            try {
+              setIsSaving(true);
+              const count = selectedMemberIds.length;
+              const deletedMembers = members.filter(m => selectedMemberIds.includes(m.id));
+              const deletePromises = selectedMemberIds.map(id => deleteDoc(doc(db, 'members', id)));
+              await Promise.all(deletePromises);
+              
+              triggerUndo({
+                type: 'bulk_delete',
+                collection: 'members',
+                data: deletedMembers,
+                message: `${count} membros excluídos.`
+              });
 
-          setSelectedMemberIds([]);
-        } catch (error) {
-          console.error("Bulk Delete Error:", error);
-          showAlert("Erro", "Não foi possível excluir alguns membros.");
-        } finally {
-          setIsSaving(false);
-        }
+              setSelectedMemberIds([]);
+            } catch (error) {
+              console.error("Bulk Delete Error:", error);
+              showAlert("Erro", "Não foi possível excluir alguns membros.");
+            } finally {
+              setIsSaving(false);
+            }
+          }
+        );
       }
     );
   };
@@ -3695,35 +3768,47 @@ export default function App() {
 
   const handleBulkToggleAbsent = async (toAbsent: boolean) => {
     if (selectedMemberIds.length === 0) return;
-    try {
-      setIsSaving(true);
-      const batch = writeBatch(db);
-      const membersToUpdate = members.filter(m => selectedMemberIds.includes(m.id));
-      const oldMembersData = membersToUpdate.map(m => ({ ...m }));
+    
+    const actionTitle = toAbsent ? 'Marcar como Ausentes' : 'Ativar Membros';
+    const actionMessage = toAbsent 
+      ? `Deseja realmente marcar os ${selectedMemberIds.length} membros selecionados como ausentes?`
+      : `Deseja realmente reativar os ${selectedMemberIds.length} membros selecionados?`;
 
-      selectedMemberIds.forEach(id => {
-        batch.update(doc(db, 'members', id), {
-          isAbsent: toAbsent,
-          updatedAt: serverTimestamp()
-        });
-      });
-      await batch.commit();
+    showConfirm(
+      actionTitle,
+      actionMessage,
+      async () => {
+        try {
+          setIsSaving(true);
+          const batch = writeBatch(db);
+          const membersToUpdate = members.filter(m => selectedMemberIds.includes(m.id));
+          const oldMembersData = membersToUpdate.map(m => ({ ...m }));
 
-      triggerUndo({
-        type: 'bulk_update',
-        collection: 'members',
-        data: oldMembersData,
-        message: `${selectedMemberIds.length} membros marcados como ${toAbsent ? 'ausentes' : 'ativos'}.`
-      });
+          selectedMemberIds.forEach(id => {
+            batch.update(doc(db, 'members', id), {
+              isAbsent: toAbsent,
+              updatedAt: serverTimestamp()
+            });
+          });
+          await batch.commit();
 
-      setSelectedMemberIds([]);
-      showAlert("Sucesso", `${selectedMemberIds.length} membros atualizados.`);
-    } catch (error) {
-      console.error("Bulk Absent Error:", error);
-      showAlert("Erro", "Falha na atualização em massa.");
-    } finally {
-      setIsSaving(false);
-    }
+          triggerUndo({
+            type: 'bulk_update',
+            collection: 'members',
+            data: oldMembersData,
+            message: `${selectedMemberIds.length} membros marcados como ${toAbsent ? 'ausentes' : 'ativos'}.`
+          });
+
+          setSelectedMemberIds([]);
+          showAlert("Sucesso", `${selectedMemberIds.length} membros atualizados.`);
+        } catch (error) {
+          console.error("Bulk Absent Error:", error);
+          showAlert("Erro", "Falha na atualização em massa.");
+        } finally {
+          setIsSaving(false);
+        }
+      }
+    );
   };
 
   const handleAddUser = async (e: React.FormEvent<HTMLFormElement>) => {
