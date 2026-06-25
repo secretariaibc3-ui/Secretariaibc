@@ -8789,13 +8789,15 @@ export default function App() {
                     </label>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nascimento (Opcional)</label>
-                  <input name="birthDate" type="date" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Data de Batismo (Opcional)</label>
-                  <input name="startDate" type="date" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
+                <div className="grid grid-cols-2 gap-4 md:col-span-2">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nascimento (Opcional)</label>
+                    <input name="birthDate" type="date" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Data de Batismo (Opcional)</label>
+                    <input name="startDate" type="date" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
+                  </div>
                 </div>
 
                 <div className="md:col-span-2 border-t border-gray-100 dark:border-[#222] pt-4">
@@ -8837,60 +8839,66 @@ export default function App() {
                         className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Número</label>
-                      <input 
-                        name="numero" 
-                        type="text" 
-                        placeholder="123" 
-                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                      />
+                    <div className="grid grid-cols-2 gap-4 md:col-span-1">
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Número</label>
+                        <input 
+                          name="numero" 
+                          type="text" 
+                          placeholder="123" 
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Complemento</label>
+                        <input 
+                          name="complemento" 
+                          type="text" 
+                          placeholder="Apto 101" 
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Complemento</label>
-                      <input 
-                        name="complemento" 
-                        type="text" 
-                        placeholder="Apto 101" 
-                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                      />
+                    <div className="grid grid-cols-2 gap-4 md:col-span-1">
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Bairro</label>
+                        <input 
+                          name="bairro" 
+                          type="text" 
+                          placeholder="Bairro" 
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Cidade</label>
+                        <input 
+                          name="cidade" 
+                          type="text" 
+                          placeholder="Cidade" 
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Bairro</label>
-                      <input 
-                        name="bairro" 
-                        type="text" 
-                        placeholder="Bairro" 
-                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Cidade</label>
-                      <input 
-                        name="cidade" 
-                        type="text" 
-                        placeholder="Cidade" 
-                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Estado</label>
-                      <input 
-                        name="estado" 
-                        type="text" 
-                        placeholder="PE" 
-                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">País</label>
-                      <input 
-                        name="pais" 
-                        type="text" 
-                        defaultValue="Brasil" 
-                        placeholder="Brasil" 
-                        className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                      />
+                    <div className="grid grid-cols-2 gap-4 md:col-span-1">
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Estado</label>
+                        <input 
+                          name="estado" 
+                          type="text" 
+                          placeholder="PE" 
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">País</label>
+                        <input 
+                          name="pais" 
+                          type="text" 
+                          defaultValue="Brasil" 
+                          placeholder="Brasil" 
+                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -9183,13 +9191,15 @@ export default function App() {
                       </label>
                     </div>
                   </div>
-                   <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nascimento (Opcional)</label>
-                    <input name="birthDate" type="date" defaultValue={selectedMember?.birthDate} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Data de Batismo (Opcional)</label>
-                    <input name="startDate" type="date" defaultValue={selectedMember?.startDate} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
+                  <div className="grid grid-cols-2 gap-4 md:col-span-2">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nascimento (Opcional)</label>
+                      <input name="birthDate" type="date" defaultValue={selectedMember?.birthDate} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Data de Batismo (Opcional)</label>
+                      <input name="startDate" type="date" defaultValue={selectedMember?.startDate} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
+                    </div>
                   </div>
 
                   <div className="md:col-span-2 border-t border-gray-100 dark:border-[#222] pt-4">
@@ -9234,65 +9244,71 @@ export default function App() {
                           className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Número</label>
-                        <input 
-                          name="numero" 
-                          type="text" 
-                          defaultValue={selectedMember?.numero || ''} 
-                          placeholder="123" 
-                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                        />
+                      <div className="grid grid-cols-2 gap-4 md:col-span-1">
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Número</label>
+                          <input 
+                            name="numero" 
+                            type="text" 
+                            defaultValue={selectedMember?.numero || ''} 
+                            placeholder="123" 
+                            className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Complemento</label>
+                          <input 
+                            name="complemento" 
+                            type="text" 
+                            defaultValue={selectedMember?.complemento || ''} 
+                            placeholder="Apto 101" 
+                            className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Complemento</label>
-                        <input 
-                          name="complemento" 
-                          type="text" 
-                          defaultValue={selectedMember?.complemento || ''} 
-                          placeholder="Apto 101" 
-                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                        />
+                      <div className="grid grid-cols-2 gap-4 md:col-span-1">
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Bairro</label>
+                          <input 
+                            name="bairro" 
+                            type="text" 
+                            defaultValue={selectedMember?.bairro || ''} 
+                            placeholder="Bairro" 
+                            className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Cidade</label>
+                          <input 
+                            name="cidade" 
+                            type="text" 
+                            defaultValue={selectedMember?.cidade || ''} 
+                            placeholder="Cidade" 
+                            className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Bairro</label>
-                        <input 
-                          name="bairro" 
-                          type="text" 
-                          defaultValue={selectedMember?.bairro || ''} 
-                          placeholder="Bairro" 
-                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Cidade</label>
-                        <input 
-                          name="cidade" 
-                          type="text" 
-                          defaultValue={selectedMember?.cidade || ''} 
-                          placeholder="Cidade" 
-                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Estado</label>
-                        <input 
-                          name="estado" 
-                          type="text" 
-                          defaultValue={selectedMember?.estado || ''} 
-                          placeholder="PE" 
-                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">País</label>
-                        <input 
-                          name="pais" 
-                          type="text" 
-                          defaultValue={selectedMember?.pais || 'Brasil'} 
-                          placeholder="Brasil" 
-                          className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
-                        />
+                      <div className="grid grid-cols-2 gap-4 md:col-span-1">
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Estado</label>
+                          <input 
+                            name="estado" 
+                            type="text" 
+                            defaultValue={selectedMember?.estado || ''} 
+                            placeholder="PE" 
+                            className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">País</label>
+                          <input 
+                            name="pais" 
+                            type="text" 
+                            defaultValue={selectedMember?.pais || 'Brasil'} 
+                            placeholder="Brasil" 
+                            className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" 
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
