@@ -1404,7 +1404,7 @@ export default function App() {
   const [isAddingNewMinistryRole, setIsAddingNewMinistryRole] = useState(false);
   const [newMinistryRoleValue, setNewMinistryRoleValue] = useState("");
 
-  const [memberStatusFilter, setMemberStatusFilter] = useState<'all' | 'active' | 'inactive' | 'absent'>('all');
+  const [memberStatusFilter, setMemberStatusFilter] = useState<'all' | 'active' | 'inactive' | 'absent' | 'homens' | 'mulheres'>('all');
 
   // Ata Roles State for "Nova Ata"
   const [signer1Role, setSigner1Role] = useState('Pastor Presidente');
@@ -4323,6 +4323,8 @@ export default function App() {
   const activeMembersCount = useMemo(() => members.filter(m => m.isActive !== false && !m.isAbsent).length, [members]);
   const absentMembersCount = useMemo(() => members.filter(m => m.isActive !== false && m.isAbsent).length, [members]);
   const inactiveMembersCount = useMemo(() => members.filter(m => m.isActive === false).length, [members]);
+  const menMembersCount = useMemo(() => members.filter(m => m.gender === 'Homem').length, [members]);
+  const womenMembersCount = useMemo(() => members.filter(m => m.gender === 'Mulher').length, [members]);
   
   const memberStats = useMemo(() => {
     const categories: Record<string, { members: Member[], prevMembers: Member[], label: string, id: string, color: string, icon: any, tag: string }> = {
@@ -4435,7 +4437,9 @@ export default function App() {
       const matchesStatus = memberStatusFilter === 'all' || 
                            (memberStatusFilter === 'active' && isActive && !isAbsent) || 
                            (memberStatusFilter === 'absent' && isActive && isAbsent) ||
-                           (memberStatusFilter === 'inactive' && !isActive);
+                           (memberStatusFilter === 'inactive' && !isActive) ||
+                           (memberStatusFilter === 'homens' && m.gender === 'Homem') ||
+                           (memberStatusFilter === 'mulheres' && m.gender === 'Mulher');
       
       return matchesSearch && matchesStatus;
     });
@@ -5337,6 +5341,42 @@ export default function App() {
                         <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{inactiveMembersCount}</p>
                       </div>
                     </button>
+                    <button 
+                       onClick={() => setMemberStatusFilter(memberStatusFilter === 'homens' ? 'all' : 'homens')}
+                      className={cn(
+                        "glass-card p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
+                        memberStatusFilter === 'homens' ? "border-blue-500 ring-4 ring-blue-50 bg-blue-50/50" : "hover:border-blue-200"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0",
+                        memberStatusFilter === 'homens' ? "bg-blue-500 text-white" : "bg-blue-50 text-blue-500"
+                      )}>
+                        <User className="w-4 h-4 sm:w-6 sm:h-6" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[7px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Homens</p>
+                        <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{menMembersCount}</p>
+                      </div>
+                    </button>
+                    <button 
+                       onClick={() => setMemberStatusFilter(memberStatusFilter === 'mulheres' ? 'all' : 'mulheres')}
+                      className={cn(
+                        "glass-card p-2 sm:p-4 rounded-2xl sm:rounded-3xl border shadow-sm flex items-center space-x-2 sm:space-x-4 transition-all duration-300 text-left min-w-[110px] sm:min-w-0 flex-1",
+                        memberStatusFilter === 'mulheres' ? "border-pink-500 ring-4 ring-pink-50 bg-pink-50/50" : "hover:border-pink-200"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0",
+                        memberStatusFilter === 'mulheres' ? "bg-pink-500 text-white" : "bg-pink-50 text-pink-500"
+                      )}>
+                        <User className="w-4 h-4 sm:w-6 sm:h-6" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[7px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Mulheres</p>
+                        <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{womenMembersCount}</p>
+                      </div>
+                    </button>
                   </div>
 
                   {/* Expandable Search bar */}
@@ -5391,7 +5431,12 @@ export default function App() {
                 <div className="flex items-center justify-between px-4 py-2 bg-ibc-teal/5 border border-ibc-teal/10 rounded-2xl max-w-5xl mx-auto">
                   <div className="flex items-center space-x-2">
                     <span className="text-xs font-bold text-ibc-teal uppercase tracking-widest">
-                      Filtrando por: {memberStatusFilter === 'active' ? 'Ativos' : memberStatusFilter === 'absent' ? 'Ausentes' : 'Inativos'}
+                      Filtrando por: {
+                        memberStatusFilter === 'active' ? 'Ativos' : 
+                        memberStatusFilter === 'absent' ? 'Ausentes' : 
+                        memberStatusFilter === 'inactive' ? 'Inativos' : 
+                        memberStatusFilter === 'homens' ? 'Homens' : 'Mulheres'
+                      }
                     </span>
                     <span className="text-xs text-gray-400">({filteredMembers.length} encontrados)</span>
                   </div>
