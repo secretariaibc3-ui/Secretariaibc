@@ -8791,11 +8791,11 @@ export default function App() {
                 </div>
                 <div className="grid grid-cols-2 gap-4 md:col-span-2">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nascimento (Opcional)</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nascimento</label>
                     <input name="birthDate" type="date" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Data de Batismo (Opcional)</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Batismo</label>
                     <input name="startDate" type="date" className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
                   </div>
                 </div>
@@ -9209,11 +9209,11 @@ export default function App() {
                   </div>
                   <div className="grid grid-cols-2 gap-4 md:col-span-2">
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nascimento (Opcional)</label>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Nascimento</label>
                       <input name="birthDate" type="date" defaultValue={selectedMember?.birthDate} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Data de Batismo (Opcional)</label>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Batismo</label>
                       <input name="startDate" type="date" defaultValue={selectedMember?.startDate} className="w-full p-2 border rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal shadow-sm" />
                     </div>
                   </div>
