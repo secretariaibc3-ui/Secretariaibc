@@ -5291,7 +5291,7 @@ export default function App() {
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'active' ? 'all' : 'active')}
                       className={cn(
                         "glass-card p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 justify-center sm:justify-start",
-                        memberStatusFilter === 'active' ? "border-green-500 ring-2 sm:ring-4 ring-green-50 bg-green-50/50" : "hover:border-green-200"
+                        memberStatusFilter === 'active' ? "border-green-500 ring-2 sm:ring-4 ring-green-50 bg-green-500/5" : "hover:border-green-200"
                       )}
                     >
                       <div className={cn(
@@ -5309,7 +5309,7 @@ export default function App() {
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'absent' ? 'all' : 'absent')}
                       className={cn(
                         "glass-card p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 justify-center sm:justify-start",
-                        memberStatusFilter === 'absent' ? "border-orange-500 ring-2 sm:ring-4 ring-orange-50 bg-orange-50/50" : "hover:border-orange-200"
+                        memberStatusFilter === 'absent' ? "border-orange-500 ring-2 sm:ring-4 ring-orange-50 bg-orange-500/5" : "hover:border-orange-200"
                       )}
                     >
                       <div className={cn(
@@ -5327,7 +5327,7 @@ export default function App() {
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'inactive' ? 'all' : 'inactive')}
                       className={cn(
                         "bg-white dark:bg-[#111] p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 justify-center sm:justify-start",
-                        memberStatusFilter === 'inactive' ? "border-red-500 ring-2 sm:ring-4 ring-red-50" : "border-gray-100 dark:border-[#222] hover:border-red-200"
+                        memberStatusFilter === 'inactive' ? "border-red-500 ring-2 sm:ring-4 ring-red-50 bg-red-500/5" : "border-gray-100 dark:border-[#222] hover:border-red-200"
                       )}
                     >
                       <div className={cn(
@@ -5345,7 +5345,7 @@ export default function App() {
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'homens' ? 'all' : 'homens')}
                       className={cn(
                         "glass-card p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 justify-center sm:justify-start",
-                        memberStatusFilter === 'homens' ? "border-blue-500 ring-2 sm:ring-4 ring-blue-50 bg-blue-50/50" : "hover:border-blue-200"
+                        memberStatusFilter === 'homens' ? "border-blue-500 ring-2 sm:ring-4 ring-blue-50 bg-blue-500/5" : "hover:border-blue-200"
                       )}
                     >
                       <div className={cn(
@@ -5363,7 +5363,7 @@ export default function App() {
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'mulheres' ? 'all' : 'mulheres')}
                       className={cn(
                         "glass-card p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 justify-center sm:justify-start",
-                        memberStatusFilter === 'mulheres' ? "border-pink-500 ring-2 sm:ring-4 ring-pink-50 bg-pink-50/50" : "hover:border-pink-200"
+                        memberStatusFilter === 'mulheres' ? "border-pink-500 ring-2 sm:ring-4 ring-pink-50 bg-pink-500/5" : "hover:border-pink-200"
                       )}
                     >
                       <div className={cn(
