@@ -338,9 +338,9 @@ const saveToCache = <T,>(key: string, data: T) => {
     return null;
   };
 
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371; // Radius of the earth in km
-    const dLat = (lat2 - lat1) * (Math.PI/180);
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number, label: string = 'Membro') => {
+    const R = 6371; // Radius of the earth in km (Audit: CORRECT)
+    const dLat = (lat2 - lat1) * (Math.PI/180); // Conversion to radians (Audit: CORRECT)
     const dLon = (lon2 - lon1) * (Math.PI/180);
     const a = 
       Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -348,7 +348,15 @@ const saveToCache = <T,>(key: string, data: T) => {
       Math.sin(dLon/2) * Math.sin(dLon/2)
       ; 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-    return R * c; // Distance in km
+    const distance = R * c; // Distance in km
+
+    // Audit Logging as requested by user
+    console.log(`[AUDITORIA GEOGRÁFICA - ${label}]`);
+    console.log(`- Igreja: Lat ${lat2}, Lng ${lon2}`);
+    console.log(`- ${label}: Lat ${lat1}, Lng ${lon1}`);
+    console.log(`- Distância Haversine: ${distance.toFixed(4)} km`);
+    
+    return distance;
   };
 
   const calculateAge = (birthDate: string | undefined | null) => {
@@ -980,6 +988,9 @@ export default function App() {
   };
 
   const getMapsUrl = (member: Member) => {
+    if (member.coordinates && member.coordinates.lat && member.coordinates.lng) {
+      return `https://www.google.com/maps/search/?api=1&query=${member.coordinates.lat},${member.coordinates.lng}`;
+    }
     const parts = [
       member.logradouro,
       member.numero,
@@ -3098,9 +3109,12 @@ export default function App() {
         let distanceToChurch = null;
         const addressToGeocode = `${logradouro}, ${numero}, ${bairro}, ${cidade}, ${estado}, ${pais}`.replace(/,\s*,/g, ',').trim();
         if (logradouro && cidade) {
+           console.log(`Buscando coordenadas para: ${addressToGeocode}`);
            coordinates = await getCoordinatesFromAddress(addressToGeocode);
            if (coordinates && appSettings.churchCoordinates) {
-              distanceToChurch = calculateDistance(coordinates.lat, coordinates.lng, appSettings.churchCoordinates.lat, appSettings.churchCoordinates.lng);
+              distanceToChurch = calculateDistance(coordinates.lat, coordinates.lng, appSettings.churchCoordinates.lat, appSettings.churchCoordinates.lng, name);
+           } else {
+              console.log("Coordenadas não encontradas ou coordenadas da igreja não configuradas.");
            }
         }
 
@@ -3336,6 +3350,7 @@ export default function App() {
         if (addressChanged) {
            const addressToGeocode = `${logradouro}, ${numero}, ${bairro}, ${cidade}, ${estado}, ${pais}`.replace(/,\s*,/g, ',').trim();
            if (logradouro && cidade) {
+              console.log(`Endereço alterado. Buscando novas coordenadas para: ${addressToGeocode}`);
               coordinates = await getCoordinatesFromAddress(addressToGeocode);
            } else {
               coordinates = null;
@@ -3344,7 +3359,7 @@ export default function App() {
         
         // Recalculate distance
         if (coordinates && appSettings.churchCoordinates) {
-           distanceToChurch = calculateDistance(coordinates.lat, coordinates.lng, appSettings.churchCoordinates.lat, appSettings.churchCoordinates.lng);
+           distanceToChurch = calculateDistance(coordinates.lat, coordinates.lng, appSettings.churchCoordinates.lat, appSettings.churchCoordinates.lng, name);
         } else {
            distanceToChurch = null;
         }
@@ -8022,7 +8037,7 @@ export default function App() {
                                         let currentBatch = writeBatch(db);
                                         let count = 0;
                                         for (const m of membersToUpdate) {
-                                           const dist = calculateDistance(m.coordinates!.lat, m.coordinates!.lng, newChurchCoords.lat, newChurchCoords.lng);
+                                           const dist = calculateDistance(m.coordinates!.lat, m.coordinates!.lng, newChurchCoords.lat, newChurchCoords.lng, m.name);
                                            currentBatch.update(doc(db, 'members', m.id), { distanceToChurch: dist });
                                            count++;
                                            if (count % 450 === 0) {
