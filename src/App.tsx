@@ -75,7 +75,8 @@ import {
   FileUp,
   GripVertical,
   ShieldCheck,
-  Calendar
+  Calendar,
+  Activity
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'motion/react';
 import SplashScreen from './components/SplashScreen';
@@ -2548,6 +2549,75 @@ export default function App() {
       footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: 'bold' }
     });
 
+    // Geographic Analysis Table
+    doc.setFontSize(14);
+    doc.setTextColor(31, 41, 55);
+    doc.setFont('helvetica', 'bold');
+    let geoY = (doc as any).lastAutoTable.finalY + 15;
+    
+    // Check if we need a new page for geo
+    if (geoY > doc.internal.pageSize.getHeight() - 40) {
+       doc.addPage();
+       geoY = 20;
+    }
+    
+    doc.text("Análise Geográfica - Distribuição por Distância", 10, geoY);
+
+    const distanceRows = reportData.distanceDistribution.map(cat => [
+      cat.name,
+      cat.count,
+      `${cat.percentage}%`
+    ]);
+
+    autoTable(doc, {
+      startY: geoY + 5,
+      head: [['Faixa de Distância', 'Membros', 'Percentual']],
+      body: distanceRows,
+      theme: 'grid',
+      headStyles: { fillColor: [6, 74, 143], fontStyle: 'bold' },
+      styles: { fontSize: 9 },
+      columnStyles: {
+        1: { halign: 'center' },
+        2: { halign: 'center' }
+      },
+      foot: [['Total', reportData.geoStats.totalWithDistance, '100%']],
+      footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: 'bold' }
+    });
+
+    // Geographic Stats
+    doc.setFontSize(14);
+    doc.setTextColor(31, 41, 55);
+    doc.setFont('helvetica', 'bold');
+    let geoStatsY = (doc as any).lastAutoTable.finalY + 15;
+    
+    if (geoStatsY > doc.internal.pageSize.getHeight() - 60) {
+       doc.addPage();
+       geoStatsY = 20;
+    }
+    
+    doc.text("Estatísticas Geográficas", 10, geoStatsY);
+
+    const geoStatsRows = [
+      ['Membro mais próximo', reportData.geoStats.minDistanceMember?.name || '-', reportData.geoStats.minDistanceMember?.distanceToChurch != null ? `${reportData.geoStats.minDistanceMember.distanceToChurch.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} km` : '-'],
+      ['Membro mais distante', reportData.geoStats.maxDistanceMember?.name || '-', reportData.geoStats.maxDistanceMember?.distanceToChurch != null ? `${reportData.geoStats.maxDistanceMember.distanceToChurch.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} km` : '-'],
+      ['Distância média', '-', reportData.geoStats.avgDistance > 0 ? `${reportData.geoStats.avgDistance.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} km` : '-'],
+      ['Distância mediana', '-', reportData.geoStats.medianDistance > 0 ? `${reportData.geoStats.medianDistance.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} km` : '-']
+    ];
+
+    autoTable(doc, {
+      startY: geoStatsY + 5,
+      head: [['Indicador', 'Membro', 'Distância']],
+      body: geoStatsRows,
+      theme: 'striped',
+      headStyles: { fillColor: [0, 168, 150], fontStyle: 'bold' },
+      styles: { fontSize: 9 }
+    });
+    
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.setFont('helvetica', 'italic');
+    doc.text("As distâncias apresentadas são aproximadas e foram calculadas entre o endereço da igreja e o endereço cadastrado de cada membro.", 10, (doc as any).lastAutoTable.finalY + 10);
+
     // Footer
     const pageCount = (doc.internal as any).getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
@@ -2636,6 +2706,56 @@ export default function App() {
       { name: 'Negativados', value: inactive }
     ];
 
+    // Geographic Distribution Logic
+    const distanceDistribution: { name: string, count: number, percentage: string }[] = [];
+    const membersWithDistance = members.filter(m => m.distanceToChurch != null);
+    const totalWithDistance = membersWithDistance.length;
+
+    const distanceCategories = [
+      { name: 'Até 2 km', min: 0, max: 2 },
+      { name: 'Entre 2 e 5 km', min: 2.0001, max: 5 },
+      { name: 'Entre 5 e 10 km', min: 5.0001, max: 10 },
+      { name: 'Acima de 10 km', min: 10.0001, max: Infinity }
+    ];
+
+    distanceCategories.forEach(cat => {
+       const count = membersWithDistance.filter(m => m.distanceToChurch! >= cat.min && m.distanceToChurch! <= cat.max).length;
+       const percentage = totalWithDistance > 0 ? ((count / totalWithDistance) * 100).toFixed(1) : '0';
+       distanceDistribution.push({ name: cat.name, count, percentage });
+    });
+
+    let maxDistanceMember = null;
+    let minDistanceMember = null;
+    let distanceSum = 0;
+    const allDistances: number[] = [];
+
+    if (totalWithDistance > 0) {
+       maxDistanceMember = membersWithDistance.reduce((prev, current) => (prev.distanceToChurch! > current.distanceToChurch!) ? prev : current);
+       minDistanceMember = membersWithDistance.reduce((prev, current) => (prev.distanceToChurch! < current.distanceToChurch!) ? prev : current);
+       
+       membersWithDistance.forEach(m => {
+          distanceSum += m.distanceToChurch!;
+          allDistances.push(m.distanceToChurch!);
+       });
+       
+       allDistances.sort((a, b) => a - b);
+    }
+    
+    const avgDistance = totalWithDistance > 0 ? (distanceSum / totalWithDistance) : 0;
+    const medianDistance = totalWithDistance > 0 
+       ? (totalWithDistance % 2 === 0 
+           ? (allDistances[totalWithDistance / 2 - 1] + allDistances[totalWithDistance / 2]) / 2 
+           : allDistances[Math.floor(totalWithDistance / 2)])
+       : 0;
+
+    const geoStats = {
+       totalWithDistance,
+       maxDistanceMember,
+       minDistanceMember,
+       avgDistance,
+       medianDistance
+    };
+
     const COLORS = ['#00A896', '#f97316', '#EF4444'];
 
     const activePercentage = total > 0 ? Math.round(((active + absent) / total) * 100) : 0;
@@ -2651,7 +2771,9 @@ export default function App() {
       activePercentage,
       COLORS,
       functionsDetails,
-      ageDistribution
+      ageDistribution,
+      distanceDistribution,
+      geoStats
     };
   }, [members, ageClassifications]);
 
@@ -6404,6 +6526,104 @@ export default function App() {
                         <div className="flex items-center space-x-2">
                           <span className="text-gray-400">{reportData.ageDistribution.reduce((acc, curr) => acc + curr.count, 0)} membros</span>
                           <span className="text-ibc-teal">100%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Geographic Distribution Card */}
+                  <div className="glass-card p-4 sm:p-8 rounded-[3rem] border border-white/40 shadow-sm">
+                    <div className="flex items-center space-x-3 mb-6 sm:mb-8">
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center">
+                        <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                      </div>
+                      <h4 className="text-xs sm:text-sm font-black text-gray-900 dark:text-gray-50 uppercase tracking-widest">Distribuição por Distância</h4>
+                    </div>
+                    <div className="space-y-4">
+                      {reportData.distanceDistribution.map((item, index) => (
+                        <div key={index} className="flex flex-col space-y-1">
+                          <div className="flex items-center justify-between text-[10px] sm:text-xs font-black uppercase tracking-widest">
+                            <span className="text-gray-700 dark:text-gray-200">{item.name}</span>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-gray-400">{item.count} membros</span>
+                              <span className="text-ibc-teal">{item.percentage}%</span>
+                            </div>
+                          </div>
+                          <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${item.percentage}%` }}
+                              transition={{ duration: 1, ease: "easeOut" }}
+                              className="h-full bg-ibc-teal rounded-full"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                      
+                      <div className="pt-4 border-t border-gray-100 dark:border-[#222] flex items-center justify-between text-[10px] sm:text-xs font-black uppercase tracking-widest">
+                        <span className="text-gray-900 dark:text-gray-50">Total</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-gray-400">{reportData.geoStats.totalWithDistance} membros</span>
+                          <span className="text-ibc-teal">100%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Geographic Stats Card */}
+                  <div className="glass-card p-4 sm:p-8 rounded-[3rem] border border-white/40 shadow-sm">
+                    <div className="flex items-center space-x-3 mb-6 sm:mb-8">
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center">
+                        <Activity className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                      </div>
+                      <h4 className="text-xs sm:text-sm font-black text-gray-900 dark:text-gray-50 uppercase tracking-widest">Estatísticas Geográficas</h4>
+                    </div>
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className="flex justify-between items-center py-2 sm:py-3 border-b border-gray-100 dark:border-[#222]">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-3.5 h-3.5 text-ibc-teal shrink-0" />
+                          <span className="text-xs sm:text-sm font-bold text-gray-600 dark:text-gray-400">Membro mais próximo</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs sm:text-sm font-black text-gray-900 dark:text-gray-50">{reportData.geoStats.minDistanceMember?.name || '-'}</div>
+                          <div className="text-[10px] sm:text-xs font-bold text-ibc-teal">{reportData.geoStats.minDistanceMember?.distanceToChurch != null ? `${reportData.geoStats.minDistanceMember.distanceToChurch.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} km` : '-'}</div>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center py-2 sm:py-3 border-b border-gray-100 dark:border-[#222]">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-3.5 h-3.5 text-ibc-teal shrink-0" />
+                          <span className="text-xs sm:text-sm font-bold text-gray-600 dark:text-gray-400">Membro mais distante</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs sm:text-sm font-black text-gray-900 dark:text-gray-50">{reportData.geoStats.maxDistanceMember?.name || '-'}</div>
+                          <div className="text-[10px] sm:text-xs font-bold text-ibc-teal">{reportData.geoStats.maxDistanceMember?.distanceToChurch != null ? `${reportData.geoStats.maxDistanceMember.distanceToChurch.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} km` : '-'}</div>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center py-2 sm:py-3 border-b border-gray-100 dark:border-[#222]">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-3.5 h-3.5 text-ibc-teal shrink-0" />
+                          <span className="text-xs sm:text-sm font-bold text-gray-600 dark:text-gray-400">Distância média dos membros</span>
+                        </div>
+                        <div className="text-xs sm:text-sm font-black text-gray-900 dark:text-gray-50">
+                          {reportData.geoStats.avgDistance > 0 ? `${reportData.geoStats.avgDistance.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} km` : '-'}
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center py-2 sm:py-3 border-b border-gray-100 dark:border-[#222]">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-3.5 h-3.5 text-ibc-teal shrink-0" />
+                          <span className="text-xs sm:text-sm font-bold text-gray-600 dark:text-gray-400">Distância mediana</span>
+                        </div>
+                        <div className="text-xs sm:text-sm font-black text-gray-900 dark:text-gray-50">
+                          {reportData.geoStats.medianDistance > 0 ? `${reportData.geoStats.medianDistance.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} km` : '-'}
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center py-2 sm:py-3">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-3.5 h-3.5 text-ibc-teal shrink-0" />
+                          <span className="text-xs sm:text-sm font-bold text-gray-600 dark:text-gray-400">Membros com endereço válido</span>
+                        </div>
+                        <div className="text-xs sm:text-sm font-black text-gray-900 dark:text-gray-50">
+                          {reportData.geoStats.totalWithDistance}
                         </div>
                       </div>
                     </div>
