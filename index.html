@@ -19,6 +19,7 @@
     </script>
     <script>
       window.onerror = function(message, source, lineno, colno, error) {
+        if (message === 'Script error.') return false;
         const errorMsg = document.createElement('div');
         errorMsg.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:white;color:red;padding:20px;z-index:99999;overflow:auto;font-family:monospace;';
         errorMsg.innerHTML = '<h1>Runtime Error</h1><p>' + message + '</p><p>at ' + source + ':' + lineno + ':' + colno + '</p><pre>' + (error ? error.stack : '') + '</pre>';
