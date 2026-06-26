@@ -338,23 +338,38 @@ const saveToCache = <T,>(key: string, data: T) => {
     return null;
   };
 
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number, label: string = 'Membro') => {
-    const R = 6371; // Radius of the earth in km (Audit: CORRECT)
-    const dLat = (lat2 - lat1) * (Math.PI/180); // Conversion to radians (Audit: CORRECT)
-    const dLon = (lon2 - lon1) * (Math.PI/180);
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number, label: string = 'Membro', memberAddress: string = '', churchAddress: string = '') => {
+    // Explicit conversion to Number to ensure audit compliance
+    const nLat1 = Number(lat1);
+    const nLon1 = Number(lon1);
+    const nLat2 = Number(lat2);
+    const nLon2 = Number(lon2);
+
+    const R = 6371; // Radius of the earth in km
+    const dLat = (nLat2 - nLat1) * (Math.PI/180);
+    const dLon = (nLon2 - nLon1) * (Math.PI/180);
     const a = 
       Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * 
+      Math.cos(nLat1 * (Math.PI/180)) * Math.cos(nLat2 * (Math.PI/180)) * 
       Math.sin(dLon/2) * Math.sin(dLon/2)
       ; 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-    const distance = R * c; // Distance in km
+    const distance = R * c; 
 
-    // Audit Logging as requested by user
-    console.log(`[AUDITORIA GEOGRÁFICA - ${label}]`);
-    console.log(`- Igreja: Lat ${lat2}, Lng ${lon2}`);
-    console.log(`- ${label}: Lat ${lat1}, Lng ${lon1}`);
-    console.log(`- Distância Haversine: ${distance.toFixed(4)} km`);
+    // Audit Logging exactly as requested by user
+    console.log("========================================================");
+    console.log("AUDITORIA DE DISTÂNCIA");
+    console.log("IGREJA");
+    console.log(`Endereço completo: ${churchAddress || 'Não fornecido'}`);
+    console.log(`Latitude: ${nLat2}`);
+    console.log(`Longitude: ${nLon2}`);
+    console.log("MEMBRO");
+    console.log(`Endereço completo: ${memberAddress || label}`);
+    console.log(`Latitude: ${nLat1}`);
+    console.log(`Longitude: ${nLon1}`);
+    console.log(`Distância calculada (Haversine): ${distance.toFixed(4)} km`);
+    console.log(`Data/Hora: ${new Date().toLocaleString('pt-BR')}`);
+    console.log("========================================================");
     
     return distance;
   };
@@ -3112,7 +3127,15 @@ export default function App() {
            console.log(`Buscando coordenadas para: ${addressToGeocode}`);
            coordinates = await getCoordinatesFromAddress(addressToGeocode);
            if (coordinates && appSettings.churchCoordinates) {
-              distanceToChurch = calculateDistance(coordinates.lat, coordinates.lng, appSettings.churchCoordinates.lat, appSettings.churchCoordinates.lng, name);
+              distanceToChurch = calculateDistance(
+                coordinates.lat, 
+                coordinates.lng, 
+                appSettings.churchCoordinates.lat, 
+                appSettings.churchCoordinates.lng, 
+                name,
+                addressToGeocode,
+                appSettings.churchAddress
+              );
            } else {
               console.log("Coordenadas não encontradas ou coordenadas da igreja não configuradas.");
            }
@@ -3340,6 +3363,7 @@ export default function App() {
 
         let coordinates = selectedMember.coordinates || null;
         let distanceToChurch = selectedMember.distanceToChurch || null;
+        const addressToGeocode = `${logradouro}, ${numero}, ${bairro}, ${cidade}, ${estado}, ${pais}`.replace(/,\s*,/g, ',').trim();
         const addressChanged = logradouro !== selectedMember.logradouro || 
                               numero !== selectedMember.numero || 
                               bairro !== selectedMember.bairro || 
@@ -3348,7 +3372,6 @@ export default function App() {
                               pais !== selectedMember.pais;
 
         if (addressChanged) {
-           const addressToGeocode = `${logradouro}, ${numero}, ${bairro}, ${cidade}, ${estado}, ${pais}`.replace(/,\s*,/g, ',').trim();
            if (logradouro && cidade) {
               console.log(`Endereço alterado. Buscando novas coordenadas para: ${addressToGeocode}`);
               coordinates = await getCoordinatesFromAddress(addressToGeocode);
@@ -3359,7 +3382,15 @@ export default function App() {
         
         // Recalculate distance
         if (coordinates && appSettings.churchCoordinates) {
-           distanceToChurch = calculateDistance(coordinates.lat, coordinates.lng, appSettings.churchCoordinates.lat, appSettings.churchCoordinates.lng, name);
+           distanceToChurch = calculateDistance(
+             coordinates.lat, 
+             coordinates.lng, 
+             appSettings.churchCoordinates.lat, 
+             appSettings.churchCoordinates.lng, 
+             name,
+             addressToGeocode,
+             appSettings.churchAddress
+           );
         } else {
            distanceToChurch = null;
         }
@@ -3386,6 +3417,7 @@ export default function App() {
           pais,
           coordinates,
           distanceToChurch,
+          distanceUpdatedAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         };
 
@@ -8006,69 +8038,89 @@ export default function App() {
 
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Endereço da Igreja</label>
-                      <div className="flex gap-2 items-start">
-                        <textarea 
-                          defaultValue={appSettings.churchAddress}
-                          onBlur={async (e) => {
-                            const newAddress = e.target.value;
-                            if (newAddress !== appSettings.churchAddress) {
-                              const oldData = { ...appSettings };
-                              const newChurchCoords = await getCoordinatesFromAddress(newAddress);
+                      <div className="flex flex-col gap-2">
+                        <div className="flex gap-2 items-start">
+                          <textarea 
+                            defaultValue={appSettings.churchAddress}
+                            onBlur={async (e) => {
+                              const newAddress = e.target.value;
+                              if (newAddress !== appSettings.churchAddress) {
+                                const oldData = { ...appSettings };
+                                const newChurchCoords = await getCoordinatesFromAddress(newAddress);
 
-                              await setDoc(doc(db, 'settings', 'app'), { 
-                                churchAddress: newAddress,
-                                churchCoordinates: newChurchCoords
-                              }, { merge: true });
+                                await setDoc(doc(db, 'settings', 'app'), { 
+                                  churchAddress: newAddress,
+                                  churchCoordinates: newChurchCoords,
+                                  updatedAt: serverTimestamp()
+                                }, { merge: true });
 
-                              triggerUndo({
-                                type: 'update',
-                                collection: 'settings',
-                                id: 'app',
-                                data: oldData,
-                                message: "Endereço atualizado."
-                              });
-                              showAlert("Sucesso", "Endereço atualizado! Atualizando distâncias...");
+                                triggerUndo({
+                                  type: 'update',
+                                  collection: 'settings',
+                                  id: 'app',
+                                  data: oldData,
+                                  message: "Endereço atualizado."
+                                });
+                                showAlert("Sucesso", "Endereço atualizado! Atualizando distâncias...");
 
-                              if (newChurchCoords) {
-                                (async () => {
-                                  try {
-                                     const membersToUpdate = members.filter(m => m.coordinates);
-                                     if (membersToUpdate.length > 0) {
-                                        let currentBatch = writeBatch(db);
-                                        let count = 0;
-                                        for (const m of membersToUpdate) {
-                                           const dist = calculateDistance(m.coordinates!.lat, m.coordinates!.lng, newChurchCoords.lat, newChurchCoords.lng, m.name);
-                                           currentBatch.update(doc(db, 'members', m.id), { distanceToChurch: dist });
-                                           count++;
-                                           if (count % 450 === 0) {
-                                              await currentBatch.commit();
-                                              currentBatch = writeBatch(db);
-                                           }
-                                        }
-                                        if (count % 450 !== 0) {
-                                           await currentBatch.commit();
-                                        }
-                                     }
-                                  } catch (err) {
-                                     console.error("Erro ao recalcular distâncias: ", err);
-                                  }
-                                })();
+                                if (newChurchCoords) {
+                                  (async () => {
+                                    try {
+                                       const membersToUpdate = members.filter(m => m.coordinates);
+                                       if (membersToUpdate.length > 0) {
+                                          let currentBatch = writeBatch(db);
+                                          let count = 0;
+                                          for (const m of membersToUpdate) {
+                                             const memberAddr = `${m.logradouro || ''}, ${m.numero || ''}, ${m.bairro || ''}, ${m.cidade || ''}`.replace(/,\s*,/g, ',').trim();
+                                             const dist = calculateDistance(
+                                               m.coordinates!.lat, 
+                                               m.coordinates!.lng, 
+                                               newChurchCoords.lat, 
+                                               newChurchCoords.lng, 
+                                               m.name,
+                                               memberAddr,
+                                               newAddress
+                                             );
+                                             currentBatch.update(doc(db, 'members', m.id), { 
+                                               distanceToChurch: dist,
+                                               distanceUpdatedAt: serverTimestamp() 
+                                             });
+                                             count++;
+                                             if (count % 450 === 0) {
+                                                await currentBatch.commit();
+                                                currentBatch = writeBatch(db);
+                                             }
+                                          }
+                                          if (count % 450 !== 0) {
+                                             await currentBatch.commit();
+                                          }
+                                       }
+                                    } catch (err) {
+                                       console.error("Erro ao recalcular distâncias: ", err);
+                                    }
+                                  })();
+                                }
                               }
-                            }
-                          }}
-                          className="flex-1 p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-ibc-teal/20 min-h-[60px] resize-y"
-                          placeholder="Ex: Rua Principal, 123 - Centro..."
-                        />
-                        {appSettings.churchAddress && (
-                          <a
-                            href={`https://maps.google.com/?q=${encodeURIComponent(appSettings.churchAddress)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="shrink-0 flex items-center justify-center gap-2 h-12 px-4 bg-white dark:bg-[#111] hover:bg-gray-100 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl text-xs font-bold text-ibc-teal shadow-sm transition-all"
-                          >
-                            <MapPin className="w-4 h-4 text-ibc-teal" />
-                            <span className="hidden sm:inline">Ver Mapa</span>
-                          </a>
+                            }}
+                            className="flex-1 p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-ibc-teal/20 min-h-[60px] resize-y"
+                            placeholder="Ex: Rua Principal, 123 - Centro..."
+                          />
+                        </div>
+                        {appSettings.churchCoordinates && (
+                          <div className="flex items-center justify-between px-3 py-2 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 rounded-xl">
+                            <div className="flex items-center text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                              <MapPin className="w-3 h-3 mr-1" />
+                              Coordenadas: {appSettings.churchCoordinates.lat.toFixed(6)}, {appSettings.churchCoordinates.lng.toFixed(6)}
+                            </div>
+                            <a 
+                              href={`https://www.google.com/maps/search/?api=1&query=${appSettings.churchCoordinates.lat},${appSettings.churchCoordinates.lng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest hover:underline"
+                            >
+                              Ver no Mapa (Coordenadas)
+                            </a>
+                          </div>
                         )}
                       </div>
                     </div>
