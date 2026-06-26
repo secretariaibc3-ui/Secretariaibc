@@ -4627,9 +4627,11 @@ export default function App() {
     return { categories, chartData, summary };
   }, [members, selectedMonth, selectedYear]);
 
+  const [memberSortFilter, setMemberSortFilter] = useState<'name' | 'nearest' | 'furthest'>('name');
+
   const filteredMembers = useMemo(() => {
     const normalizedQuery = normalizeString(searchQuery);
-    return members.filter(m => {
+    const filtered = members.filter(m => {
       const matchesSearch = normalizeString(m.name || '').includes(normalizedQuery) ||
                            normalizeString(m.function || '').includes(normalizedQuery);
       
@@ -4647,13 +4649,33 @@ export default function App() {
       
       return matchesSearch && matchesStatus && matchesGender;
     });
-  }, [members, searchQuery, memberStatusFilter, memberGenderFilter]);
+
+    if (memberSortFilter === 'nearest') {
+      filtered.sort((a, b) => {
+        const distA = a.distanceToChurch != null ? a.distanceToChurch : Infinity;
+        const distB = b.distanceToChurch != null ? b.distanceToChurch : Infinity;
+        if (distA === distB) return (a.name || '').localeCompare(b.name || '');
+        return distA - distB;
+      });
+    } else if (memberSortFilter === 'furthest') {
+      filtered.sort((a, b) => {
+        const distA = a.distanceToChurch != null ? a.distanceToChurch : -Infinity;
+        const distB = b.distanceToChurch != null ? b.distanceToChurch : -Infinity;
+        if (distA === distB) return (a.name || '').localeCompare(b.name || '');
+        return distB - distA;
+      });
+    } else {
+      filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    }
+
+    return filtered;
+  }, [members, searchQuery, memberStatusFilter, memberGenderFilter, memberSortFilter]);
 
   const [visibleMembersCount, setVisibleMembersCount] = useState(30);
 
   useEffect(() => {
     setVisibleMembersCount(30);
-  }, [searchQuery, memberStatusFilter, memberGenderFilter]);
+  }, [searchQuery, memberStatusFilter, memberGenderFilter, memberSortFilter]);
 
   const displayedMembers = useMemo(() => {
     return filteredMembers.slice(0, visibleMembersCount);
@@ -5655,28 +5677,46 @@ export default function App() {
                 </div>
 
               {/* Member List Header/Clear Filter */}
-              {(memberStatusFilter !== 'all' || memberGenderFilter !== 'all') && (
-                <div className="flex items-center justify-between px-4 py-2 bg-ibc-teal/5 border border-ibc-teal/10 rounded-2xl max-w-5xl mx-auto">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs font-bold text-ibc-teal uppercase tracking-widest">
-                      Filtrando por: {[
-                        memberGenderFilter === 'homens' ? 'HOMENS' : memberGenderFilter === 'mulheres' ? 'MULHERES' : null,
-                        memberStatusFilter === 'active' ? 'ATIVOS' : memberStatusFilter === 'absent' ? 'AUSENTES' : memberStatusFilter === 'inactive' ? 'INATIVOS' : null
-                      ].filter(Boolean).join(' + ')}
-                    </span>
-                    <span className="text-xs text-gray-400">({filteredMembers.length} encontrados)</span>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      setMemberStatusFilter('all');
-                      setMemberGenderFilter('all');
-                    }}
-                    className="text-xs font-bold text-gray-400 hover:text-ibc-teal transition-colors underline underline-offset-4"
-                  >
-                    Mostrar Todos
-                  </button>
+              {(memberStatusFilter !== 'all' || memberGenderFilter !== 'all' || memberSortFilter !== 'name') && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 py-2 sm:py-3 bg-ibc-teal/5 border border-ibc-teal/10 rounded-2xl max-w-5xl mx-auto gap-3 sm:gap-2 mb-2">
+                   <div className="flex items-center space-x-2 flex-1 min-w-0">
+                     <span className="text-xs font-bold text-ibc-teal uppercase tracking-widest flex items-center shrink-0">
+                       <Filter className="w-3.5 h-3.5 mr-1" />
+                       Filtros:
+                     </span>
+                     <span className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">
+                       {[
+                         memberGenderFilter === 'homens' ? 'Homens' : memberGenderFilter === 'mulheres' ? 'Mulheres' : null,
+                         memberStatusFilter === 'active' ? 'Ativos' : memberStatusFilter === 'absent' ? 'Ausentes' : memberStatusFilter === 'inactive' ? 'Inativos' : null,
+                         memberSortFilter === 'nearest' ? 'Mais Próximos' : memberSortFilter === 'furthest' ? 'Mais Distantes' : null
+                       ].filter(Boolean).join(' • ')}
+                     </span>
+                     <span className="text-[10px] text-ibc-teal/50 shrink-0">({filteredMembers.length})</span>
+                   </div>
+                   <button 
+                     onClick={() => {
+                       setMemberStatusFilter('all');
+                       setMemberGenderFilter('all');
+                       setMemberSortFilter('name');
+                     }}
+                     className="text-[10px] font-black text-gray-400 hover:text-ibc-teal transition-colors underline underline-offset-4 uppercase tracking-widest shrink-0 self-start sm:self-auto"
+                   >
+                     Limpar
+                   </button>
                 </div>
               )}
+              
+              <div className="flex justify-end max-w-5xl mx-auto px-1 pt-1 pb-3">
+                 <select 
+                   value={memberSortFilter} 
+                   onChange={(e) => setMemberSortFilter(e.target.value as any)}
+                   className="bg-transparent border border-gray-100 dark:border-[#222] rounded-lg px-2 py-1 text-xs font-bold text-gray-500 cursor-pointer outline-none focus:ring-2 focus:ring-ibc-teal/20 hover:text-ibc-teal hover:border-ibc-teal/20 transition-all text-right"
+                 >
+                   <option value="name">Ordenar por Nome</option>
+                   <option value="nearest">Mais próximos da Igreja</option>
+                   <option value="furthest">Mais distantes da Igreja</option>
+                 </select>
+              </div>
 
               {/* Member List */}
               <div className="space-y-1.5 sm:space-y-2 max-w-5xl mx-auto">
