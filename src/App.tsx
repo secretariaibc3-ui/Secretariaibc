@@ -320,6 +320,36 @@ const saveToCache = <T,>(key: string, data: T) => {
     }
   };
 
+  const getCoordinatesFromAddress = async (address: string): Promise<{lat: number, lng: number} | null> => {
+    if (!address) return null;
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+      const data = await response.json();
+      if (data && data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon)
+        };
+      }
+    } catch (error) {
+      console.error("Erro ao obter coordenadas:", error);
+    }
+    return null;
+  };
+
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * (Math.PI/180);
+    const dLon = (lon2 - lon1) * (Math.PI/180);
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2)
+      ; 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    return R * c; // Distance in km
+  };
+
   const calculateAge = (birthDate: string | undefined | null) => {
     if (!birthDate) return null;
     try {
@@ -399,6 +429,8 @@ interface Member {
   cidade?: string;
   estado?: string;
   pais?: string;
+  coordinates?: { lat: number, lng: number };
+  distanceToChurch?: number;
   createdAt: any;
   updatedAt: any;
 }
@@ -1275,6 +1307,8 @@ export default function App() {
     logoUrl: '', 
     appName: 'IBC Coqueiral', 
     churchCnpj: '',
+    churchAddress: '',
+    churchCoordinates: null,
     navOrder: DEFAULT_NAV_ITEMS.map(i => i.id)
   }));
   const [sideNavItems, setSideNavItems] = useState(DEFAULT_NAV_ITEMS);
@@ -2270,11 +2304,14 @@ export default function App() {
       (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data();
-          setAppSettings({
+          setAppSettings(prev => ({
+            ...prev,
             logoUrl: data.logoUrl || '',
             appName: data.appName || 'IBC Coqueiral',
-            churchCnpj: data.churchCnpj || ''
-          });
+            churchCnpj: data.churchCnpj || '',
+            churchAddress: data.churchAddress || '',
+            churchCoordinates: data.churchCoordinates || null
+          }));
         }
       },
       (error) => handleFirestoreError(error, OperationType.GET, 'settings')
@@ -2935,6 +2972,16 @@ export default function App() {
         }
 
         console.log("Preparando batch para salvar membro...");
+        let coordinates = null;
+        let distanceToChurch = null;
+        const addressToGeocode = `${logradouro}, ${numero}, ${bairro}, ${cidade}, ${estado}, ${pais}`.replace(/,\s*,/g, ',').trim();
+        if (logradouro && cidade) {
+           coordinates = await getCoordinatesFromAddress(addressToGeocode);
+           if (coordinates && appSettings.churchCoordinates) {
+              distanceToChurch = calculateDistance(coordinates.lat, coordinates.lng, appSettings.churchCoordinates.lat, appSettings.churchCoordinates.lng);
+           }
+        }
+
         const batch = writeBatch(db);
         const memberRef = doc(collection(db, 'members'));
         const memberId = memberRef.id;
@@ -2959,6 +3006,8 @@ export default function App() {
           cidade,
           estado,
           pais,
+          coordinates,
+          distanceToChurch,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
@@ -3138,6 +3187,8 @@ export default function App() {
           cidade: selectedMember.cidade || '',
           estado: selectedMember.estado || '',
           pais: selectedMember.pais || '',
+          coordinates: selectedMember.coordinates || null,
+          distanceToChurch: selectedMember.distanceToChurch || null,
           updatedAt: serverTimestamp()
         };
 
@@ -3149,6 +3200,31 @@ export default function App() {
           const fileName = photoFile.name || "profile";
           photoUrl = await uploadFile(`members/${Date.now()}_${fileName}`, photoFile);
           console.log("Upload de nova foto concluído com sucesso:", photoUrl);
+        }
+
+        let coordinates = selectedMember.coordinates || null;
+        let distanceToChurch = selectedMember.distanceToChurch || null;
+        const addressChanged = logradouro !== selectedMember.logradouro || 
+                              numero !== selectedMember.numero || 
+                              bairro !== selectedMember.bairro || 
+                              cidade !== selectedMember.cidade || 
+                              estado !== selectedMember.estado || 
+                              pais !== selectedMember.pais;
+
+        if (addressChanged) {
+           const addressToGeocode = `${logradouro}, ${numero}, ${bairro}, ${cidade}, ${estado}, ${pais}`.replace(/,\s*,/g, ',').trim();
+           if (logradouro && cidade) {
+              coordinates = await getCoordinatesFromAddress(addressToGeocode);
+           } else {
+              coordinates = null;
+           }
+        }
+        
+        // Recalculate distance
+        if (coordinates && appSettings.churchCoordinates) {
+           distanceToChurch = calculateDistance(coordinates.lat, coordinates.lng, appSettings.churchCoordinates.lat, appSettings.churchCoordinates.lng);
+        } else {
+           distanceToChurch = null;
         }
         
         const updatedMemberData = {
@@ -3171,6 +3247,8 @@ export default function App() {
           cidade,
           estado,
           pais,
+          coordinates,
+          distanceToChurch,
           updatedAt: serverTimestamp()
         };
 
@@ -4996,6 +5074,18 @@ export default function App() {
               {appSettings.appName}
             </h1>
             <p className="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-widest">{appSettings.churchCnpj || "CNPJ Não informado"}</p>
+            {appSettings.churchAddress && (
+              <a
+                href={`https://maps.google.com/?q=${encodeURIComponent(appSettings.churchAddress)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 text-[10px] font-bold text-ibc-teal flex items-start gap-1 hover:underline text-left w-full max-w-[200px]"
+                title="Ver no mapa"
+              >
+                <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
+                <span className="line-clamp-2 leading-tight">{appSettings.churchAddress}</span>
+              </a>
+            )}
           </div>
           <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 hover:bg-gray-100 dark:bg-[#1a1a1a] rounded-xl transition-colors">
             <X className="w-6 h-6 text-gray-400" />
@@ -5071,6 +5161,18 @@ export default function App() {
                   {appSettings.appName}
                 </h1>
                 <p className="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-widest">{appSettings.churchCnpj || "CNPJ Não informado"}</p>
+                {appSettings.churchAddress && (
+                  <a
+                    href={`https://maps.google.com/?q=${encodeURIComponent(appSettings.churchAddress)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 text-[10px] font-bold text-ibc-teal flex items-start gap-1.5 hover:underline text-left"
+                    title="Ver no mapa"
+                  >
+                    <MapPin className="w-3.5 h-3.5 shrink-0" />
+                    <span className="line-clamp-3 leading-tight">{appSettings.churchAddress}</span>
+                  </a>
+                )}
               </motion.div>
             )}
           <button 
@@ -5290,21 +5392,21 @@ export default function App() {
                 {/* Member Stats Cards & Search */}
                 <div className="flex flex-col lg:flex-row lg:items-center gap-2 sm:gap-4">
                   {/* Status Cards - Horizontal on Mobile */}
-                  <div className="flex flex-row gap-1 sm:gap-4 flex-1 w-full">
+                  <div className="flex flex-row gap-1 sm:gap-2 xl:gap-4 flex-1 w-full">
                     <button 
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'active' ? 'all' : 'active')}
                       className={cn(
-                        "glass-card p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 justify-center sm:justify-start",
+                        "glass-card p-1.5 sm:px-3 sm:py-4 xl:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-2 xl:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 w-full justify-center sm:justify-start",
                         memberStatusFilter === 'active' ? "!border-green-500 ring-2 sm:ring-4 ring-green-50 !bg-green-500/5" : "hover:border-green-200"
                       )}
                     >
                       <div className={cn(
-                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0 hidden sm:flex",
+                        "w-8 h-8 sm:w-10 sm:h-10 xl:w-12 xl:h-12 rounded-lg sm:rounded-xl xl:rounded-2xl flex items-center justify-center transition-colors shrink-0 hidden sm:flex",
                         memberStatusFilter === 'active' ? "bg-green-500 text-white" : "bg-green-50 text-green-500"
                       )}>
                         <Users className="w-4 h-4 sm:w-6 sm:h-6" />
                       </div>
-                      <div className="min-w-0 text-center sm:text-left">
+                      <div className="min-w-0 text-center sm:text-left flex-1">
                         <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Ativos</p>
                         <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{activeMembersCount}</p>
                       </div>
@@ -5312,17 +5414,17 @@ export default function App() {
                     <button 
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'absent' ? 'all' : 'absent')}
                       className={cn(
-                        "glass-card p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 justify-center sm:justify-start",
+                        "glass-card p-1.5 sm:px-3 sm:py-4 xl:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-2 xl:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 w-full justify-center sm:justify-start",
                         memberStatusFilter === 'absent' ? "!border-orange-500 ring-2 sm:ring-4 ring-orange-50 !bg-orange-500/5" : "hover:border-orange-200"
                       )}
                     >
                       <div className={cn(
-                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0 hidden sm:flex",
+                        "w-8 h-8 sm:w-10 sm:h-10 xl:w-12 xl:h-12 rounded-lg sm:rounded-xl xl:rounded-2xl flex items-center justify-center transition-colors shrink-0 hidden sm:flex",
                         memberStatusFilter === 'absent' ? "bg-orange-500 text-white" : "bg-orange-50 text-orange-500"
                       )}>
                         <Clock className="w-4 h-4 sm:w-6 sm:h-6" />
                       </div>
-                      <div className="min-w-0 text-center sm:text-left">
+                      <div className="min-w-0 text-center sm:text-left flex-1">
                         <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Ausentes</p>
                         <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{absentMembersCount}</p>
                       </div>
@@ -5330,17 +5432,17 @@ export default function App() {
                     <button 
                        onClick={() => setMemberStatusFilter(memberStatusFilter === 'inactive' ? 'all' : 'inactive')}
                       className={cn(
-                        "bg-white dark:bg-[#111] p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 justify-center sm:justify-start",
+                        "bg-white dark:bg-[#111] p-1.5 sm:px-3 sm:py-4 xl:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-2 xl:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 w-full justify-center sm:justify-start",
                         memberStatusFilter === 'inactive' ? "!border-red-500 ring-2 sm:ring-4 ring-red-50 !bg-red-500/5" : "border-gray-100 dark:border-[#222] hover:border-red-200"
                       )}
                     >
                       <div className={cn(
-                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0 hidden sm:flex",
+                        "w-8 h-8 sm:w-10 sm:h-10 xl:w-12 xl:h-12 rounded-lg sm:rounded-xl xl:rounded-2xl flex items-center justify-center transition-colors shrink-0 hidden sm:flex",
                         memberStatusFilter === 'inactive' ? "bg-red-500 text-white" : "bg-red-50 text-red-500"
                       )}>
                         <UserMinus className="w-4 h-4 sm:w-6 sm:h-6" />
                       </div>
-                      <div className="min-w-0 text-center sm:text-left">
+                      <div className="min-w-0 text-center sm:text-left flex-1">
                         <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Inativos</p>
                         <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{inactiveMembersCount}</p>
                       </div>
@@ -5348,17 +5450,17 @@ export default function App() {
                     <button 
                        onClick={() => setMemberGenderFilter(memberGenderFilter === 'homens' ? 'all' : 'homens')}
                       className={cn(
-                        "glass-card p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 justify-center sm:justify-start",
+                        "glass-card p-1.5 sm:px-3 sm:py-4 xl:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-2 xl:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 w-full justify-center sm:justify-start",
                         memberGenderFilter === 'homens' ? "!border-blue-500 ring-2 sm:ring-4 ring-blue-50 !bg-blue-500/5" : "hover:border-blue-200"
                       )}
                     >
                       <div className={cn(
-                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0 hidden sm:flex",
+                        "w-8 h-8 sm:w-10 sm:h-10 xl:w-12 xl:h-12 rounded-lg sm:rounded-xl xl:rounded-2xl flex items-center justify-center transition-colors shrink-0 hidden sm:flex",
                         memberGenderFilter === 'homens' ? "bg-blue-500 text-white" : "bg-blue-50 text-blue-500"
                       )}>
                         <User className="w-4 h-4 sm:w-6 sm:h-6" />
                       </div>
-                      <div className="min-w-0 text-center sm:text-left">
+                      <div className="min-w-0 text-center sm:text-left flex-1">
                         <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Homens</p>
                         <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{menMembersCount}</p>
                       </div>
@@ -5366,17 +5468,17 @@ export default function App() {
                     <button 
                        onClick={() => setMemberGenderFilter(memberGenderFilter === 'mulheres' ? 'all' : 'mulheres')}
                       className={cn(
-                        "glass-card p-1.5 sm:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 justify-center sm:justify-start",
+                        "glass-card p-1.5 sm:px-3 sm:py-4 xl:p-4 rounded-xl sm:rounded-3xl border shadow-sm flex items-center sm:space-x-2 xl:space-x-4 transition-all duration-300 text-left min-w-0 flex-1 w-full justify-center sm:justify-start",
                         memberGenderFilter === 'mulheres' ? "!border-pink-500 ring-2 sm:ring-4 ring-pink-50 !bg-pink-500/5" : "hover:border-pink-200"
                       )}
                     >
                       <div className={cn(
-                        "w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-colors shrink-0 hidden sm:flex",
+                        "w-8 h-8 sm:w-10 sm:h-10 xl:w-12 xl:h-12 rounded-lg sm:rounded-xl xl:rounded-2xl flex items-center justify-center transition-colors shrink-0 hidden sm:flex",
                         memberGenderFilter === 'mulheres' ? "bg-pink-500 text-white" : "bg-pink-50 text-pink-500"
                       )}>
                         <User className="w-4 h-4 sm:w-6 sm:h-6" />
                       </div>
-                      <div className="min-w-0 text-center sm:text-left">
+                      <div className="min-w-0 text-center sm:text-left flex-1">
                         <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5 truncate">Mulheres</p>
                         <p className="text-xs sm:text-2xl font-black text-gray-900 dark:text-gray-50 leading-none">{womenMembersCount}</p>
                       </div>
@@ -5384,7 +5486,7 @@ export default function App() {
                   </div>
 
                   {/* Expandable Search bar */}
-                  <div className="relative flex items-center h-10 sm:h-14 w-full sm:w-80 lg:w-96 justify-start">
+                  <div className="relative flex items-center h-10 sm:h-14 w-full sm:w-80 lg:w-72 xl:w-80 justify-start">
                     <motion.div 
                       layout
                       initial={false}
@@ -7626,6 +7728,75 @@ export default function App() {
                         />
                       </div>
                     </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Endereço da Igreja</label>
+                      <div className="flex gap-2 items-start">
+                        <textarea 
+                          defaultValue={appSettings.churchAddress}
+                          onBlur={async (e) => {
+                            const newAddress = e.target.value;
+                            if (newAddress !== appSettings.churchAddress) {
+                              const oldData = { ...appSettings };
+                              const newChurchCoords = await getCoordinatesFromAddress(newAddress);
+
+                              await setDoc(doc(db, 'settings', 'app'), { 
+                                churchAddress: newAddress,
+                                churchCoordinates: newChurchCoords
+                              }, { merge: true });
+
+                              triggerUndo({
+                                type: 'update',
+                                collection: 'settings',
+                                id: 'app',
+                                data: oldData,
+                                message: "Endereço atualizado."
+                              });
+                              showAlert("Sucesso", "Endereço atualizado! Atualizando distâncias...");
+
+                              if (newChurchCoords) {
+                                (async () => {
+                                  try {
+                                     const membersToUpdate = members.filter(m => m.coordinates);
+                                     if (membersToUpdate.length > 0) {
+                                        let currentBatch = writeBatch(db);
+                                        let count = 0;
+                                        for (const m of membersToUpdate) {
+                                           const dist = calculateDistance(m.coordinates!.lat, m.coordinates!.lng, newChurchCoords.lat, newChurchCoords.lng);
+                                           currentBatch.update(doc(db, 'members', m.id), { distanceToChurch: dist });
+                                           count++;
+                                           if (count % 450 === 0) {
+                                              await currentBatch.commit();
+                                              currentBatch = writeBatch(db);
+                                           }
+                                        }
+                                        if (count % 450 !== 0) {
+                                           await currentBatch.commit();
+                                        }
+                                     }
+                                  } catch (err) {
+                                     console.error("Erro ao recalcular distâncias: ", err);
+                                  }
+                                })();
+                              }
+                            }
+                          }}
+                          className="flex-1 p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-ibc-teal/20 min-h-[60px] resize-y"
+                          placeholder="Ex: Rua Principal, 123 - Centro..."
+                        />
+                        {appSettings.churchAddress && (
+                          <a
+                            href={`https://maps.google.com/?q=${encodeURIComponent(appSettings.churchAddress)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0 flex items-center justify-center gap-2 h-12 px-4 bg-white dark:bg-[#111] hover:bg-gray-100 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl text-xs font-bold text-ibc-teal shadow-sm transition-all"
+                          >
+                            <MapPin className="w-4 h-4 text-ibc-teal" />
+                            <span className="hidden sm:inline">Ver Mapa</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </section>
               )}
@@ -9836,6 +10007,19 @@ export default function App() {
                           {selectedMember.cidade || "Não preenchido"} - {selectedMember.estado || "Não preenchido"}{selectedMember.pais && `, ${selectedMember.pais}`}
                         </p>
                       )}
+                    </div>
+
+                    <div className="flex flex-col gap-1 p-3 sm:p-3.5 bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-sm">
+                      <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-ibc-teal" />
+                        Distância da Igreja
+                      </div>
+                      <div className="text-xs font-extrabold text-gray-800 dark:text-gray-100">
+                        {selectedMember.distanceToChurch != null 
+                          ? `${selectedMember.distanceToChurch.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} km`
+                          : <span className="text-gray-400 font-bold">Distância não disponível.</span>
+                        }
+                      </div>
                     </div>
 
                     <a
