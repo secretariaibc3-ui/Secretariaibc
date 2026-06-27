@@ -5127,28 +5127,28 @@ export default function App() {
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         {/* Admin Quick Access Control Button */}
       {appUser?.role === 'admin' && (
-        <div className="fixed bottom-36 left-6 z-[60] flex flex-col items-start gap-4 pointer-events-none">
+        <div className="fixed top-6 right-6 z-[60] flex flex-col items-end gap-3 pointer-events-none">
           <AnimatePresence>
             {users.some(u => u.status === 'pending') && (
               <motion.div
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="bg-amber-500 text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 flex items-center gap-2 pointer-events-auto"
+                exit={{ opacity: 0, x: 20 }}
+                className="bg-amber-500 text-white px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 flex items-center gap-2 pointer-events-auto"
               >
-                <div className="w-2 h-2 bg-white dark:bg-[#111] rounded-full animate-ping" />
-                {users.filter(u => u.status === 'pending').length} Solicitações Pendentes
+                <div className="w-1.5 h-1.5 bg-white dark:bg-[#111] rounded-full animate-ping" />
+                {users.filter(u => u.status === 'pending').length} Solicitações
               </motion.div>
             )}
           </AnimatePresence>
           
           <button
             onClick={() => setIsAccessControlOpen(true)}
-            className="w-14 h-14 bg-white dark:bg-[#111] text-ibc-teal rounded-2xl shadow-2xl shadow-black/10 border border-gray-100 dark:border-[#222] flex items-center justify-center hover:scale-110 active:scale-95 transition-all pointer-events-auto group relative"
+            className="w-11 h-11 bg-white dark:bg-[#111] text-ibc-teal rounded-xl shadow-2xl shadow-black/10 border border-gray-100 dark:border-[#222] flex items-center justify-center hover:scale-110 active:scale-95 transition-all pointer-events-auto group relative"
           >
-            <ShieldCheck className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+            <ShieldCheck className="w-5 h-5 group-hover:rotate-12 transition-transform" />
             {users.some(u => u.status === 'pending') && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 border-2 border-white rounded-full" />
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 border-2 border-white rounded-full" />
             )}
           </button>
         </div>
