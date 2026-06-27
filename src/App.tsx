@@ -2118,8 +2118,12 @@ export default function App() {
 
   // Update history when tab changes
   useEffect(() => {
-    if (window.history.state?.tab !== activeTab) {
-      window.history.pushState({ tab: activeTab }, '');
+    try {
+      if (window.history.state?.tab !== activeTab) {
+        window.history.pushState({ tab: activeTab }, '');
+      }
+    } catch (err) {
+      console.warn("History API error in tab change:", err);
     }
   }, [activeTab]);
 
@@ -2137,41 +2141,53 @@ export default function App() {
                          (passwordPromptConfig?.isOpen ?? false);
 
   useEffect(() => {
-    if (isAnyModalOpen) {
-      // If modal was just opened, push a state
-      if (!window.history.state?.modal) {
-        window.history.pushState({ tab: activeTab, modal: true }, '');
+    try {
+      if (isAnyModalOpen) {
+        // If modal was just opened, push a state
+        if (!window.history.state?.modal) {
+          window.history.pushState({ tab: activeTab, modal: true }, '');
+        }
+      } else {
+        // If modal was closed via UI (not back button), and we have a modal state in history, go back
+        if (window.history.state?.modal) {
+          window.history.back();
+        }
       }
-    } else {
-      // If modal was closed via UI (not back button), and we have a modal state in history, go back
-      if (window.history.state?.modal) {
-        window.history.back();
-      }
+    } catch (err) {
+      console.warn("History API error in modal:", err);
     }
   }, [isAnyModalOpen]);
 
   // Specific history pushes for expandedCard and expandedFunction to allow native back button to close them directly
   useEffect(() => {
-    if (expandedFunction) {
-      if (window.history.state?.expandedFunction !== expandedFunction) {
-        window.history.pushState({ tab: activeTab, expandedFunction }, '');
+    try {
+      if (expandedFunction) {
+        if (window.history.state?.expandedFunction !== expandedFunction) {
+          window.history.pushState({ tab: activeTab, expandedFunction }, '');
+        }
+      } else {
+        if (window.history.state?.expandedFunction) {
+          window.history.back();
+        }
       }
-    } else {
-      if (window.history.state?.expandedFunction) {
-        window.history.back();
-      }
+    } catch (err) {
+      console.warn("History API error in expandedFunction:", err);
     }
   }, [expandedFunction]);
 
   useEffect(() => {
-    if (expandedCard) {
-      if (window.history.state?.expandedCard !== expandedCard) {
-        window.history.pushState({ tab: activeTab, expandedCard }, '');
+    try {
+      if (expandedCard) {
+        if (window.history.state?.expandedCard !== expandedCard) {
+          window.history.pushState({ tab: activeTab, expandedCard }, '');
+        }
+      } else {
+        if (window.history.state?.expandedCard) {
+          window.history.back();
+        }
       }
-    } else {
-      if (window.history.state?.expandedCard) {
-        window.history.back();
-      }
+    } catch (err) {
+      console.warn("History API error in expandedCard:", err);
     }
   }, [expandedCard]);
 

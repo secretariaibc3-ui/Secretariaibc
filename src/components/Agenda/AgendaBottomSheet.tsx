@@ -82,25 +82,36 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
 
   // Handle Back Button to close modal
   useEffect(() => {
-    if (!isOpen) return;
+    try {
+      if (isOpen) {
+        if (!window.history.state?.agendaModalOpen) {
+          window.history.pushState(
+            { ...(window.history.state || {}), agendaModalOpen: true },
+            "",
+          );
+        }
+      } else {
+        if (window.history.state?.agendaModalOpen) {
+          window.history.back();
+        }
+      }
+    } catch (err) {
+      console.warn("History API error:", err);
+    }
+  }, [isOpen]);
 
-    // Push state to history
-    window.history.pushState({ agendaModalOpen: true }, "");
-
-    const handlePopState = () => {
-      onClose();
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      if (e.state?.agendaModalOpen !== true) {
+        onClose();
+      }
     };
 
     window.addEventListener("popstate", handlePopState);
-
     return () => {
       window.removeEventListener("popstate", handlePopState);
-      // If we are closing but the history state is still there (manual close), pop it
-      if (window.history.state?.agendaModalOpen) {
-        window.history.back();
-      }
     };
-  }, [isOpen, onClose]);
+  }, [onClose]);
 
   // Member Selector State
   const [isMemberSelectorOpen, setIsMemberSelectorOpen] = useState(false);
@@ -319,14 +330,13 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
             </div>
 
             {/* Content Form */}
-            <div className="shrink min-h-0 overflow-y-auto p-4 space-y-4">
+            <div className="shrink min-h-0 overflow-y-auto px-4 pt-4 pb-4 space-y-4 mb-2">
               <input
                 type="text"
                 placeholder="Título"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full text-xl font-black bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-700 pb-2 border-b border-gray-100 dark:border-[#222]"
-                autoFocus
               />
 
               {tab === "event" ? (

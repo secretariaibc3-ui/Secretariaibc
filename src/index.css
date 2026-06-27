@@ -113,6 +113,13 @@ html, body, #root {
   overflow: hidden;
   margin: 0;
   padding: 0;
+  background-color: #F4F5F7;
+}
+
+@media (prefers-color-scheme: dark) {
+  html, body, #root {
+    background-color: #000000;
+  }
 }
 
 body {
