@@ -1010,7 +1010,8 @@ export default function App() {
     setIsContactOptionsModalOpen(true);
   };
 
-  const getMapsUrl = (member: Member) => {
+  const getMapsUrl = (member: Member | null) => {
+    if (!member) return '#';
     const parts = [
       member.logradouro,
       member.numero,
