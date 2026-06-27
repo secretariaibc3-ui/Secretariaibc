@@ -1011,9 +1011,6 @@ export default function App() {
   };
 
   const getMapsUrl = (member: Member) => {
-    if (member.coordinates && member.coordinates.lat && member.coordinates.lng) {
-      return `https://www.google.com/maps/search/?api=1&query=${member.coordinates.lat},${member.coordinates.lng}`;
-    }
     const parts = [
       member.logradouro,
       member.numero,
@@ -1024,7 +1021,16 @@ export default function App() {
       member.pais || "Brasil"
     ].filter(Boolean);
     const fullAddress = parts.join(", ");
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+    
+    if (fullAddress.trim()) {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+    }
+    
+    if (member.coordinates && member.coordinates.lat && member.coordinates.lng) {
+      return `https://www.google.com/maps/search/?api=1&query=${member.coordinates.lat},${member.coordinates.lng}`;
+    }
+    
+    return '#';
   };
 
   const hasAddress = (member: Member) => {
@@ -10367,83 +10373,6 @@ export default function App() {
                             Atualizado: {selectedMember.distanceUpdatedAt?.seconds ? new Date(selectedMember.distanceUpdatedAt.seconds * 1000).toLocaleDateString('pt-BR') : 'Recentemente'}
                           </div>
                         )}
-                      </div>
-                      
-                      {/* Auditoria Section */}
-                      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-[#222]">
-                        <div className="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-2">Auditoria de Dados Geográficos</div>
-                        <div className="grid grid-cols-2 gap-2 text-[10px]">
-                          <div className="p-2 bg-gray-50 dark:bg-black/40 rounded-lg border border-gray-100 dark:border-[#222]">
-                            <span className="text-gray-400 block mb-0.5">Igreja (Banco)</span>
-                            <span className="font-mono font-bold text-gray-600 dark:text-gray-300">
-                              {appSettings.churchCoordinates ? `${appSettings.churchCoordinates.lat.toFixed(6)}, ${appSettings.churchCoordinates.lng.toFixed(6)}` : 'N/A'}
-                            </span>
-                          </div>
-                          <div className="p-2 bg-gray-50 dark:bg-black/40 rounded-lg border border-gray-100 dark:border-[#222]">
-                            <span className="text-gray-400 block mb-0.5">Membro (Banco)</span>
-                            <span className="font-mono font-bold text-gray-600 dark:text-gray-300">
-                              {selectedMember.coordinates ? `${selectedMember.coordinates.lat.toFixed(6)}, ${selectedMember.coordinates.lng.toFixed(6)}` : 'N/A'}
-                            </span>
-                          </div>
-                          <div className="p-2 bg-gray-50 dark:bg-black/40 rounded-lg border border-gray-100 dark:border-[#222]">
-                            <span className="text-gray-400 block mb-0.5">Distância Salva</span>
-                            <span className="font-mono font-bold text-gray-600 dark:text-gray-300">
-                              {selectedMember.distanceToChurch != null ? `${selectedMember.distanceToChurch.toFixed(4)} km` : 'N/A'}
-                            </span>
-                          </div>
-                          <div className="p-2 bg-gray-50 dark:bg-black/40 rounded-lg border border-gray-100 dark:border-[#222]">
-                            <span className="text-gray-400 block mb-0.5">Última Atualização</span>
-                            <span className="font-mono font-bold text-gray-600 dark:text-gray-300">
-                              {selectedMember.distanceUpdatedAt?.seconds ? new Date(selectedMember.distanceUpdatedAt.seconds * 1000).toLocaleDateString('pt-BR') : 'N/A'}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div className="mt-2 flex flex-col gap-2">
-                          <div className="grid grid-cols-2 gap-2">
-                            <a 
-                              href={`https://www.google.com/maps/search/?api=1&query=${appSettings.churchCoordinates?.lat},${appSettings.churchCoordinates?.lng}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-center py-2 bg-gray-100 hover:bg-gray-200 dark:bg-[#222] dark:hover:bg-[#333] text-gray-600 dark:text-gray-300 text-[9px] font-black uppercase tracking-widest rounded-lg transition-colors border border-gray-200 dark:border-[#333]"
-                            >
-                              Mapa Igreja
-                            </a>
-                            <a 
-                              href={`https://www.google.com/maps/search/?api=1&query=${selectedMember.coordinates?.lat},${selectedMember.coordinates?.lng}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-center py-2 bg-gray-100 hover:bg-gray-200 dark:bg-[#222] dark:hover:bg-[#333] text-gray-600 dark:text-gray-300 text-[9px] font-black uppercase tracking-widest rounded-lg transition-colors border border-gray-200 dark:border-[#333]"
-                            >
-                              Mapa Membro
-                            </a>
-                          </div>
-                          <button 
-                            onClick={async () => {
-                              const addr = `${selectedMember.logradouro}, ${selectedMember.numero}, ${selectedMember.bairro}, ${selectedMember.cidade}, ${selectedMember.estado}, ${selectedMember.cep || ''}, ${selectedMember.pais}`.replace(/,\s*,/g, ',').trim();
-                              console.log("========================================================");
-                              console.log("RECALCULANDO PARA AUDITORIA...");
-                              const coords = await getCoordinatesFromAddress(addr);
-                              if (coords && appSettings.churchCoordinates) {
-                                const dist = calculateDistance(coords.lat, coords.lng, appSettings.churchCoordinates.lat, appSettings.churchCoordinates.lng, selectedMember.name, addr, appSettings.churchAddress);
-                                showAlert("Auditoria", `Distância calculada: ${dist.toFixed(4)} km. Coordenadas: ${coords.lat}, ${coords.lng}. Verifique o console para detalhes.`);
-                                // Update if different
-                                if (Math.abs((selectedMember.distanceToChurch || 0) - dist) > 0.001) {
-                                  await updateDoc(doc(db, 'members', selectedMember.id), {
-                                    coordinates: coords,
-                                    distanceToChurch: dist,
-                                    distanceUpdatedAt: serverTimestamp()
-                                  });
-                                }
-                              } else {
-                                showAlert("Erro", "Não foi possível obter coordenadas ou as coordenadas da igreja não estão configuradas.");
-                              }
-                            }}
-                            className="w-full py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/10 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-lg transition-colors border border-blue-100 dark:border-blue-900/20"
-                          >
-                            Recalcular e Validar (Audit)
-                          </button>
-                        </div>
                       </div>
                     </div>
 
