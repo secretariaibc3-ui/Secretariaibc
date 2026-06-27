@@ -14,7 +14,6 @@ export const AGENDA_CATEGORY_COLORS: Record<AgendaCategory, string> = {
   'Outro': '#9ca3af', 
 };
 
-export type ReminderType = 'none' | '0' | '10m' | '30m' | '1h' | '2h' | '1d' | '2d' | '1w';
 export type RepeatType = 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly';
 export type TaskPriority = 'baixa' | 'media' | 'alta';
 export type TaskStatus = 'pendente' | 'concluida';
@@ -41,7 +40,6 @@ export interface AgendaEvent extends BaseAgendaItem {
   ministryId?: string;
   responsibleIds?: string[];
   repeat: RepeatType;
-  reminder: ReminderType;
 }
 
 export interface AgendaTask extends BaseAgendaItem {

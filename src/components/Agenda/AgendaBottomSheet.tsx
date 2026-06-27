@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Calendar, Clock, MapPin, Users, Repeat, Bell, FileText, Trash2, Copy, CheckCircle2 } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, Users, Repeat, FileText, Trash2, Copy, CheckCircle2, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { db } from '../../firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/storage'; // Wait, it's firestore, not storage
 import { 
   AgendaItem, 
   AgendaEvent, 
@@ -11,7 +10,6 @@ import {
   AGENDA_CATEGORY_COLORS, 
   AgendaCategory,
   RepeatType,
-  ReminderType,
   TaskPriority,
   TaskStatus
 } from '../../types/Agenda';
@@ -53,7 +51,6 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
   const [ministryId, setMinistryId] = useState('');
   const [responsibleIds, setResponsibleIds] = useState<string[]>([]);
   const [repeat, setRepeat] = useState<RepeatType>('none');
-  const [reminder, setReminder] = useState<ReminderType>('none');
   const [observations, setObservations] = useState('');
 
   // Form State - Task
@@ -63,6 +60,11 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
   const [taskResponsibleId, setTaskResponsibleId] = useState('');
 
   const [loading, setLoading] = useState(false);
+  
+  // Member Selector State
+  const [isMemberSelectorOpen, setIsMemberSelectorOpen] = useState(false);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [memberSelectorMode, setMemberSelectorMode] = useState<'single'|'multiple'>('multiple');
 
   useEffect(() => {
     if (isOpen) {
@@ -84,7 +86,6 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
           setMinistryId(ev.ministryId || '');
           setResponsibleIds(ev.responsibleIds || []);
           setRepeat(ev.repeat);
-          setReminder(ev.reminder);
         } else {
           const ts = editItem as AgendaTask;
           setTaskDescription(ts.description || '');
@@ -108,7 +109,6 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
         setMinistryId('');
         setResponsibleIds([]);
         setRepeat('none');
-        setReminder('none');
         setObservations('');
         
         setTaskDescription('');
@@ -149,8 +149,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
           location,
           ministryId,
           responsibleIds,
-          repeat,
-          reminder
+          repeat
         };
       } else {
         itemData = {
@@ -274,22 +273,22 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
             </div>
 
             {/* Content Form */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
               
               <input
                 type="text"
                 placeholder="Título"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full text-2xl font-black bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-700 pb-2 border-b border-gray-100 dark:border-[#222]"
+                className="w-full text-xl font-black bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-700 pb-2 border-b border-gray-100 dark:border-[#222]"
                 autoFocus
               />
 
               {tab === 'event' ? (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   
                   {/* Category & Color */}
-                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-2xl">
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl">
                     <div className="w-6 h-6 rounded-full shrink-0" style={{ backgroundColor: color }} />
                     <select
                       value={category}
@@ -307,7 +306,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                   </div>
 
                   {/* Dates */}
-                  <div className="bg-gray-50 dark:bg-[#1a1a1a] p-4 rounded-2xl space-y-4">
+                  <div className="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-2xl space-y-3">
                     <label className="flex items-center justify-between">
                       <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Todo o dia</span>
                       <input type="checkbox" checked={allDay} onChange={e => setAllDay(e.target.checked)} className="w-5 h-5 rounded text-ibc-teal focus:ring-ibc-teal" />
@@ -331,7 +330,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                   </div>
 
                   {/* Location */}
-                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-2xl">
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl">
                     <MapPin className="w-5 h-5 text-gray-400 shrink-0" />
                     <input 
                       type="text" 
@@ -343,7 +342,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                   </div>
 
                   {/* Ministry */}
-                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-2xl">
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl">
                     <Users className="w-5 h-5 text-gray-400 shrink-0" />
                     <select
                       value={ministryId}
@@ -358,28 +357,33 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                   </div>
 
                   {/* Responsáveis */}
-                  <div className="flex items-start gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-2xl">
-                    <Users className="w-5 h-5 text-gray-400 shrink-0 mt-1" />
-                    <div className="flex-1">
-                      <select
-                        multiple
-                        value={responsibleIds}
-                        onChange={e => {
-                          const values = Array.from(e.target.selectedOptions, option => option.value);
-                          setResponsibleIds(values);
-                        }}
-                        className="w-full bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200 min-h-[80px]"
-                      >
-                        {members.map(m => (
-                          <option key={m.id} value={m.id}>{m.name}</option>
-                        ))}
-                      </select>
-                      <p className="text-[10px] text-gray-400 mt-1">Segure Ctrl (ou Cmd) para selecionar mais de um.</p>
+                  <div 
+                    className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl cursor-pointer hover:bg-gray-100 dark:hover:bg-[#222] transition-colors"
+                    onClick={() => { setMemberSelectorMode('multiple'); setIsMemberSelectorOpen(true); }}
+                  >
+                    <Users className="w-5 h-5 text-gray-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                        {responsibleIds.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {responsibleIds.map(id => {
+                              const m = members.find(m => m.id === id);
+                              return m ? (
+                                <span key={id} className="bg-ibc-teal/10 text-ibc-teal px-2 py-0.5 rounded-lg text-xs truncate max-w-[120px]">
+                                  {m.name.split(' ')[0]}
+                                </span>
+                              ) : null;
+                            })}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">Selecionar responsáveis...</span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Repeat & Reminder */}
-                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-2xl">
+                  {/* Repeat */}
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl">
                     <Repeat className="w-5 h-5 text-gray-400 shrink-0" />
                     <select
                       value={repeat}
@@ -395,41 +399,22 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                     </select>
                   </div>
 
-                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-2xl">
-                    <Bell className="w-5 h-5 text-gray-400 shrink-0" />
-                    <select
-                      value={reminder}
-                      onChange={e => setReminder(e.target.value as ReminderType)}
-                      className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200"
-                    >
-                      <option value="none">Sem lembrete</option>
-                      <option value="0">No horário</option>
-                      <option value="10m">10 minutos antes</option>
-                      <option value="30m">30 minutos antes</option>
-                      <option value="1h">1 hora antes</option>
-                      <option value="2h">2 horas antes</option>
-                      <option value="1d">1 dia antes</option>
-                      <option value="2d">2 dias antes</option>
-                      <option value="1w">1 semana antes</option>
-                    </select>
-                  </div>
-
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   
                   {/* Task Date/Time */}
-                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-2xl">
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl">
                     <Calendar className="w-5 h-5 text-gray-400 shrink-0" />
                     <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200" />
                   </div>
-                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-2xl">
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl">
                     <Clock className="w-5 h-5 text-gray-400 shrink-0" />
                     <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200" />
                   </div>
 
                   {/* Priority */}
-                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-2xl">
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl">
                     <span className="w-5 h-5 flex items-center justify-center text-gray-400 font-bold shrink-0">!</span>
                     <select
                       value={taskPriority}
@@ -443,7 +428,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                   </div>
 
                   {/* Status */}
-                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-2xl">
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl">
                     <CheckCircle2 className="w-5 h-5 text-gray-400 shrink-0" />
                     <select
                       value={taskStatus}
@@ -456,22 +441,26 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                   </div>
 
                   {/* Task Responsible */}
-                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-2xl">
+                  <div 
+                    className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl cursor-pointer hover:bg-gray-100 dark:hover:bg-[#222] transition-colors"
+                    onClick={() => { setMemberSelectorMode('single'); setIsMemberSelectorOpen(true); }}
+                  >
                     <Users className="w-5 h-5 text-gray-400 shrink-0" />
-                    <select
-                      value={taskResponsibleId}
-                      onChange={e => setTaskResponsibleId(e.target.value)}
-                      className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200"
-                    >
-                      <option value="">Sem responsável</option>
-                      {members.map(m => (
-                        <option key={m.id} value={m.id}>{m.name}</option>
-                      ))}
-                    </select>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">
+                        {taskResponsibleId && members.find(m => m.id === taskResponsibleId) ? (
+                          <span className="bg-ibc-teal/10 text-ibc-teal px-2 py-0.5 rounded-lg text-xs">
+                            {members.find(m => m.id === taskResponsibleId)?.name.split(' ')[0]}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">Sem responsável</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   
                   {/* Task Description */}
-                  <div className="bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-2xl">
+                  <div className="bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl">
                     <textarea 
                       placeholder="Descrição da tarefa"
                       value={taskDescription}
@@ -484,7 +473,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
               )}
 
               {/* Shared Observations */}
-              <div className="flex items-start gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-3 rounded-2xl">
+              <div className="flex items-start gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl">
                 <FileText className="w-5 h-5 text-gray-400 shrink-0 mt-1" />
                 <textarea 
                   placeholder="Observações"
@@ -524,10 +513,122 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                   </button>
                 </div>
               )}
-              
-              <div className="h-20" /> {/* Bottom Spacer */}
             </div>
           </motion.div>
+
+          {/* Member Selector Modal inside BottomSheet */}
+          <AnimatePresence>
+            {isMemberSelectorOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+              >
+                <div 
+                  className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+                  onClick={() => setIsMemberSelectorOpen(false)}
+                />
+                
+                <div className="bg-white dark:bg-[#111] w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col relative z-10 max-h-[85vh]">
+                  {/* Header */}
+                  <div className="flex flex-col gap-3 p-4 border-b border-gray-100 dark:border-[#222]">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-black text-gray-900 dark:text-white">Selecionar {memberSelectorMode === 'multiple' ? 'Responsáveis' : 'Responsável'}</h3>
+                      <button onClick={() => setIsMemberSelectorOpen(false)} className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                    
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input 
+                        type="text" 
+                        placeholder="Pesquisar membro..."
+                        value={memberSearch}
+                        onChange={(e) => setMemberSearch(e.target.value)}
+                        className="w-full bg-gray-50 dark:bg-black rounded-xl pl-9 pr-4 py-2.5 text-sm font-bold text-gray-800 dark:text-gray-200 outline-none border border-gray-100 dark:border-[#222] focus:ring-2 focus:ring-ibc-teal/20"
+                      />
+                    </div>
+                  </div>
+
+                  {/* List */}
+                  <div className="flex-1 overflow-y-auto p-2">
+                    {members
+                      .filter(m => m.name.toLowerCase().includes(memberSearch.toLowerCase()))
+                      .sort((a,b) => a.name.localeCompare(b.name))
+                      .map(member => {
+                        const isSelected = memberSelectorMode === 'multiple' 
+                          ? responsibleIds.includes(member.id)
+                          : taskResponsibleId === member.id;
+                        
+                        return (
+                          <div 
+                            key={member.id}
+                            onClick={() => {
+                              if (memberSelectorMode === 'multiple') {
+                                if (isSelected) {
+                                  setResponsibleIds(prev => prev.filter(id => id !== member.id));
+                                } else {
+                                  setResponsibleIds(prev => [...prev, member.id]);
+                                }
+                              } else {
+                                setTaskResponsibleId(isSelected ? '' : member.id);
+                                setIsMemberSelectorOpen(false);
+                              }
+                            }}
+                            className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all ${
+                              isSelected 
+                                ? 'bg-ibc-teal/10 hover:bg-ibc-teal/20' 
+                                : 'hover:bg-gray-50 dark:hover:bg-[#1a1a1a]'
+                            }`}
+                          >
+                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
+                              isSelected
+                                ? 'bg-ibc-teal border-ibc-teal text-white'
+                                : 'border-gray-300 dark:border-gray-600'
+                            }`}>
+                              {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                            </div>
+                            
+                            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden shrink-0">
+                              {member.photoUrl ? (
+                                <img src={member.photoUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                              ) : (
+                                <span className="text-xs font-bold text-gray-500">{member.name.charAt(0)}</span>
+                              )}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{member.name}</p>
+                              <p className="text-[10px] text-gray-500 font-medium truncate">{member.function}</p>
+                            </div>
+                          </div>
+                        );
+                    })}
+                    
+                    {members.filter(m => m.name.toLowerCase().includes(memberSearch.toLowerCase())).length === 0 && (
+                      <div className="p-8 text-center text-gray-500 text-sm">
+                        Nenhum membro encontrado.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer Action */}
+                  {memberSelectorMode === 'multiple' && (
+                    <div className="p-4 border-t border-gray-100 dark:border-[#222]">
+                      <button 
+                        onClick={() => setIsMemberSelectorOpen(false)}
+                        className="w-full py-3 bg-ibc-teal text-white rounded-xl text-sm font-bold shadow-sm hover:opacity-90 transition-all"
+                      >
+                        Confirmar ({responsibleIds.length})
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </>
       )}
     </AnimatePresence>
