@@ -236,11 +236,11 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
             className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
           />
           <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-white dark:bg-[#111] rounded-t-3xl z-50 flex flex-col shadow-2xl"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-lg max-h-[90vh] bg-white dark:bg-[#111] rounded-3xl z-50 flex flex-col shadow-2xl overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-[#222]">
