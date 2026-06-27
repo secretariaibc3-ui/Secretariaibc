@@ -80,6 +80,28 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
 
   const [loading, setLoading] = useState(false);
 
+  // Handle Back Button to close modal
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Push state to history
+    window.history.pushState({ agendaModalOpen: true }, "");
+
+    const handlePopState = () => {
+      onClose();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      // If we are closing but the history state is still there (manual close), pop it
+      if (window.history.state?.agendaModalOpen) {
+        window.history.back();
+      }
+    };
+  }, [isOpen, onClose]);
+
   // Member Selector State
   const [isMemberSelectorOpen, setIsMemberSelectorOpen] = useState(false);
   const [memberSearch, setMemberSearch] = useState("");

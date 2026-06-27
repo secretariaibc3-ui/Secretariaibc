@@ -61,6 +61,14 @@ export const AgendaTab: React.FC<AgendaTabProps> = ({ members, ministries }) => 
     setIsBottomSheetOpen(true);
   };
 
+  const handleClose = React.useCallback(() => {
+    setIsBottomSheetOpen(false);
+  }, []);
+
+  const handleSave = React.useCallback(() => {
+    setIsBottomSheetOpen(false);
+  }, []);
+
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-black relative">
       {/* Top Search Bar */}
@@ -108,12 +116,12 @@ export const AgendaTab: React.FC<AgendaTabProps> = ({ members, ministries }) => 
 
       <AgendaBottomSheet 
         isOpen={isBottomSheetOpen}
-        onClose={() => setIsBottomSheetOpen(false)}
+        onClose={handleClose}
         selectedDate={selectedDate}
         editItem={editItem}
         members={members}
         ministries={ministries}
-        onSave={() => setIsBottomSheetOpen(false)}
+        onSave={handleSave}
       />
     </div>
   );
