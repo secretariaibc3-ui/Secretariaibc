@@ -5611,7 +5611,11 @@ export default function App() {
         {/* Content Area */}
         <div className={twMerge("flex-1 overflow-y-auto relative", activeTab === 'agenda' ? "" : "px-4 sm:px-8 pb-12")}>
           {activeTab === 'agenda' ? (
-            <AgendaTab members={members} ministries={ministries} />
+            <AgendaTab 
+              members={members} 
+              ministries={ministries} 
+              isAdmin={appUser?.role === 'admin'} 
+            />
           ) : activeTab === 'members' ? (
             <div className="max-w-6xl mx-auto space-y-3 sm:space-y-6">
               {/* Sticky Header Section */}

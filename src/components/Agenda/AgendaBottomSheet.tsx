@@ -44,6 +44,7 @@ interface AgendaBottomSheetProps {
   members: any[];
   ministries: any[];
   onSave: () => void;
+  isAdmin?: boolean;
 }
 
 export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
@@ -54,6 +55,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
   members,
   ministries,
   onSave,
+  isAdmin = false,
 }) => {
   const [tab, setTab] = useState<"event" | "task">("event");
 
@@ -320,13 +322,15 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                   </button>
                 </div>
               </div>
-              <button
-                onClick={handleSave}
-                disabled={loading}
-                className="px-5 py-2 bg-ibc-teal text-white rounded-xl text-sm font-bold shadow-sm hover:opacity-90 transition-all disabled:opacity-50"
-              >
-                Salvar
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={handleSave}
+                  disabled={loading}
+                  className="px-5 py-2 bg-ibc-teal text-white rounded-xl text-sm font-bold shadow-sm hover:opacity-90 transition-all disabled:opacity-50"
+                >
+                  Salvar
+                </button>
+              )}
             </div>
 
             {/* Content Form */}
@@ -337,6 +341,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full text-xl font-black bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-700 pb-2 border-b border-gray-100 dark:border-[#222]"
+                disabled={!isAdmin}
               />
 
               {tab === "event" ? (
@@ -355,6 +360,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                         setColor(AGENDA_CATEGORY_COLORS[val]);
                       }}
                       className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200"
+                      disabled={!isAdmin}
                     >
                       {Object.keys(AGENDA_CATEGORY_COLORS).map((cat) => (
                         <option key={cat} value={cat}>
@@ -375,6 +381,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                         checked={allDay}
                         onChange={(e) => setAllDay(e.target.checked)}
                         className="w-5 h-5 rounded text-ibc-teal focus:ring-ibc-teal"
+                        disabled={!isAdmin}
                       />
                     </label>
 
@@ -386,6 +393,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                           value={startDate}
                           onChange={(e) => setStartDate(e.target.value)}
                           className="w-full bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200"
+                          disabled={!isAdmin}
                         />
                         {!allDay && (
                           <input
@@ -393,6 +401,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                             value={startTime}
                             onChange={(e) => setStartTime(e.target.value)}
                             className="w-full bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200 text-right"
+                            disabled={!isAdmin}
                           />
                         )}
                       </div>
@@ -406,6 +415,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                           value={endDate}
                           onChange={(e) => setEndDate(e.target.value)}
                           className="w-full bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200"
+                          disabled={!isAdmin}
                         />
                         {!allDay && (
                           <input
@@ -413,6 +423,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                             value={endTime}
                             onChange={(e) => setEndTime(e.target.value)}
                             className="w-full bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200 text-right"
+                            disabled={!isAdmin}
                           />
                         )}
                       </div>
@@ -428,6 +439,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
                       className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200 placeholder-gray-400"
+                      disabled={!isAdmin}
                     />
                   </div>
 
@@ -438,6 +450,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                       value={ministryId}
                       onChange={(e) => setMinistryId(e.target.value)}
                       className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200"
+                      disabled={!isAdmin}
                     >
                       <option value="">Nenhum ministério relacionado</option>
                       {ministries.map((m) => (
@@ -450,8 +463,9 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
 
                   {/* Responsáveis */}
                   <div
-                    className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl cursor-pointer hover:bg-gray-100 dark:hover:bg-[#222] transition-colors"
+                    className={`flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl transition-colors ${isAdmin ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-[#222]' : ''}`}
                     onClick={() => {
+                      if (!isAdmin) return;
                       setMemberSelectorMode("multiple");
                       setIsMemberSelectorOpen(true);
                     }}
@@ -489,6 +503,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                       value={repeat}
                       onChange={(e) => setRepeat(e.target.value as RepeatType)}
                       className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200"
+                      disabled={!isAdmin}
                     >
                       <option value="none">Não repetir</option>
                       <option value="daily">Todos os dias</option>
@@ -509,6 +524,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
                       className="w-full bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200"
+                      disabled={!isAdmin}
                     />
                   </div>
                   <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl">
@@ -518,6 +534,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
                       className="w-full bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200"
+                      disabled={!isAdmin}
                     />
                   </div>
 
@@ -532,6 +549,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                         setTaskPriority(e.target.value as TaskPriority)
                       }
                       className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200"
+                      disabled={!isAdmin}
                     >
                       <option value="baixa">Prioridade Baixa</option>
                       <option value="media">Prioridade Média</option>
@@ -548,6 +566,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                         setTaskStatus(e.target.value as TaskStatus)
                       }
                       className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200"
+                      disabled={!isAdmin}
                     >
                       <option value="pendente">Pendente</option>
                       <option value="concluida">Concluída</option>
@@ -556,8 +575,9 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
 
                   {/* Task Responsible */}
                   <div
-                    className="flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl cursor-pointer hover:bg-gray-100 dark:hover:bg-[#222] transition-colors"
+                    className={`flex items-center gap-3 bg-gray-50 dark:bg-[#1a1a1a] p-2.5 rounded-2xl transition-colors ${isAdmin ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-[#222]' : ''}`}
                     onClick={() => {
+                      if (!isAdmin) return;
                       setMemberSelectorMode("single");
                       setIsMemberSelectorOpen(true);
                     }}
@@ -588,6 +608,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                       value={taskDescription}
                       onChange={(e) => setTaskDescription(e.target.value)}
                       className="w-full bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200 resize-none min-h-[80px]"
+                      disabled={!isAdmin}
                     />
                   </div>
                 </div>
@@ -601,11 +622,12 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
                   value={observations}
                   onChange={(e) => setObservations(e.target.value)}
                   className="w-full bg-transparent border-none outline-none text-sm font-bold text-gray-800 dark:text-gray-200 resize-none min-h-[80px]"
+                  disabled={!isAdmin}
                 />
               </div>
 
               {/* Action Buttons for Edit */}
-              {editItem && (
+              {editItem && isAdmin && (
                 <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100 dark:border-[#222]">
                   {editItem.type === "task" && taskStatus === "pendente" && (
                     <button

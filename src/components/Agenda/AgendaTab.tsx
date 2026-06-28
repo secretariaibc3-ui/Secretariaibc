@@ -12,9 +12,10 @@ import { db } from '../../firebase';
 interface AgendaTabProps {
   members: any[];
   ministries: any[];
+  isAdmin?: boolean;
 }
 
-export const AgendaTab: React.FC<AgendaTabProps> = ({ members, ministries }) => {
+export const AgendaTab: React.FC<AgendaTabProps> = ({ members, ministries, isAdmin = false }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,17 +103,19 @@ export const AgendaTab: React.FC<AgendaTabProps> = ({ members, ministries }) => 
       </div>
 
       {/* Floating Action Button / Bottom Bar */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[90%] max-w-sm">
-        <button 
-          onClick={handleAddNew}
-          className="w-full flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-black py-4 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all"
-        >
-          <Plus className="w-5 h-5" />
-          <span className="text-sm font-black">
-            Adicionar em {format(selectedDate, "d 'de' MMMM", { locale: ptBR })}
-          </span>
-        </button>
-      </div>
+      {isAdmin && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[90%] max-w-sm">
+          <button 
+            onClick={handleAddNew}
+            className="w-full flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-black py-4 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all"
+          >
+            <Plus className="w-5 h-5" />
+            <span className="text-sm font-black">
+              Adicionar em {format(selectedDate, "d 'de' MMMM", { locale: ptBR })}
+            </span>
+          </button>
+        </div>
+      )}
 
       <AgendaBottomSheet 
         isOpen={isBottomSheetOpen}
@@ -122,6 +125,7 @@ export const AgendaTab: React.FC<AgendaTabProps> = ({ members, ministries }) => 
         members={members}
         ministries={ministries}
         onSave={handleSave}
+        isAdmin={isAdmin}
       />
     </div>
   );
