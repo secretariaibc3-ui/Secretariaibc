@@ -76,7 +76,9 @@ import {
   GripVertical,
   ShieldCheck,
   Calendar,
-  Activity
+  Activity,
+  Briefcase,
+  Home
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react';
 import SplashScreen from './components/SplashScreen';
@@ -88,7 +90,7 @@ const TAB_ICONS: Record<string, any> = {
   ministries: LayoutGrid,
   assembleia: FileText,
   reports: TrendingUp,
-  rh: Users,
+  rh: Briefcase,
   normativos: Scale,
   agenda: Calendar,
   adm: Settings
