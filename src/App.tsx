@@ -585,66 +585,277 @@ const SidebarItem = ({
   </div>
 );
 
-const AccessControlModal = ({ 
+const UserManagementModal = ({ 
   isOpen, 
   onClose, 
-  pendingUsers, 
+  users,
+  appUser,
   onStartApproval, 
-  onReject 
+  onReject,
+  onToggleRole,
+  onBlock,
+  onUnblock,
+  onDelete,
+  onAddNewUser
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
-  pendingUsers: AppUser[]; 
+  users: AppUser[];
+  appUser: AppUser | null;
   onStartApproval: (user: AppUser) => void;
   onReject: (id: string, email: string) => void;
-}) => (
-  <Modal isOpen={isOpen} onClose={onClose} title="Solicitações de Acesso" maxWidth="max-w-md">
-    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-      {pendingUsers.length === 0 ? (
-        <div className="text-center py-10">
-          <div className="w-16 h-16 bg-emerald-50 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Check className="w-8 h-8" />
+  onToggleRole: (user: AppUser) => void;
+  onBlock: (user: AppUser) => void;
+  onUnblock: (user: AppUser) => void;
+  onDelete: (user: AppUser) => void;
+  onAddNewUser: () => void;
+}) => {
+  const [activeTab, setActiveTab] = useState<'ativos' | 'pendentes' | 'historico'>('pendentes');
+  
+  const pendentes = users.filter(u => u.status === 'pending');
+  const ativos = users.filter(u => u.status === 'approved' || (!u.status && u.role));
+  const historico = users.filter(u => u.status === 'blocked' || u.rejectedAt);
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Gerenciamento de Usuários" maxWidth="max-w-4xl">
+      <div className="flex flex-col h-[70vh]">
+        
+        {/* Tabs and Actions Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-[#222] pb-4 mb-4">
+          <div className="flex bg-gray-100 dark:bg-[#1a1a1a] rounded-lg p-1 w-full sm:w-auto overflow-x-auto custom-scrollbar">
+            <button
+              onClick={() => setActiveTab('pendentes')}
+              className={cn(
+                "px-4 py-2 rounded-md text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2",
+                activeTab === 'pendentes' ? "bg-white dark:bg-[#222] shadow-sm text-gray-900 dark:text-white" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              )}
+            >
+              Solicitações
+              {pendentes.length > 0 && (
+                <span className="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{pendentes.length}</span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('ativos')}
+              className={cn(
+                "px-4 py-2 rounded-md text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2",
+                activeTab === 'ativos' ? "bg-white dark:bg-[#222] shadow-sm text-gray-900 dark:text-white" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              )}
+            >
+              Ativos
+              <span className="bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full">{ativos.length}</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('historico')}
+              className={cn(
+                "px-4 py-2 rounded-md text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2",
+                activeTab === 'historico' ? "bg-white dark:bg-[#222] shadow-sm text-gray-900 dark:text-white" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              )}
+            >
+              Histórico
+            </button>
           </div>
-          <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Nenhuma solicitação pendente</p>
+          
+          {appUser?.role === 'admin' && (
+            <button 
+              onClick={() => {
+                onClose();
+                onAddNewUser();
+              }}
+              className="bg-ibc-teal text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-ibc-teal/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-ibc-teal/20"
+            >
+              <Plus className="w-4 h-4" />
+              Novo Usuário
+            </button>
+          )}
         </div>
-      ) : (
-        pendingUsers.map((user) => (
-          <motion.div 
-            key={user.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group"
-          >
-            <div className="flex flex-col gap-1 mb-4">
-              <span className="text-[10px] font-black text-ibc-teal uppercase tracking-[0.2em]">Pendente de Aprovação</span>
-              <h4 className="text-sm font-black text-gray-900 dark:text-gray-50 truncate">{user.email}</h4>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                Solicitado em: {user.requestAt?.seconds ? new Date(user.requestAt.seconds * 1000).toLocaleString('pt-BR') : 'Recentemente'}
-              </p>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          
+          {/* TAB: PENDENTES */}
+          {activeTab === 'pendentes' && (
+            <div className="space-y-3">
+              {pendentes.length === 0 ? (
+                <div className="text-center py-10">
+                  <div className="w-16 h-16 bg-emerald-50 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Check className="w-8 h-8" />
+                  </div>
+                  <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Nenhuma solicitação pendente</p>
+                </div>
+              ) : (
+                pendentes.map((user) => (
+                  <motion.div 
+                    key={user.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] p-5 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  >
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em]">Aguardando Aprovação</span>
+                      <h4 className="text-sm font-black text-gray-900 dark:text-gray-50 truncate">{user.email}</h4>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1 mt-1">
+                        <Clock className="w-3 h-3" />
+                        Solicitado em: {user.requestAt?.seconds ? new Date(user.requestAt.seconds * 1000).toLocaleString('pt-BR') : 'Recentemente'}
+                      </p>
+                    </div>
+                    
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={() => onStartApproval(user)}
+                        className="flex-1 sm:flex-none bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10 active:scale-95"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        Aprovar
+                      </button>
+                      <button
+                        onClick={() => onReject(user.id, user.email)}
+                        className="flex-1 sm:flex-none bg-rose-50 text-rose-500 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-2 active:scale-95"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        Recusar
+                      </button>
+                    </div>
+                  </motion.div>
+                ))
+              )}
             </div>
-            
-            <div className="flex gap-3">
-              <button
-                onClick={() => onStartApproval(user)}
-                className="flex-1 bg-emerald-500 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10 active:scale-95"
-              >
-                <Check className="w-3.5 h-3.5" />
-                Aprovar
-              </button>
-              <button
-                onClick={() => onReject(user.id, user.email)}
-                className="flex-1 bg-rose-50 text-rose-500 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-2 active:scale-95"
-              >
-                <X className="w-3.5 h-3.5" />
-                Recusar
-              </button>
+          )}
+
+          {/* TAB: ATIVOS */}
+          {activeTab === 'ativos' && (
+            <div className="space-y-3">
+              {ativos.length === 0 ? (
+                <div className="text-center py-10">
+                  <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Nenhum usuário ativo</p>
+                </div>
+              ) : (
+                ativos.map((u) => (
+                  <motion.div 
+                    key={u.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  >
+                    <div className="flex flex-col gap-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-black text-gray-900 dark:text-gray-50 truncate">{u.email}</h4>
+                        <span className={cn(
+                          "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shrink-0",
+                          u.role === 'admin' ? "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300" : "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300"
+                        )}>
+                          {u.role === 'admin' ? 'Administrador' : 'Usuário'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-3 mt-1">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1">
+                          <Check className="w-3 h-3 text-emerald-500" />
+                          Aprovado em: {u.approvedAt?.seconds ? new Date(u.approvedAt.seconds * 1000).toLocaleDateString('pt-BR') : '-'}
+                        </p>
+                        {u.handledByEmail && (
+                          <p className="text-[10px] text-ibc-teal font-medium flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3" />
+                            Por: {u.handledByEmail.split('@')[0]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {appUser?.role === 'admin' && u.email !== 'secretariaibc3@gmail.com' && (
+                      <div className="flex flex-wrap sm:flex-nowrap gap-2 shrink-0 border-t border-gray-100 dark:border-[#222] sm:border-t-0 pt-3 sm:pt-0">
+                        <button 
+                          onClick={() => onToggleRole(u)}
+                          className="flex-1 sm:flex-none px-3 py-2 bg-gray-50 dark:bg-black rounded-lg text-[10px] font-black text-ibc-teal uppercase tracking-widest hover:bg-ibc-teal/10 transition-all text-center"
+                        >
+                          Tornar {u.role === 'admin' ? 'User' : 'Admin'}
+                        </button>
+                        <button 
+                          onClick={() => onBlock(u)}
+                          className="flex-1 sm:flex-none px-3 py-2 bg-rose-50 dark:bg-rose-900/20 rounded-lg text-[10px] font-black text-rose-500 uppercase tracking-widest hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all text-center"
+                        >
+                          Bloquear
+                        </button>
+                        <button 
+                          onClick={() => onDelete(u)}
+                          className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all shrink-0 flex items-center justify-center"
+                          title="Excluir Usuário"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                ))
+              )}
             </div>
-          </motion.div>
-        ))
-      )}
-    </div>
-  </Modal>
-);
+          )}
+
+          {/* TAB: HISTÓRICO */}
+          {activeTab === 'historico' && (
+            <div className="space-y-3">
+              {historico.length === 0 ? (
+                <div className="text-center py-10">
+                  <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Nenhum histórico encontrado</p>
+                </div>
+              ) : (
+                historico.map((u) => (
+                  <motion.div 
+                    key={u.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 opacity-75"
+                  >
+                    <div className="flex flex-col gap-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-black text-gray-900 dark:text-gray-50 truncate line-through decoration-rose-500/50">{u.email}</h4>
+                        <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shrink-0 bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400">
+                          {u.status === 'blocked' ? 'Bloqueado / Recusado' : 'Inativo'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-3 mt-1">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1">
+                          <X className="w-3 h-3 text-rose-500" />
+                          Bloqueado em: {u.rejectedAt?.seconds ? new Date(u.rejectedAt.seconds * 1000).toLocaleDateString('pt-BR') : '-'}
+                        </p>
+                        {u.handledByEmail && (
+                          <p className="text-[10px] text-gray-500 font-medium flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3" />
+                            Por: {u.handledByEmail.split('@')[0]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {appUser?.role === 'admin' && (
+                      <div className="flex flex-wrap sm:flex-nowrap gap-2 shrink-0 border-t border-gray-100 dark:border-[#222] sm:border-t-0 pt-3 sm:pt-0">
+                        <button 
+                          onClick={() => onUnblock(u)}
+                          className="flex-1 sm:flex-none px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all text-center"
+                        >
+                          Restaurar Acesso
+                        </button>
+                        <button 
+                          onClick={() => onDelete(u)}
+                          className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all shrink-0 flex items-center justify-center"
+                          title="Excluir Permanentemente"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                ))
+              )}
+            </div>
+          )}
+
+        </div>
+      </div>
+    </Modal>
+  );
+};
 
 const RoleSelectionModal = ({ 
   user, 
@@ -5177,11 +5388,12 @@ export default function App() {
         </div>
       )}
 
-      {/* Access Control Modal */}
-      <AccessControlModal 
+      {/* User Management Modal */}
+      <UserManagementModal 
         isOpen={isAccessControlOpen}
         onClose={() => setIsAccessControlOpen(false)}
-        pendingUsers={users.filter(u => u.status === 'pending')}
+        users={users}
+        appUser={appUser}
         onStartApproval={(u) => {
           setApprovingUser({ id: u.id, email: u.email });
           setIsAccessControlOpen(false);
@@ -5201,6 +5413,62 @@ export default function App() {
             }
           );
         }}
+        onToggleRole={async (u) => {
+          const oldData = { ...u };
+          const newRole = u.role === 'admin' ? 'user' : 'admin';
+          await updateDoc(doc(db, 'users', u.id), { 
+            role: newRole,
+            isFullAdmin: newRole === 'admin'
+          });
+          triggerUndo({
+            type: 'update',
+            collection: 'users',
+            id: u.id,
+            data: oldData,
+            message: `Nível de ${u.email} alterado.`
+          });
+        }}
+        onBlock={async (u) => {
+          await updateDoc(doc(db, 'users', u.id), { 
+            status: 'blocked',
+            rejectedAt: serverTimestamp(),
+            handledByEmail: appUser?.email,
+            handledByUid: appUser?.id
+          });
+          showAlert("Atenção", `Acesso de ${u.email} bloqueado.`);
+        }}
+        onUnblock={async (u) => {
+          await updateDoc(doc(db, 'users', u.id), { 
+            status: 'approved',
+            approvedAt: serverTimestamp(),
+            handledByEmail: appUser?.email,
+            handledByUid: appUser?.id
+          });
+          showAlert("Sucesso", `Acesso de ${u.email} restaurado.`);
+        }}
+        onDelete={async (u) => {
+          showConfirm(
+            'Remover Usuário Permanentemente',
+            `Deseja excluir o usuário ${u.email} permanentemente?`,
+            async () => {
+              try {
+                const oldData = { ...u };
+                await deleteDoc(doc(db, 'users', u.id));
+                triggerUndo({
+                  type: 'delete',
+                  collection: 'users',
+                  id: u.id,
+                  data: oldData,
+                  message: `Usuário ${u.email} removido.`
+                });
+              } catch (error) {
+                console.error("Delete User Error:", error);
+                showAlert("Erro", "Não foi possível remover o usuário.");
+              }
+            }
+          );
+        }}
+        onAddNewUser={() => setIsAddUserModalOpen(true)}
       />
 
       {/* Role Selection Modal */}
@@ -5615,6 +5883,8 @@ export default function App() {
               members={members} 
               ministries={ministries} 
               isAdmin={appUser?.role === 'admin'} 
+              showAlert={showAlert}
+              showConfirm={showConfirm}
             />
           ) : activeTab === 'members' ? (
             <div className="max-w-6xl mx-auto space-y-3 sm:space-y-6">
@@ -8193,274 +8463,48 @@ export default function App() {
                 </section>
               )}
 
-              {/* User Management Section */}
+              {/* Configuration Section */}
               {appUser?.isFullAdmin && (
                 <section className="bg-white dark:bg-[#111] p-8 rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm">
-                <div className="flex items-center justify-between mb-8">
-                  <div>
-                    <h3 className="text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">Usuários do Sistema</h3>
-                    <p className="text-sm text-gray-400 font-medium mt-1">Gerencie quem tem acesso e níveis de permissão.</p>
-                  </div>
-                  <div className="flex flex-col items-end space-y-3">
-                    {appUser?.role === 'admin' && (
-                      <button 
-                        onClick={() => setIsAddUserModalOpen(true)}
-                        className="text-ibc-teal font-black text-sm uppercase tracking-widest flex items-center hover:opacity-70 transition-opacity"
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h3 className="text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">Configurações de Acesso</h3>
+                      <p className="text-sm text-gray-400 font-medium mt-1">Links e métodos de login do sistema.</p>
+                    </div>
+                    <div className="flex flex-col items-end space-y-3">
+                      <a 
+                        href="https://console.firebase.google.com/project/gen-lang-client-0749076142/authentication/providers" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-[10px] text-gray-400 font-bold hover:text-ibc-blue flex items-center transition-colors uppercase tracking-widest"
                       >
-                        <Plus className="w-4 h-4 mr-1.5" />
-                        Novo Usuário
+                        Configurar Métodos de Login
+                        <ExternalLink className="w-3 h-3 ml-1.5" />
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="p-6 bg-gray-50/50 dark:bg-[#111] rounded-2xl border border-gray-100 dark:border-[#222]">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Link de Acesso Atual (Ambiente de Desenvolvimento)</h4>
+                    <div className="flex items-center space-x-3">
+                      <input 
+                        readOnly 
+                        value={window.location.origin} 
+                        className="flex-1 bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] p-3 rounded-xl text-sm text-gray-600 dark:text-gray-300 font-medium outline-none focus:ring-2 focus:ring-gray-100 transition-all"
+                      />
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(window.location.origin);
+                          showAlert("Sucesso", "Link copiado!");
+                        }}
+                        className="text-gray-400 hover:text-gray-600 dark:text-gray-300 p-3"
+                      >
+                        <Copy className="w-5 h-5" />
                       </button>
-                    )}
-                    <a 
-                      href="https://console.firebase.google.com/project/gen-lang-client-0749076142/authentication/providers" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-[10px] text-gray-400 font-bold hover:text-ibc-blue flex items-center transition-colors uppercase tracking-widest"
-                    >
-                      Configurar Métodos de Login
-                      <ExternalLink className="w-3 h-3 ml-1.5" />
-                    </a>
+                    </div>
                   </div>
-                </div>
-
-                <div className="mt-10 p-6 bg-gray-50/50 dark:bg-[#111] rounded-2xl border border-gray-100 dark:border-[#222]">
-                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Link de Acesso Atual (Ambiente de Desenvolvimento)</h4>
-                  <div className="flex items-center space-x-3">
-                    <input 
-                      readOnly 
-                      value={window.location.origin} 
-                      className="flex-1 bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] p-3 rounded-xl text-sm text-gray-600 dark:text-gray-300 font-medium outline-none focus:ring-2 focus:ring-gray-100 transition-all"
-                    />
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(window.location.origin);
-                        showAlert("Sucesso", "Link copiado!");
-                      }}
-                      className="text-gray-400 hover:text-gray-600 dark:text-gray-300 p-3"
-                    >
-                      <Copy className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-10 overflow-hidden border border-gray-100 dark:border-[#222] rounded-2xl">
-                {/* Table for large screens, Cards for mobile */}
-                <div className="hidden sm:block overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead className="bg-gray-50/50 dark:bg-[#111]">
-                        <tr>
-                          <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</th>
-                          <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nível</th>
-                          <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                          <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Solicitação</th>
-                          <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Decisão</th>
-                          <th className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {users.map((u) => (
-                          <tr key={u.id} className={cn("hover:bg-gray-50/30 transition-colors", u.status === 'pending' && "bg-amber-50/30")}>
-                            <td className="px-8 py-5">
-                              <div className="flex flex-col">
-                                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{u.email}</span>
-                                {u.status === 'pending' && (
-                                  <span className="mt-1 w-fit inline-flex items-center px-2 py-0.5 rounded text-[8px] font-black bg-amber-100 text-amber-800 uppercase tracking-widest">
-                                    Novo Acesso
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-8 py-5">
-                              <span className={cn(
-                                "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm",
-                                u.role === 'admin' ? "bg-purple-500 text-white" : "bg-blue-500 text-white"
-                              )}>
-                                {u.role}
-                              </span>
-                            </td>
-                            <td className="px-8 py-5">
-                              <span className={cn(
-                                "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm flex items-center w-fit",
-                                u.status === 'approved' ? "bg-emerald-500 text-white" : 
-                                u.status === 'pending' ? "bg-amber-500 text-white animate-pulse" : "bg-rose-500 text-white"
-                              )}>
-                                {u.status === 'approved' ? <Check className="w-3 h-3 mr-1" /> : u.status === 'pending' ? <Clock className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
-                                {u.status === 'approved' ? 'Aprovado' : u.status === 'blocked' ? 'Bloqueado' : u.status === 'pending' ? 'Pendente' : 'Ativo'}
-                              </span>
-                            </td>
-                            <td className="px-8 py-5">
-                              <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">
-                                {u.requestAt?.seconds ? new Date(u.requestAt.seconds * 1000).toLocaleDateString('pt-BR') : '-'}
-                              </p>
-                              <p className="text-[9px] text-gray-400">
-                                {u.requestAt?.seconds ? new Date(u.requestAt.seconds * 1000).toLocaleTimeString('pt-BR') : '-'}
-                              </p>
-                            </td>
-                            <td className="px-8 py-5">
-                              <div className="flex flex-col">
-                                <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">
-                                  {u.status === 'approved' && u.approvedAt?.seconds ? new Date(u.approvedAt.seconds * 1000).toLocaleDateString('pt-BR') : 
-                                   u.status === 'blocked' && u.rejectedAt?.seconds ? new Date(u.rejectedAt.seconds * 1000).toLocaleDateString('pt-BR') : '-'}
-                                </p>
-                                {u.handledByEmail && (
-                                  <p className="text-[9px] text-ibc-teal font-medium mt-1 truncate max-w-[120px]" title={u.handledByEmail}>
-                                    Por: {u.handledByEmail.split('@')[0]}
-                                  </p>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-8 py-5 text-right">
-                              {appUser?.role === 'admin' && u.email !== 'secretariaibc3@gmail.com' && (
-                                <div className="flex justify-end items-center space-x-4">
-                                  {u.status === 'pending' && (
-                                    <button 
-                                      onClick={() => setApprovingUser({ id: u.id, email: u.email })}
-                                      className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:opacity-70 transition-opacity"
-                                    >
-                                      Aprovar
-                                    </button>
-                                  )}
-                                  <button 
-                                    onClick={async () => {
-                                      const oldData = { ...u };
-                                      const newRole = u.role === 'admin' ? 'user' : 'admin';
-                                      await updateDoc(doc(db, 'users', u.id), { 
-                                        role: newRole,
-                                        isFullAdmin: newRole === 'admin'
-                                      });
-                                      triggerUndo({
-                                        type: 'update',
-                                        collection: 'users',
-                                        id: u.id,
-                                        data: oldData,
-                                        message: `Nível de ${u.email} alterado.`
-                                      });
-                                    }}
-                                    className="text-[10px] font-black text-ibc-teal uppercase tracking-widest hover:opacity-70 transition-opacity"
-                                  >
-                                    Mudar para {u.role === 'admin' ? 'User' : 'Admin'}
-                                  </button>
-                                  {u.status === 'approved' ? (
-                                    <button 
-                                      onClick={async () => {
-                                        await updateDoc(doc(db, 'users', u.id), { status: 'blocked' });
-                                        showAlert("Atenção", `Acesso de ${u.email} bloqueado.`);
-                                      }}
-                                      className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:opacity-70 transition-opacity"
-                                    >
-                                      Bloquear
-                                    </button>
-                                  ) : u.status === 'blocked' ? (
-                                    <button 
-                                      onClick={async () => {
-                                        await updateDoc(doc(db, 'users', u.id), { status: 'approved' });
-                                        showAlert("Sucesso", `Acesso de ${u.email} restaurado.`);
-                                      }}
-                                      className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:opacity-70 transition-opacity"
-                                    >
-                                      Desbloquear
-                                    </button>
-                                  ) : null}
-                                  <button 
-                                    onClick={() => {
-                                      showConfirm(
-                                        'Remover Usuário',
-                                        `Deseja remover o acesso de ${u.email}?`,
-                                        async () => {
-                                          try {
-                                            await deleteDoc(doc(db, 'users', u.id));
-                                          } catch (error) {
-                                            console.error("Delete User Error:", error);
-                                            showAlert("Erro", "Não foi possível remover o usuário.");
-                                          }
-                                        }
-                                      );
-                                    }}
-                                    className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Mobile View: User Cards */}
-                  <div className="sm:hidden divide-y divide-gray-50">
-                    {users.map((u) => (
-                      <div key={u.id} className="p-4 bg-white/40 hover:bg-white/60 backdrop-blur-md transition-colors">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="min-w-0 mr-2">
-                            <p className="text-sm font-bold text-gray-900 dark:text-gray-50 truncate">{u.email}</p>
-                            <span className={cn(
-                              "inline-block mt-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-sm",
-                              u.role === 'admin' ? "bg-purple-500 text-white" : "bg-blue-500 text-white"
-                            )}>
-                              {u.role}
-                            </span>
-                          </div>
-                          {appUser?.role === 'admin' && u.email !== 'secretariaibc3@gmail.com' && (
-                            <button 
-                              onClick={() => {
-                                showConfirm(
-                                  'Remover Usuário',
-                                  `Deseja remover o acesso de ${u.email}?`,
-                                  async () => {
-                                    try {
-                                      const oldData = { ...u };
-                                      await deleteDoc(doc(db, 'users', u.id));
-                                      triggerUndo({
-                                        type: 'delete',
-                                        collection: 'users',
-                                        id: u.id,
-                                        data: oldData,
-                                        message: `Usuário ${u.email} removido.`
-                                      });
-                                    } catch (error) {
-                                      console.error("Delete User Error:", error);
-                                      showAlert("Erro", "Não foi possível remover o usuário.");
-                                    }
-                                  }
-                                );
-                              }}
-                              className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shrink-0"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                        {appUser?.role === 'admin' && u.email !== 'secretariaibc3@gmail.com' && (
-                          <button 
-                            onClick={async () => {
-                              const oldData = { ...u };
-                              const newRole = u.role === 'admin' ? 'user' : 'admin';
-                              await updateDoc(doc(db, 'users', u.id), { 
-                                role: newRole,
-                                isFullAdmin: newRole === 'admin'
-                              });
-                              triggerUndo({
-                                type: 'update',
-                                collection: 'users',
-                                id: u.id,
-                                data: oldData,
-                                message: `Nível de ${u.email} alterado.`
-                              });
-                            }}
-                            className="w-full bg-gray-50 dark:bg-black text-[10px] font-black text-ibc-teal uppercase tracking-widest py-2 rounded-xl border border-gray-100 dark:border-[#222] hover:bg-ibc-teal/5 transition-all"
-                          >
-                            Tornar {u.role === 'admin' ? 'Usuário Comum' : 'Administrador'}
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-            )}
+                </section>
+              )}
         </div>
       )}
     </div>
@@ -9118,12 +9162,16 @@ export default function App() {
                           type="button"
                           onClick={(e) => {
                             e.preventDefault();
-                            if (window.confirm('Tem certeza que deseja remover esta imagem?')) {
-                              setPhotoPreview(null);
-                              setIsFormDirty(true);
-                              const fileInput = document.getElementById('add-ministry-photo') as HTMLInputElement;
-                              if (fileInput) fileInput.value = '';
-                            }
+                            showConfirm(
+                              'Remover Imagem',
+                              'Tem certeza que deseja remover esta imagem?',
+                              () => {
+                                setPhotoPreview(null);
+                                setIsFormDirty(true);
+                                const fileInput = document.getElementById('add-ministry-photo') as HTMLInputElement;
+                                if (fileInput) fileInput.value = '';
+                              }
+                            );
                           }}
                           className="p-3 bg-red-500/80 hover:bg-red-500 rounded-xl text-white backdrop-blur-md transition-all flex flex-col items-center justify-center min-w-[70px]"
                           title="Remover Foto"
@@ -9239,12 +9287,16 @@ export default function App() {
                           type="button"
                           onClick={(e) => {
                             e.preventDefault();
-                            if (window.confirm('Tem certeza que deseja remover esta imagem?')) {
-                              setPhotoPreview(null);
-                              setIsFormDirty(true);
-                              const fileInput = document.getElementById('edit-ministry-photo') as HTMLInputElement;
-                              if (fileInput) fileInput.value = '';
-                            }
+                            showConfirm(
+                              'Remover Imagem',
+                              'Tem certeza que deseja remover esta imagem?',
+                              () => {
+                                setPhotoPreview(null);
+                                setIsFormDirty(true);
+                                const fileInput = document.getElementById('edit-ministry-photo') as HTMLInputElement;
+                                if (fileInput) fileInput.value = '';
+                              }
+                            );
                           }}
                           className="p-3 bg-red-500/80 hover:bg-red-500 rounded-xl text-white backdrop-blur-md transition-all flex flex-col items-center justify-center min-w-[70px]"
                           title="Remover Foto"

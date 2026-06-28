@@ -45,6 +45,8 @@ interface AgendaBottomSheetProps {
   ministries: any[];
   onSave: () => void;
   isAdmin?: boolean;
+  showAlert: (title: string, message: string) => void;
+  showConfirm: (title: string, message: string, onConfirm: () => void) => void;
 }
 
 export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
@@ -56,6 +58,8 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
   ministries,
   onSave,
   isAdmin = false,
+  showAlert,
+  showConfirm,
 }) => {
   const [tab, setTab] = useState<"event" | "task">("event");
 
@@ -177,7 +181,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
 
   const handleSave = async () => {
     if (!title.trim()) {
-      alert("O título é obrigatório.");
+      showAlert("Aviso", "O título é obrigatório.");
       return;
     }
 
@@ -229,7 +233,7 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
       onClose();
     } catch (error) {
       console.error("Erro ao salvar:", error);
-      alert("Erro ao salvar compromisso.");
+      showAlert("Erro", "Erro ao salvar compromisso.");
     } finally {
       setLoading(false);
     }
@@ -237,15 +241,20 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
 
   const handleDelete = async () => {
     if (!editItem) return;
-    if (window.confirm("Deseja realmente excluir este compromisso?")) {
-      try {
-        await fsDeleteDoc(fsDoc(db, "calendar", editItem.id));
-        onSave();
-        onClose();
-      } catch (error) {
-        console.error("Erro ao excluir:", error);
+    showConfirm(
+      "Confirmar Exclusão",
+      "Deseja realmente excluir este compromisso?",
+      async () => {
+        try {
+          await fsDeleteDoc(fsDoc(db, "calendar", editItem.id));
+          onSave();
+          onClose();
+        } catch (error) {
+          console.error("Erro ao excluir:", error);
+          showAlert("Erro", "Erro ao excluir compromisso.");
+        }
       }
-    }
+    );
   };
 
   const handleDuplicate = async () => {

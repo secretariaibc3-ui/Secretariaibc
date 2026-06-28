@@ -13,9 +13,17 @@ interface AgendaTabProps {
   members: any[];
   ministries: any[];
   isAdmin?: boolean;
+  showAlert: (title: string, message: string) => void;
+  showConfirm: (title: string, message: string, onConfirm: () => void) => void;
 }
 
-export const AgendaTab: React.FC<AgendaTabProps> = ({ members, ministries, isAdmin = false }) => {
+export const AgendaTab: React.FC<AgendaTabProps> = ({ 
+  members, 
+  ministries, 
+  isAdmin = false,
+  showAlert,
+  showConfirm
+}) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -126,6 +134,8 @@ export const AgendaTab: React.FC<AgendaTabProps> = ({ members, ministries, isAdm
         ministries={ministries}
         onSave={handleSave}
         isAdmin={isAdmin}
+        showAlert={showAlert}
+        showConfirm={showConfirm}
       />
     </div>
   );
