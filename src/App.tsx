@@ -2577,34 +2577,11 @@ export default function App() {
         if ('rhFilterType' in state) setRhFilterType(state.rhFilterType || 'all');
         if ('rhSelectedValue' in state) setRhSelectedValue(state.rhSelectedValue || '');
         
-        // Close all modals if we go back
-        setIsAddMemberModalOpen(false);
-        setIsEditMemberModalOpen(false);
-        setIsViewMemberModalOpen(false);
-        setIsDeactivateModalOpen(false);
-        setIsAddUserModalOpen(false);
-        setIsShareModalOpen(false);
-        setIsAddMinistryModalOpen(false);
-        setIsEditMinistryModalOpen(false);
-        setIsAddAtaModalOpen(false);
-        setIsEditAtaModalOpen(false);
-        setIsViewAtaModalOpen(false);
-        setIsAddPresencaModalOpen(false);
-        setIsEditPresencaModalOpen(false);
-        setIsViewPresencaModalOpen(false);
-        setIsMinistryMembersModalOpen(false);
-        setIsGalleryPickerOpen(false);
-        setIsAddFunctionModalOpen(false);
-        setIsEditFunctionModalOpen(false);
-        setIsViewFunctionDetailsModalOpen(false);
-        setIsAddRelationshipTypeModalOpen(false);
-        setIsEditRelationshipTypeModalOpen(false);
-        setIsExportModalOpen(false);
-        setExpandedCard(null);
-        setExpandedFunction(null);
-        setAlertConfig(null);
-        setConfirmConfig(null);
-        setPasswordPromptConfig(null);
+        // As abas e os filtros são sincronizados via state acima.
+        // O fechamento dos modais é gerenciado individualmente pelo hook useBackButton,
+        // que ouve o mesmo evento popstate e fecha o modal se o modalId for diferente.
+        // Removendo o fechamento global cego que causava o fechamento indesejado
+        // ao alternar entre modais (ex: de Visualizar para Editar).
       } else {
         // Safe reset if no state is present in pop
         setIsAddMemberModalOpen(false);
@@ -3375,6 +3352,19 @@ export default function App() {
       geoStats
     };
   }, [members, ageClassifications]);
+
+  // Sincronizar o membro selecionado com as atualizações em tempo real da lista
+  useEffect(() => {
+    if (selectedMember && members.length > 0) {
+      const updated = members.find(m => m.id === selectedMember.id);
+      if (updated) {
+        // Usar uma comparação simples para evitar loops, mas garantir que estamos atualizados
+        if (JSON.stringify(updated) !== JSON.stringify(selectedMember)) {
+          setSelectedMember(updated);
+        }
+      }
+    }
+  }, [members]);
 
   // Data Fetching
   useEffect(() => {
@@ -5890,17 +5880,28 @@ export default function App() {
         onToggleRole={async (u) => {
           const oldData = { ...u };
           const newRole = u.role === 'admin' ? 'user' : 'admin';
-          await updateDoc(doc(db, 'users', u.id), { 
-            role: newRole,
-            isFullAdmin: newRole === 'admin'
-          });
-          triggerUndo({
-            type: 'update',
-            collection: 'users',
-            id: u.id,
-            data: oldData,
-            message: `Nível de ${u.email} alterado.`
-          });
+          
+          // Atualização otimista para feedback imediato
+          setUsers(prev => prev.map(user => user.id === u.id ? { ...user, role: newRole, isFullAdmin: newRole === 'admin' } : user));
+          
+          try {
+            await updateDoc(doc(db, 'users', u.id), { 
+              role: newRole,
+              isFullAdmin: newRole === 'admin'
+            });
+            triggerUndo({
+              type: 'update',
+              collection: 'users',
+              id: u.id,
+              data: oldData,
+              message: `Nível de ${u.email} alterado.`
+            });
+          } catch (error) {
+            console.error("Error toggling role:", error);
+            // Reverter em caso de erro
+            setUsers(prev => prev.map(user => user.id === u.id ? oldData : user));
+            showAlert("Erro", "Não foi possível alterar o nível de acesso.");
+          }
         }}
         onBlock={async (u) => {
           await updateDoc(doc(db, 'users', u.id), { 
@@ -5952,8 +5953,13 @@ export default function App() {
         user={approvingUser}
         onConfirm={async (role) => {
           if (!approvingUser) return;
+          const userToApprove = approvingUser;
+          
+          // Optimistic update for immediate feedback
+          setUsers(prev => prev.map(u => u.id === userToApprove.id ? { ...u, status: 'approved', role, isFullAdmin: role === 'admin' } : u));
+          
           try {
-            await updateDoc(doc(db, 'users', approvingUser.id), { 
+            await updateDoc(doc(db, 'users', userToApprove.id), { 
               status: 'approved',
               role: role,
               isFullAdmin: role === 'admin',
@@ -5961,10 +5967,12 @@ export default function App() {
               handledByEmail: appUser?.email,
               handledByUid: appUser?.id
             });
-            showAlert("Sucesso", `${approvingUser.email} foi aprovado como ${role === 'admin' ? 'Administrador' : 'Usuário'}.`);
+            showAlert("Sucesso", `${userToApprove.email} foi aprovado como ${role === 'admin' ? 'Administrador' : 'Usuário'}.`);
             setApprovingUser(null);
           } catch (error) {
             console.error("Error approving user:", error);
+            // Revert on error
+            setUsers(prev => [...prev]); // Force refresh from state or it will be corrected by onSnapshot eventually
             showAlert("Erro", "Não foi possível aprovar o usuário.");
           }
         }}
