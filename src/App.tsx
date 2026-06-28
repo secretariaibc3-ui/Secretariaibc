@@ -1293,9 +1293,6 @@ export default function App() {
   const activeTab = activeTabState;
   const setActiveTab = (tab: 'dashboard' | 'members' | 'ministries' | 'assembleia' | 'reports' | 'rh' | 'adm' | 'normativos' | 'agenda') => {
     setActiveTabState(tab);
-    if (window.innerWidth < 768) {
-      window.history.pushState({ tab }, '');
-    }
   };
 
   useEffect(() => {
@@ -2577,6 +2574,8 @@ export default function App() {
       const state = event.state;
       if (state) {
         if (state.tab) setActiveTabState(state.tab);
+        if ('rhFilterType' in state) setRhFilterType(state.rhFilterType || 'all');
+        if ('rhSelectedValue' in state) setRhSelectedValue(state.rhSelectedValue || '');
         
         // Close all modals if we go back
         setIsAddMemberModalOpen(false);
@@ -2639,7 +2638,7 @@ export default function App() {
     
     // Initial state
     if (!window.history.state) {
-      window.history.replaceState({ tab: activeTab, root: true }, '');
+      window.history.replaceState({ tab: activeTab, rhFilterType: 'all', rhSelectedValue: '', root: true }, '');
     }
 
     return () => window.removeEventListener('popstate', handlePopState);
@@ -2649,12 +2648,26 @@ export default function App() {
   useEffect(() => {
     try {
       if (window.history.state?.tab !== activeTab) {
-        window.history.pushState({ tab: activeTab }, '');
+        window.history.pushState({ tab: activeTab, rhFilterType: 'all', rhSelectedValue: '' }, '');
       }
     } catch (err) {
       console.warn("History API error in tab change:", err);
     }
   }, [activeTab]);
+
+  // Update history when RH filter changes
+  useEffect(() => {
+    if (activeTab !== 'rh') return;
+    try {
+      const currentState = window.history.state;
+      if (currentState?.tab === 'rh' && 
+          (currentState?.rhFilterType !== rhFilterType || currentState?.rhSelectedValue !== rhSelectedValue)) {
+        window.history.pushState({ tab: 'rh', rhFilterType, rhSelectedValue }, '');
+      }
+    } catch (err) {
+      console.warn("History API error in RH filter change:", err);
+    }
+  }, [rhFilterType, rhSelectedValue, activeTab]);
 
   // Handle Modal History (Push state when any modal opens)
   const isAnyModalOpen = isAddMemberModalOpen || isEditMemberModalOpen || isViewMemberModalOpen || 
@@ -8130,7 +8143,7 @@ export default function App() {
 
 
               {/* Member Functions Management Section moved from ADM to RH */}
-              {appUser?.role === 'admin' ? (
+              {appUser?.role === 'admin' && (
                 <>
                   <section className="bg-white dark:bg-[#111] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm overflow-hidden">
                     <div 
@@ -8372,12 +8385,6 @@ export default function App() {
                     </AnimatePresence>
                   </section>
                 </>
-              ) : (
-                <div className="text-center py-20 bg-white dark:bg-[#111] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm">
-                   <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                   <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50">Acesso Restrito</h3>
-                   <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto mt-2">Esta área é destinada apenas para administradores do sistema.</p>
-                </div>
               )}
             </div>
           ) : activeTab === 'normativos' ? (
