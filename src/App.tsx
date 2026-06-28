@@ -5719,6 +5719,7 @@ export default function App() {
       {/* Main Content */}
       {activeTab === 'dashboard' ? (
         <MobileDashboard 
+          members={members}
           setActiveTab={setActiveTab} 
           onAddMember={() => setIsAddMemberModalOpen(true)}
           onAddMinistry={() => setIsAddMinistryModalOpen(true)}

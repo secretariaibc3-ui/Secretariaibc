@@ -10,10 +10,21 @@ import {
   FileText,
   Plus,
   UserPlus,
-  Home
+  Home,
+  Cake,
+  MessageSquare
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+
+interface Member {
+  id: string;
+  name: string;
+  birthDate: string;
+  photoUrl?: string;
+  isActive: boolean;
+  celular?: string;
+}
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -30,17 +41,38 @@ const DASHBOARD_ITEMS = [
 ];
 
 export const MobileDashboard = ({ 
+  members,
   setActiveTab,
   onAddMember,
   onAddMinistry,
   isAdmin
 }: {
+  members: Member[];
   setActiveTab: (tab: any) => void;
   onAddMember: () => void;
   onAddMinistry: () => void;
   isAdmin: boolean;
 }) => {
   const [isFabOpen, setIsFabOpen] = useState(false);
+
+  const currentMonth = new Date().getMonth() + 1;
+  const birthdayMembers = (members || [])
+    .filter(m => {
+      if (!m.isActive || !m.birthDate) return false;
+      const parts = m.birthDate.split('-');
+      return parseInt(parts[1], 10) === currentMonth;
+    })
+    .sort((a, b) => {
+      const dayA = parseInt(a.birthDate.split('-')[2], 10) || 0;
+      const dayB = parseInt(b.birthDate.split('-')[2], 10) || 0;
+      return dayA - dayB;
+    });
+
+  const handleContactMember = (celular: string, name: string) => {
+    const cleanNumber = celular.replace(/\D/g, '');
+    const message = encodeURIComponent(`Olá ${name}! A ${"Igreja Batista Seropédica"} deseja um Feliz Aniversário! 🎉 Que Deus te abençoe ricamente.`);
+    window.open(`https://wa.me/55${cleanNumber}?text=${message}`, '_blank');
+  };
 
   const dashboardItems = DASHBOARD_ITEMS.map(item => {
     if (item.id === 'adm' && !isAdmin) {
@@ -56,7 +88,7 @@ export const MobileDashboard = ({
         <img 
           src="/icon-ibc-branco.png" 
           alt="Igreja Batista Seropédica" 
-          className="h-20 w-auto object-contain drop-shadow-md"
+          className="h-24 w-[90%] max-w-[320px] object-contain drop-shadow-md"
         />
       </div>
 
@@ -80,15 +112,93 @@ export const MobileDashboard = ({
           })}
         </div>
 
-        {/* Upcoming Events Placeholder */}
-        <div className="mt-8">
-          <h3 className="text-gray-900 dark:text-gray-50 font-black text-lg tracking-tight mb-4">
-            Próximos eventos
-          </h3>
-          <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] rounded-3xl p-6 shadow-sm flex items-center justify-center min-h-[180px]">
-            <p className="text-gray-400 dark:text-gray-500 font-medium text-sm text-center">
-              Nenhum evento próximo.
-            </p>
+        {/* Upcoming Events and Birthdays */}
+        <div className="mt-8 space-y-8">
+          <div>
+            <h3 className="text-gray-900 dark:text-gray-50 font-black text-lg tracking-tight mb-4">
+              Próximos eventos
+            </h3>
+            <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] rounded-3xl p-6 shadow-sm flex items-center justify-center min-h-[180px]">
+              <p className="text-gray-400 dark:text-gray-500 font-medium text-sm text-center">
+                Nenhum evento próximo.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-gray-900 dark:text-gray-50 font-black text-lg tracking-tight">
+                Aniversariantes do mês
+              </h3>
+              <div className="bg-ibc-teal/10 text-ibc-teal px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                {birthdayMembers.length} {birthdayMembers.length === 1 ? 'Membro' : 'Membros'}
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              {birthdayMembers.length > 0 ? (
+                birthdayMembers.map((member) => {
+                  const birthdayParts = member.birthDate.split('-');
+                  const day = birthdayParts[2] ? parseInt(birthdayParts[2], 10) : 0;
+                  const monthIdx = birthdayParts[1] ? parseInt(birthdayParts[1], 10) - 1 : 0;
+                  
+                  // Calculate age
+                  let age = null;
+                  if (birthdayParts.length === 3 && birthdayParts[0].length === 4) {
+                    const birthYear = parseInt(birthdayParts[0], 10);
+                    const currentYear = new Date().getFullYear();
+                    age = currentYear - birthYear;
+                  }
+
+                  return (
+                    <div 
+                      key={member.id}
+                      className="bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] rounded-[2rem] p-4 shadow-sm flex items-center gap-4 transition-transform active:scale-[0.98]"
+                    >
+                      <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-black overflow-hidden shrink-0 border border-gray-100 dark:border-[#222] flex items-center justify-center text-lg font-bold text-gray-400">
+                        {member.photoUrl ? (
+                          <img src={member.photoUrl} className="w-full h-full object-cover" alt={member.name} referrerPolicy="no-referrer" />
+                        ) : (
+                          member.name.charAt(0)
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-extrabold text-gray-900 dark:text-gray-50 text-sm truncate">
+                          {member.name}
+                        </h4>
+                        <div className="flex flex-col mt-0.5">
+                          <span className="text-[10px] text-ibc-teal font-black uppercase tracking-widest">
+                            {day.toString().padStart(2, '0')}/{(monthIdx + 1).toString().padStart(2, '0')}
+                          </span>
+                          {age !== null && (
+                            <span className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">
+                              Completa {age} anos
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {member.celular && (
+                        <button 
+                          onClick={() => handleContactMember(member.celular!, member.name)}
+                          className="w-10 h-10 bg-ibc-teal/10 text-ibc-teal rounded-xl flex items-center justify-center active:scale-90 transition-transform shrink-0"
+                        >
+                          <MessageSquare className="w-5 h-5 fill-current" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] rounded-3xl p-8 shadow-sm flex flex-col items-center justify-center text-center">
+                  <Cake className="w-8 h-8 text-gray-200 mb-3" />
+                  <p className="text-gray-400 dark:text-gray-500 font-medium text-sm">
+                    Nenhum aniversariante encontrado neste mês.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
