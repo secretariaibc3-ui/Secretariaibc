@@ -5056,7 +5056,7 @@ export default function App() {
 
   // Handle unauthorized tab access
   useEffect(() => {
-    if (appUser?.role === 'user' && activeTab === 'adm') {
+    if (appUser?.role === 'user' && activeTab === 'adm' && window.innerWidth >= 768) {
       setActiveTab('members');
     }
   }, [appUser?.role, activeTab]);
@@ -5721,6 +5721,7 @@ export default function App() {
           setActiveTab={setActiveTab} 
           onAddMember={() => setIsAddMemberModalOpen(true)}
           onAddMinistry={() => setIsAddMinistryModalOpen(true)}
+          isAdmin={appUser?.role === 'admin'}
         />
       ) : (
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -5749,7 +5750,7 @@ export default function App() {
                    activeTab === 'reports' ? 'Relatórios e Estatísticas' :
                    activeTab === 'rh' ? 'Recursos Humanos' :
                    activeTab === 'normativos' ? 'Atos Normativos' :
-                   'Administração'}
+                   (window.innerWidth < 768 && appUser?.role !== 'admin') ? 'Ajustes' : 'Administração'}
                 </h2>
                 {activeTab === 'members' && (
                   <div className="flex items-center ml-2 sm:ml-3">
@@ -5766,7 +5767,7 @@ export default function App() {
                  activeTab === 'reports' ? 'Quadro de membros' :
                  activeTab === 'rh' ? 'Gestão de Funções' :
                  activeTab === 'normativos' ? 'Estatuto & Regimento Interno' :
-                 'Configurações'}
+                 (window.innerWidth < 768 && appUser?.role !== 'admin') ? 'Ajustes e Conta' : 'Configurações'}
               </p>
             </div>
           </div>
@@ -8497,7 +8498,28 @@ export default function App() {
                   </div>
                 </section>
               )}
-        </div>
+
+              {/* Logout Section for Mobile */}
+              <section className="bg-white dark:bg-[#111] p-8 rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm md:hidden">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4 text-left">
+                    <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-900/10 flex items-center justify-center text-red-500 shrink-0">
+                      <LogOut className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">Sair da Conta</h3>
+                      <p className="text-sm text-gray-400 font-medium mt-1">Encerrar sua sessão atual.</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={handleLogout}
+                    className="bg-red-500 text-white px-6 py-3 rounded-2xl font-bold hover:bg-red-600 transition-all active:scale-95 shadow-lg shadow-red-500/20"
+                  >
+                    Sair
+                  </button>
+                </div>
+              </section>
+            </div>
       )}
     </div>
   </main>

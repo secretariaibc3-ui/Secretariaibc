@@ -32,13 +32,22 @@ const DASHBOARD_ITEMS = [
 export const MobileDashboard = ({ 
   setActiveTab,
   onAddMember,
-  onAddMinistry
+  onAddMinistry,
+  isAdmin
 }: {
   setActiveTab: (tab: any) => void;
   onAddMember: () => void;
   onAddMinistry: () => void;
+  isAdmin: boolean;
 }) => {
   const [isFabOpen, setIsFabOpen] = useState(false);
+
+  const dashboardItems = DASHBOARD_ITEMS.map(item => {
+    if (item.id === 'adm' && !isAdmin) {
+      return { ...item, label: 'Ajustes' };
+    }
+    return item;
+  });
 
   return (
     <div className="flex flex-col h-full w-full bg-gray-50 dark:bg-[#0a0a0a] md:hidden">
@@ -54,7 +63,7 @@ export const MobileDashboard = ({
       {/* Main Content */}
       <div className="flex-1 px-6 pt-8 pb-32 overflow-y-auto">
         <div className="grid grid-cols-2 gap-4">
-          {DASHBOARD_ITEMS.map((item) => {
+          {dashboardItems.map((item) => {
             const Icon = item.icon;
             return (
               <button
