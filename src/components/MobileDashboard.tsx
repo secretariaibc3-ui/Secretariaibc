@@ -46,7 +46,7 @@ export const MobileDashboard = ({
   setActiveTab,
   onAddMember,
   onAddMinistry,
-  onSendMessage,
+  onContactMember,
   isAdmin
 }: {
   members: Member[];
@@ -54,7 +54,7 @@ export const MobileDashboard = ({
   setActiveTab: (tab: any) => void;
   onAddMember: () => void;
   onAddMinistry: () => void;
-  onSendMessage: (recipient: {id: string, name: string, photoUrl?: string, userId: string}) => void;
+  onContactMember: (phone: string, name: string, message?: string) => void;
   isAdmin: boolean;
 }) => {
   const [isFabOpen, setIsFabOpen] = useState(false);
@@ -157,7 +157,6 @@ export const MobileDashboard = ({
                     age = currentYear - birthYear;
                   }
 
-                  const linkedUser = users?.find(u => u.linkedMemberId === member.id);
 
                   return (
                     <div 
@@ -189,27 +188,19 @@ export const MobileDashboard = ({
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        {linkedUser && (
+                        {member.celular && (
                           <button 
-                            onClick={() => onSendMessage({
-                              id: member.id,
-                              name: member.name,
-                              photoUrl: member.photoUrl,
-                              userId: linkedUser.id
-                            })}
-                            className="w-10 h-10 bg-blue-50 text-blue-500 dark:bg-blue-500/10 dark:text-blue-400 rounded-xl flex items-center justify-center active:scale-90 transition-transform"
+                            onClick={() => onContactMember(
+                              member.celular!, 
+                              member.name, 
+                              "🎉 Feliz aniversário! Que Deus continue abençoando sua vida com muita saúde, paz, sabedoria e muitos anos na presença d'Ele. Que este novo ciclo seja repleto de alegrias e realizações. Parabéns pelo seu dia! 🙏"
+                            )}
+                            className="w-10 h-10 bg-ibc-teal/10 text-ibc-teal rounded-xl flex items-center justify-center active:scale-90 transition-transform"
+                            title="Enviar mensagem de aniversário"
                           >
                             <MessageSquare className="w-5 h-5 fill-current" />
                           </button>
                         )}
-                        {/* {member.celular && (
-                          <button 
-                            onClick={() => handleContactMember(member.celular!, member.name)}
-                            className="w-10 h-10 bg-ibc-teal/10 text-ibc-teal rounded-xl flex items-center justify-center active:scale-90 transition-transform"
-                          >
-                            <MessageSquare className="w-5 h-5 fill-current" />
-                          </button>
-                        )} */}
                       </div>
                     </div>
                   );
