@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Secretaria IBC",
-  "short_name": "Secretaria IBC",
-  "description": "Sistema de Secretaria e Gestão da Igreja Batista Coqueiral",
+  "name": "IBC Seropédica",
+  "short_name": "IBC Seropédica",
+  "description": "Sistema de Gestão da Igreja Batista Seropédica",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

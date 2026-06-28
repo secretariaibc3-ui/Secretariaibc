@@ -52,16 +52,16 @@ export const MobileDashboard = ({
   return (
     <div className="flex flex-col h-full w-full bg-gray-50 dark:bg-[#0a0a0a] md:hidden">
       {/* Header */}
-      <div className="bg-ibc-teal pt-10 pb-6 px-6 rounded-b-[2.5rem] shadow-lg flex flex-col items-center justify-center relative z-10">
+      <div className="bg-ibc-teal pt-8 pb-4 px-6 rounded-b-[2rem] shadow-lg flex flex-col items-center justify-center relative z-10">
         <img 
           src="/icon-ibc-branco.png" 
-          alt="Igreja Batista Coqueiral" 
-          className="h-44 w-auto object-contain drop-shadow-md"
+          alt="Igreja Batista Seropédica" 
+          className="w-[85%] max-w-[280px] h-auto object-contain drop-shadow-md"
         />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 px-6 pt-8 pb-32 overflow-y-auto">
+      <div className="flex-1 px-6 pt-6 pb-32 overflow-y-auto">
         <div className="grid grid-cols-2 gap-4">
           {dashboardItems.map((item) => {
             const Icon = item.icon;
@@ -85,7 +85,7 @@ export const MobileDashboard = ({
           <h3 className="text-gray-900 dark:text-gray-50 font-black text-lg tracking-tight mb-4">
             Próximos eventos
           </h3>
-          <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] rounded-3xl p-6 shadow-sm flex items-center justify-center min-h[120px]">
+          <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] rounded-3xl p-6 shadow-sm flex items-center justify-center min-h-[180px]">
             <p className="text-gray-400 dark:text-gray-500 font-medium text-sm text-center">
               Nenhum evento próximo.
             </p>

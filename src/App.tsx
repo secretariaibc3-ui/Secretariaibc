@@ -1636,7 +1636,7 @@ export default function App() {
   const [users, setUsers] = useState<AppUser[]>(() => loadFromCache<AppUser[]>('users', []));
   const [appSettings, setAppSettings] = useState<any>(() => loadFromCache<any>('settings', { 
     logoUrl: '', 
-    appName: 'ibcseropedica', 
+    appName: 'IBC Seropédica', 
     appLink: 'https://ibcseropedica.vercel.app/',
     churchCnpj: '',
     churchAddress: '',
@@ -1649,7 +1649,7 @@ export default function App() {
   useEffect(() => {
     const updateDynamicMetadata = () => {
       const logoUrl = appSettings.logoUrl || '/icon-192.png';
-      const appName = appSettings.appName || 'Secretaria IBC';
+      const appName = appSettings.appName || 'IBC Seropédica';
       
       // Keep manifest link stable at /manifest.json for reliable PWA install prompt triggers
       
@@ -2655,7 +2655,7 @@ export default function App() {
           setAppSettings(prev => ({
             ...prev,
             logoUrl: data.logoUrl || '',
-            appName: data.appName || 'IBC Coqueiral',
+            appName: data.appName || 'IBC Seropédica',
             churchCnpj: data.churchCnpj || '',
             churchAddress: data.churchAddress || '',
             churchCoordinates: data.churchCoordinates || null
@@ -4793,7 +4793,7 @@ export default function App() {
           </style>
         </head>
         <body>
-          <h1>Igreja Batista Coqueiral</h1>
+          <h1>Igreja Batista Seropédica</h1>
           <h2>Lista de Presença - Ata nº ${presenca.ataNumber} - Data: ${safeFormatDate(presenca.date)}</h2>
           ${lines.map(n => `<div class="line"><span>${n}.</span> __________________________________________________________________________</div>`).join('')}
           <script>
@@ -4865,7 +4865,7 @@ export default function App() {
     const doc = new jsPDF();
     
     doc.setFontSize(22);
-    doc.text("Igreja Batista Coqueiral", 105, 20, { align: 'center' });
+    doc.text("Igreja Batista Seropédica", 105, 20, { align: 'center' });
     
     doc.setFontSize(16);
     doc.text(`Ata nº ${ata.number}`, 105, 35, { align: 'center' });
@@ -5302,13 +5302,13 @@ export default function App() {
             <div className="w-24 h-24 bg-ibc-teal/5 rounded-3xl flex items-center justify-center mb-4 shadow-inner overflow-hidden">
               <img 
                 src={currentLogo} 
-                alt="Igreja Batista Coqueiral" 
+                alt="Igreja Batista Seropédica" 
                 className="w-full h-full object-contain"
                 referrerPolicy="no-referrer"
               />
             </div>
             <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 mb-1">CNPJ 05.048.0001/27</p>
-            <p className="text-gray-400 font-black text-[10px] uppercase tracking-[0.3em]">Secretaria</p>
+            <p className="text-gray-400 font-black text-[10px] uppercase tracking-[0.3em]">IBC Seropédica</p>
           </div>
 
           <div className="flex mb-8 bg-gray-50 dark:bg-black p-1.5 rounded-2xl border border-gray-100 dark:border-[#222]">
@@ -5440,7 +5440,7 @@ export default function App() {
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         {/* Admin Quick Access Control Button */}
       {appUser?.role === 'admin' && (
-        <div className="fixed top-6 right-6 z-[60] flex flex-col items-end gap-3 pointer-events-none">
+        <div className="fixed bottom-6 right-6 md:top-6 md:bottom-auto z-[60] flex flex-col items-end gap-3 pointer-events-none">
           <AnimatePresence>
             {users.some(u => u.status === 'pending') && (
               <motion.div
@@ -8245,7 +8245,7 @@ export default function App() {
                       <h3 className="text-xl font-black tracking-tight">Instalar Aplicativo</h3>
                     </div>
                     <p className="text-sm font-medium text-white/90 mb-6 max-w-md">
-                      Instale o sistema da IBC Coqueiral no seu dispositivo para acesso rápido pela área de trabalho ou tela de início, mesmo offline.
+                      Instale o sistema da IBC Seropédica no seu dispositivo para acesso rápido pela área de trabalho ou tela de início, mesmo offline.
                     </p>
                     <button 
                       onClick={handleInstallClick}
@@ -8345,7 +8345,7 @@ export default function App() {
                               }
                             }}
                             className="flex-1 p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-ibc-teal/20"
-                            placeholder="Ex: IBC Coqueiral"
+                            placeholder="Ex: IBC Seropédica"
                           />
                         </div>
                       </div>
