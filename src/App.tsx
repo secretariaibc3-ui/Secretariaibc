@@ -5165,6 +5165,31 @@ export default function App() {
   const menMembersCount = useMemo(() => members.filter(m => m.gender === 'Homem' && (memberStatusFilter === 'all' || (memberStatusFilter === 'active' && m.isActive !== false && !m.isAbsent) || (memberStatusFilter === 'absent' && m.isActive !== false && m.isAbsent) || (memberStatusFilter === 'inactive' && m.isActive === false))).length, [members, memberStatusFilter]);
   const womenMembersCount = useMemo(() => members.filter(m => m.gender === 'Mulher' && (memberStatusFilter === 'all' || (memberStatusFilter === 'active' && m.isActive !== false && !m.isAbsent) || (memberStatusFilter === 'absent' && m.isActive !== false && m.isAbsent) || (memberStatusFilter === 'inactive' && m.isActive === false))).length, [members, memberStatusFilter]);
   
+  // Recharts Custom Tooltip to fix visual glitches and match theme
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-[#1a1a1a] p-3 sm:p-4 rounded-2xl shadow-xl border border-gray-100 dark:border-[#222] backdrop-blur-md">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 border-b border-gray-100 dark:border-[#222] pb-1">
+            {label}
+          </p>
+          <div className="space-y-1.5">
+            {payload.map((entry: any, index: number) => (
+              <div key={index} className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.fill }} />
+                  <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 capitalize">{entry.name}:</span>
+                </div>
+                <span className="text-[10px] sm:text-xs font-black text-gray-900 dark:text-gray-50">{entry.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   const memberStats = useMemo(() => {
     const categories: Record<string, { members: Member[], prevMembers: Member[], label: string, id: string, color: string, icon: any, tag: string }> = {
       absents: { members: [], prevMembers: [], label: 'Ausentes', id: 'absents', color: '#F97316', icon: Clock, tag: 'Ausentes' },
@@ -5319,8 +5344,13 @@ export default function App() {
   }, [filteredMembers, visibleMembersCount]);
 
   const filteredNavItems = useMemo(() => {
-    if (appUser?.role === 'admin') return sideNavItems;
-    return sideNavItems.filter(item => item.id !== 'adm');
+    let items = sideNavItems;
+    if (appUser?.role !== 'admin') {
+      items = items
+        .filter(item => item.id !== 'adm')
+        .map(item => item.id === 'rh' ? { ...item, label: 'Relacionamento' } : item);
+    }
+    return items;
   }, [sideNavItems, appUser?.role]);
 
   // Handle unauthorized tab access
@@ -5451,7 +5481,7 @@ export default function App() {
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white dark:bg-[#111] p-10 rounded-3xl shadow-2xl shadow-gray-200/50 max-w-md w-full border border-gray-100 dark:border-[#222] text-center"
         >
-          <div className="w-24 h-24 bg-ibc-teal/5 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner overflow-hidden">
+          <div className="w-32 h-32 bg-ibc-teal/5 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner overflow-hidden">
             <img 
               src={currentLogo} 
               alt={appSettings.appName} 
@@ -5567,7 +5597,7 @@ export default function App() {
           className="bg-white dark:bg-[#111] p-10 rounded-3xl shadow-2xl shadow-gray-200/50 max-w-md w-full border border-gray-100 dark:border-[#222]"
         >
           <div className="flex flex-col items-center mb-10">
-            <div className="w-24 h-24 bg-ibc-teal/5 rounded-3xl flex items-center justify-center mb-4 shadow-inner overflow-hidden">
+            <div className="w-32 h-32 bg-ibc-teal/5 rounded-3xl flex items-center justify-center mb-6 shadow-inner overflow-hidden">
               <img 
                 src={currentLogo} 
                 alt="Igreja Batista Seropédica" 
@@ -5981,12 +6011,14 @@ export default function App() {
                 animate={{ opacity: 1 }}
                 className="flex flex-col items-start"
               >
-                <img 
-                  src={currentLogo} 
-                  alt={appSettings.appName} 
-                  className="h-10 w-auto mb-1 rounded-lg"
-                  referrerPolicy="no-referrer"
-                />
+                <div className="w-full h-32 flex items-center justify-center mb-6 px-1">
+                  <img 
+                    src={currentLogo} 
+                    alt={appSettings.appName} 
+                    className="max-w-full max-h-full object-contain"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
                 <h1 className="text-sm font-black text-gray-900 dark:text-gray-50 tracking-tight leading-none uppercase">
                   {appSettings.appName}
                 </h1>
@@ -6105,7 +6137,7 @@ export default function App() {
                    activeTab === 'agenda' ? 'Agenda' :
                    activeTab === 'assembleia' ? 'Reuniões' : 
                    activeTab === 'reports' ? 'Relatórios e Estatísticas' :
-                   activeTab === 'rh' ? 'Recursos Humanos' :
+                   activeTab === 'rh' ? (appUser?.role === 'admin' ? 'Recursos Humanos' : 'Relacionamento') :
                    activeTab === 'normativos' ? 'Atos Normativos' :
                    (window.innerWidth < 768 && appUser?.role !== 'admin') ? 'Ajustes' : 'Administração'}
                 </h2>
@@ -6122,7 +6154,7 @@ export default function App() {
                  activeTab === 'agenda' ? 'Eventos e Compromissos' :
                  activeTab === 'assembleia' ? 'Atas e registros' : 
                  activeTab === 'reports' ? 'Quadro de membros' :
-                 activeTab === 'rh' ? 'Gestão de Funções' :
+                 activeTab === 'rh' ? (appUser?.role === 'admin' ? 'Gestão de Funções' : 'Vínculos Familiares') :
                  activeTab === 'normativos' ? 'Estatuto & Regimento Interno' :
                  (window.innerWidth < 768 && appUser?.role !== 'admin') ? 'Ajustes e Conta' : 'Configurações'}
               </p>
@@ -7021,7 +7053,7 @@ export default function App() {
                           />
                           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#9CA3AF' }} />
                           <Tooltip 
-                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                            content={<CustomTooltip />}
                             cursor={{ fill: 'transparent' }}
                           />
                           <Bar dataKey="novos" name="novos" fill="#3B82F6" radius={[4, 4, 0, 0]} />
@@ -7472,534 +7504,628 @@ export default function App() {
               </section>
             </div>
           ) : activeTab === 'rh' ? (
+
             <div className="max-w-6xl mx-auto space-y-4 sm:space-y-10">
-              {/* Filtro Card */}
-              <section className="bg-white dark:bg-[#111] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm overflow-hidden">
-                <div 
-                  onClick={() => setIsRHFilterCollapsed(!isRHFilterCollapsed)}
-                  className="flex items-center justify-between p-3 sm:p-8 cursor-pointer hover:bg-gray-50 dark:bg-black transition-colors"
-                >
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight flex items-center">
-                      <Filter className="w-5 h-5 mr-3 text-ibc-teal" />
-                      Filtro
-                      {isRHFilterCollapsed ? (
-                        <ChevronDown className="w-5 h-5 ml-2 text-gray-400" />
-                      ) : (
-                        <ChevronUp className="w-5 h-5 ml-2 text-gray-400" />
-                      )}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-gray-400 font-medium mt-1">Filtre membros por parentesco, função, idade ou veja os casais.</p>
-                  </div>
-                </div>
-
-                <AnimatePresence>
-                  {!isRHFilterCollapsed && (
-                    <motion.div 
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                    >
-                      <div className="px-3 sm:px-8 pb-3 sm:pb-8 space-y-3 sm:space-y-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
-                          <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Filtrar Por</label>
-                            <select 
-                              value={rhFilterType}
-                              onChange={(e) => {
-                                setRhFilterType(e.target.value as any);
-                                setRhSelectedValue('');
-                              }}
-                              className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
-                            >
-                              <option value="all">Selecione um filtro...</option>
-                              <option value="relationship">Grau de Parentesco</option>
-                              <option value="function">Função de Membro</option>
-                              <option value="age">Classificação por Idade</option>
-                              <option value="couples">Casais</option>
-                              <option value="families">Famílias</option>
-                              <option value="birthdays">Aniversariantes</option>
-                            </select>
-                          </div>
-
-                          {rhFilterType === 'age' && (
-                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex-1">
-                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Selecionar Classificação</label>
-                              <select 
-                                value={rhSelectedValue}
-                                onChange={(e) => setRhSelectedValue(e.target.value)}
-                                className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
-                              >
-                                <option value="">Todas as classificações...</option>
-                                {ageClassifications.map(c => (
-                                  <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
-                              </select>
-                            </motion.div>
-                          )}
-
-                          {rhFilterType === 'birthdays' && (
-                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex-1">
-                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Selecionar Mês</label>
-                              <select 
-                                value={rhBirthdayMonth}
-                                onChange={(e) => setRhBirthdayMonth(Number(e.target.value))}
-                                className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
-                              >
-                                {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
-                                  <option key={i} value={i}>{m}</option>
-                                ))}
-                              </select>
-                            </motion.div>
-                          )}
-
-                          {rhFilterType === 'relationship' && (
-                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex-1">
-                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Selecionar Parentesco</label>
-                              <select 
-                                value={rhSelectedValue}
-                                onChange={(e) => setRhSelectedValue(e.target.value)}
-                                className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
-                              >
-                                <option value="">Todos os parentescos...</option>
-                                {relationshipTypes.map(rt => (
-                                  <option key={rt.id} value={rt.name}>{rt.name}</option>
-                                ))}
-                              </select>
-                            </motion.div>
-                          )}
-
-                          {rhFilterType === 'function' && (
-                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex-1">
-                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Selecionar Função</label>
-                              <select 
-                                value={rhSelectedValue}
-                                onChange={(e) => setRhSelectedValue(e.target.value)}
-                                className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
-                              >
-                                <option value="">Todas as funções...</option>
-                                {memberFunctions.map(f => (
-                                  <option key={f.id} value={f.name}>{f.name}</option>
-                                ))}
-                              </select>
-                            </motion.div>
-                          )}
-
-                          {((rhFilterType !== 'all' && (rhSelectedValue || rhFilterType === 'couples' || rhFilterType === 'birthdays' || rhFilterType === 'families' || rhFilterType === 'elders'))) && (
-                            <div className="flex items-end">
-                              <button 
-                                onClick={handleExportRHFilterPDF}
-                                className="w-full p-3 bg-ibc-blue text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center hover:bg-ibc-blue/90 shadow-lg shadow-ibc-blue/20 transition-all active:scale-95"
-                              >
-                                <Download className="w-4 h-4 mr-2" />
-                                Exportar em PDF
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Resultados */}
-                        <div className="mt-8 pt-6 border-t border-gray-50 dark:border-[#222]">
-                          {rhFilterType === 'birthdays' ? (
-                            <div className="space-y-6">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                  Aniversariantes de {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][rhBirthdayMonth]}
-                                </h4>
-                                <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
-                                  <Cake className="w-3.5 h-3.5 mr-2" />
-                                  <span className="text-xs font-black uppercase tracking-tight">
-                                    {getFilteredMembers().length} {getFilteredMembers().length === 1 ? 'Aniversariante' : 'Aniversariantes'}
-                                  </span>
+              {appUser?.role === 'admin' ? (
+                /* Admin Filtro Card */
+                              <section className="bg-white dark:bg-[#111] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm overflow-hidden">
+                                <div 
+                                  onClick={() => setIsRHFilterCollapsed(!isRHFilterCollapsed)}
+                                  className="flex items-center justify-between p-3 sm:p-8 cursor-pointer hover:bg-gray-50 dark:bg-black transition-colors"
+                                >
+                                  <div>
+                                    <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight flex items-center">
+                                      <Filter className="w-5 h-5 mr-3 text-ibc-teal" />
+                                      Filtro
+                                      {isRHFilterCollapsed ? (
+                                        <ChevronDown className="w-5 h-5 ml-2 text-gray-400" />
+                                      ) : (
+                                        <ChevronUp className="w-5 h-5 ml-2 text-gray-400" />
+                                      )}
+                                    </h3>
+                                    <p className="text-xs sm:text-sm text-gray-400 font-medium mt-1">Filtre membros por parentesco, função, idade ou veja os casais.</p>
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {getFilteredMembers().map((member, index) => {
-                                  const birthdayParts = member.birthDate.split('-');
-                                  const day = birthdayParts[2] ? parseInt(birthdayParts[2], 10) : 0;
-                                  const monthIdx = birthdayParts[1] ? parseInt(birthdayParts[1], 10) - 1 : 0;
-                                  
-                                  // Calculate approximate age if birthdate is full
-                                  let ageDisplay = null;
-                                  if (birthdayParts.length === 3 && birthdayParts[0].length === 4) {
-                                    const birthYear = parseInt(birthdayParts[0], 10);
-                                    const currentYear = new Date().getFullYear();
-                                    ageDisplay = currentYear - birthYear;
-                                  }
-
-                                  return (
+                
+                                <AnimatePresence>
+                                  {!isRHFilterCollapsed && (
                                     <motion.div 
-                                      key={member.id} 
-                                      initial={{ opacity: 0, y: 10 }}
-                                      animate={{ opacity: 1, y: 0 }}
-                                      transition={{ delay: index * 0.05 }}
-                                      className="p-4 bg-white dark:bg-[#0a0a0a] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group transition-all flex items-center space-x-4 relative overflow-hidden"
+                                      initial={{ height: 0, opacity: 0 }}
+                                      animate={{ height: "auto", opacity: 1 }}
+                                      exit={{ height: 0, opacity: 0 }}
+                                      transition={{ duration: 0.3, ease: "easeInOut" }}
                                     >
-                                      {/* Birthday Icon indicator */}
-                                      <div className="absolute top-0 left-0 w-8 h-8 bg-ibc-teal/10 flex items-center justify-center rounded-br-2xl">
-                                        <Cake className="w-3.5 h-3.5 text-ibc-teal" />
-                                      </div>
-                                      <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-black overflow-hidden shrink-0 border border-gray-100 dark:border-[#222] flex items-center justify-center text-lg font-bold text-gray-400">
-                                        {member.photoUrl ? (
-                                          <img src={member.photoUrl} className="w-full h-full object-cover" alt={member.name} referrerPolicy="no-referrer" />
-                                        ) : (
-                                          member.name.charAt(0)
-                                        )}
-                                      </div>
-                                      <div className="min-w-0 flex-1">
-                                        <div className="font-extrabold text-gray-900 dark:text-gray-50 text-sm truncate group-hover:text-ibc-teal transition-colors">
-                                          {member.name}
-                                        </div>
-                                        <div className="flex flex-col mt-0.5">
-                                          <span className="text-[10px] text-ibc-teal font-black uppercase tracking-widest">
-                                            {day.toString().padStart(2, '0')}/{ (monthIdx + 1).toString().padStart(2, '0')}
-                                          </span>
-                                          {ageDisplay !== null && (
-                                            <span className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">
-                                              Completa {ageDisplay} anos
-                                            </span>
+                                      <div className="px-3 sm:px-8 pb-3 sm:pb-8 space-y-3 sm:space-y-6">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+                                          <div>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Filtrar Por</label>
+                                            <select 
+                                              value={rhFilterType}
+                                              onChange={(e) => {
+                                                setRhFilterType(e.target.value as any);
+                                                setRhSelectedValue('');
+                                              }}
+                                              className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
+                                            >
+                                              <option value="all">Selecione um filtro...</option>
+                                              <option value="relationship">Grau de Parentesco</option>
+                                              <option value="function">Função de Membro</option>
+                                              <option value="age">Classificação por Idade</option>
+                                              <option value="couples">Casais</option>
+                                              <option value="families">Famílias</option>
+                                              <option value="birthdays">Aniversariantes</option>
+                                            </select>
+                                          </div>
+                
+                                          {rhFilterType === 'age' && (
+                                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex-1">
+                                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Selecionar Classificação</label>
+                                              <select 
+                                                value={rhSelectedValue}
+                                                onChange={(e) => setRhSelectedValue(e.target.value)}
+                                                className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
+                                              >
+                                                <option value="">Todas as classificações...</option>
+                                                {ageClassifications.map(c => (
+                                                  <option key={c.id} value={c.id}>{c.name}</option>
+                                                ))}
+                                              </select>
+                                            </motion.div>
+                                          )}
+                
+                                          {rhFilterType === 'birthdays' && (
+                                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex-1">
+                                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Selecionar Mês</label>
+                                              <select 
+                                                value={rhBirthdayMonth}
+                                                onChange={(e) => setRhBirthdayMonth(Number(e.target.value))}
+                                                className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
+                                              >
+                                                {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
+                                                  <option key={i} value={i}>{m}</option>
+                                                ))}
+                                              </select>
+                                            </motion.div>
+                                          )}
+                
+                                          {rhFilterType === 'relationship' && (
+                                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex-1">
+                                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Selecionar Parentesco</label>
+                                              <select 
+                                                value={rhSelectedValue}
+                                                onChange={(e) => setRhSelectedValue(e.target.value)}
+                                                className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
+                                              >
+                                                <option value="">Todos os parentescos...</option>
+                                                {relationshipTypes.map(rt => (
+                                                  <option key={rt.id} value={rt.name}>{rt.name}</option>
+                                                ))}
+                                              </select>
+                                            </motion.div>
+                                          )}
+                
+                                          {rhFilterType === 'function' && (
+                                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex-1">
+                                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Selecionar Função</label>
+                                              <select 
+                                                value={rhSelectedValue}
+                                                onChange={(e) => setRhSelectedValue(e.target.value)}
+                                                className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-2xl outline-none focus:ring-2 focus:ring-ibc-teal text-sm font-bold transition-all"
+                                              >
+                                                <option value="">Todas as funções...</option>
+                                                {memberFunctions.map(f => (
+                                                  <option key={f.id} value={f.name}>{f.name}</option>
+                                                ))}
+                                              </select>
+                                            </motion.div>
+                                          )}
+                
+                                          {((rhFilterType !== 'all' && (rhSelectedValue || rhFilterType === 'couples' || rhFilterType === 'birthdays' || rhFilterType === 'families' || rhFilterType === 'elders'))) && (
+                                            <div className="flex items-end">
+                                              <button 
+                                                onClick={handleExportRHFilterPDF}
+                                                className="w-full p-3 bg-ibc-blue text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center hover:bg-ibc-blue/90 shadow-lg shadow-ibc-blue/20 transition-all active:scale-95"
+                                              >
+                                                <Download className="w-4 h-4 mr-2" />
+                                                Exportar em PDF
+                                              </button>
+                                            </div>
                                           )}
                                         </div>
-                                      </div>
-                                      {member.celular && (
-                                        <button 
-                                          onClick={() => handleContactMember(member.celular, member.name)}
-                                          className="w-10 h-10 bg-ibc-teal/10 text-ibc-teal rounded-xl flex items-center justify-center hover:bg-ibc-teal/20 transition-all active:scale-95 shrink-0"
-                                          title="Enviar mensagem"
-                                        >
-                                          <MessageSquare className="w-5 h-5 fill-current" />
-                                        </button>
-                                      )}
-                                    </motion.div>
-                                  );
-                                })}
-                                {getFilteredMembers().length === 0 && (
-                                  <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
-                                    <Cake className="w-8 h-8 text-gray-200 mx-auto mb-3" />
-                                    <p className="text-xs text-gray-400 font-medium">Nenhum aniversariante encontrado neste mês.</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ) : (rhFilterType === 'elders' || rhFilterType === 'age') ? (
-                            <div className="space-y-6">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                  {rhFilterType === 'elders' ? 'Idosos (60+ anos)' : `Idade: ${ageClassifications.find(c => c.id === rhSelectedValue)?.name || rhSelectedValue}`}
-                                </h4>
-                                <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
-                                  <User className="w-3.5 h-3.5 mr-2" />
-                                  <span className="text-xs font-black uppercase tracking-tight">
-                                    {getFilteredMembers().length} {getFilteredMembers().length === 1 ? 'Membro' : 'Membros'}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {getFilteredMembers().map((member, index) => {
-                                  let age = '-';
-                                  if (member.birthDate) {
-                                    const parts = member.birthDate.split('-');
-                                    if (parts.length === 3) {
-                                      const birthYear = parseInt(parts[0], 10);
-                                      const birthMonth = parseInt(parts[1], 10) - 1;
-                                      const birthDay = parseInt(parts[2], 10);
-                                      const today = new Date();
-                                      let calcAge = today.getFullYear() - birthYear;
-                                      const monthDiff = today.getMonth() - birthMonth;
-                                      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDay)) {
-                                        calcAge--;
-                                      }
-                                      age = calcAge.toString();
-                                    }
-                                  }
-                                  return (
-                                    <motion.div 
-                                      key={member.id} 
-                                      initial={{ opacity: 0, y: 10 }}
-                                      animate={{ opacity: 1, y: 0 }}
-                                      transition={{ delay: index * 0.05 }}
-                                      className="p-4 bg-white dark:bg-[#0a0a0a] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group transition-all flex items-center space-x-4"
-                                    >
-                                      <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-black overflow-hidden shrink-0 border border-gray-100 dark:border-[#222] flex items-center justify-center text-lg font-bold text-gray-400">
-                                        {member.photoUrl ? (
-                                          <img src={member.photoUrl} className="w-full h-full object-cover" alt={member.name} referrerPolicy="no-referrer" />
-                                        ) : (
-                                          member.name.charAt(0)
-                                        )}
-                                      </div>
-                                      <div className="min-w-0 flex-1">
-                                        <div className="font-extrabold text-gray-900 dark:text-gray-50 text-sm truncate">{member.name}</div>
-                                        <div className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">{member.function} • {age} Anos</div>
+                
                                       </div>
                                     </motion.div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ) : rhFilterType === 'families' ? (
-                            <div className="space-y-6">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Famílias da Igreja 👨‍👩‍👧‍👦</h4>
-                                <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
-                                  <Users className="w-3.5 h-3.5 mr-2" />
-                                  <span className="text-xs font-black uppercase tracking-tight">
-                                    {getFamilies().length} {getFamilies().length === 1 ? 'Família' : 'Famílias'}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {getFamilies().map((family, index) => (
-                                  <motion.div 
-                                    key={index} 
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    className="p-6 bg-white dark:bg-[#0a0a0a] rounded-[40px] border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group transition-all flex flex-col relative overflow-hidden"
-                                  >
-                                    {/* Header Section */}
-                                    <div className="flex items-center mb-6">
-                                      <div className={cn(
-                                        "w-12 h-12 rounded-full flex items-center justify-center mr-4 shrink-0",
-                                        family.type === 'constituted' ? "bg-red-500/10 text-red-500" : "bg-blue-500/10 text-blue-500"
-                                      )}>
-                                        {family.type === 'constituted' ? <Heart className="w-6 h-6 fill-current" /> : <Users className="w-6 h-6" />}
-                                      </div>
-                                      <div className="min-w-0">
-                                        <h5 className="font-black text-gray-900 dark:text-gray-50 text-base leading-tight truncate">
-                                          {family.title}
-                                        </h5>
-                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">
-                                          {family.type === 'constituted' ? 'NÚCLEO FAMILIAR CONSTITUÍDO' : 'FAMÍLIA DE ORIGEM'}
-                                        </p>
-                                      </div>
-                                    </div>
+                                  )}
+                                </AnimatePresence>
+                              </section>
+              ) : (
+                /* Non-admin filter buttons */
+                <section>
+                   {rhFilterType === 'all' ? (
+                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                       <button onClick={() => setRhFilterType('relationship')} className="bg-white dark:bg-[#111] p-6 rounded-3xl border border-gray-100 dark:border-[#222] flex flex-col items-center justify-center text-center gap-3 shadow-sm hover:shadow-md hover:border-ibc-teal/50 transition-all active:scale-95">
+                          <Users className="w-8 h-8 text-ibc-teal" />
+                          <span className="font-bold text-gray-900 dark:text-gray-50 text-sm">Grau de Parentesco</span>
+                       </button>
+                       <button onClick={() => setRhFilterType('function')} className="bg-white dark:bg-[#111] p-6 rounded-3xl border border-gray-100 dark:border-[#222] flex flex-col items-center justify-center text-center gap-3 shadow-sm hover:shadow-md hover:border-ibc-teal/50 transition-all active:scale-95">
+                          <Briefcase className="w-8 h-8 text-ibc-teal" />
+                          <span className="font-bold text-gray-900 dark:text-gray-50 text-sm">Função de Membros</span>
+                       </button>
+                       <button onClick={() => setRhFilterType('age')} className="bg-white dark:bg-[#111] p-6 rounded-3xl border border-gray-100 dark:border-[#222] flex flex-col items-center justify-center text-center gap-3 shadow-sm hover:shadow-md hover:border-ibc-teal/50 transition-all active:scale-95">
+                          <Clock className="w-8 h-8 text-ibc-teal" />
+                          <span className="font-bold text-gray-900 dark:text-gray-50 text-sm">Classificação por Idade</span>
+                       </button>
+                       <button onClick={() => setRhFilterType('couples')} className="bg-white dark:bg-[#111] p-6 rounded-3xl border border-gray-100 dark:border-[#222] flex flex-col items-center justify-center text-center gap-3 shadow-sm hover:shadow-md hover:border-ibc-teal/50 transition-all active:scale-95">
+                          <Heart className="w-8 h-8 text-ibc-teal" />
+                          <span className="font-bold text-gray-900 dark:text-gray-50 text-sm">Casais</span>
+                       </button>
+                       <button onClick={() => setRhFilterType('families')} className="bg-white dark:bg-[#111] p-6 rounded-3xl border border-gray-100 dark:border-[#222] flex flex-col items-center justify-center text-center gap-3 shadow-sm hover:shadow-md hover:border-ibc-teal/50 transition-all active:scale-95">
+                          <Home className="w-8 h-8 text-ibc-teal" />
+                          <span className="font-bold text-gray-900 dark:text-gray-50 text-sm">Familiares</span>
+                       </button>
+                       <button onClick={() => setRhFilterType('birthdays')} className="bg-white dark:bg-[#111] p-6 rounded-3xl border border-gray-100 dark:border-[#222] flex flex-col items-center justify-center text-center gap-3 shadow-sm hover:shadow-md hover:border-ibc-teal/50 transition-all active:scale-95">
+                          <Cake className="w-8 h-8 text-ibc-teal" />
+                          <span className="font-bold text-gray-900 dark:text-gray-50 text-sm">Aniversariantes</span>
+                       </button>
+                     </div>
+                   ) : (
+                     <div className="space-y-6">
+                       <button onClick={() => { setRhFilterType('all'); setRhSelectedValue(''); }} className="flex items-center text-sm font-bold text-gray-500 hover:text-ibc-teal transition-colors">
+                         <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
+                       </button>
 
-                                    {/* Separator */}
-                                    <div className="w-full h-px bg-gray-100 dark:border-[#222] mb-8" />
+                       {/* Inner selections for non-admins before showing results */}
+                       {rhFilterType === 'relationship' && !rhSelectedValue && (
+                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                           {relationshipTypes.map(rt => (
+                             <button key={rt.id} onClick={() => setRhSelectedValue(rt.name)} className="p-4 bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] rounded-2xl font-bold text-gray-900 dark:text-gray-50 text-sm hover:border-ibc-teal hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-all text-left flex justify-between items-center group">
+                               <span>{rt.name}</span>
+                               <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-ibc-teal" />
+                             </button>
+                           ))}
+                         </div>
+                       )}
 
-                                    {/* Photos Section - Overlapping circles as in the image */}
-                                    <div className="flex items-center justify-center w-full mb-8 relative z-10 -space-x-6">
-                                      {family.members.slice(0, 5).map((m, mIdx) => (
-                                        <div 
-                                          key={m.id} 
-                                          className="relative transition-transform hover:scale-110 hover:z-30 z-10" 
-                                          style={{ zIndex: family.members.length - mIdx }}
-                                          onClick={() => { setSelectedMember(m); setIsViewMemberModalOpen(true); }}
-                                        >
-                                          <div className="w-20 h-20 rounded-full cursor-pointer bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-4 border-white dark:border-[#0a0a0a] shadow-md hover:border-ibc-teal transition-all">
-                                            {m.photoUrl ? (
-                                              <img src={m.photoUrl} alt="" className="w-full h-full object-cover" />
+                       {rhFilterType === 'function' && !rhSelectedValue && (
+                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                           {memberFunctions.map(f => (
+                             <button key={f.id} onClick={() => setRhSelectedValue(f.name)} className="p-4 bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] rounded-2xl font-bold text-gray-900 dark:text-gray-50 text-sm hover:border-ibc-teal hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-all text-left flex justify-between items-center group">
+                               <span>{f.name}</span>
+                               <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-ibc-teal" />
+                             </button>
+                           ))}
+                         </div>
+                       )}
+
+                       {rhFilterType === 'age' && !rhSelectedValue && (
+                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                           {ageClassifications.map(c => (
+                             <button key={c.id} onClick={() => setRhSelectedValue(c.id)} className="p-4 bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] rounded-2xl font-bold text-gray-900 dark:text-gray-50 text-sm hover:border-ibc-teal hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-all text-left flex justify-between items-center group">
+                               <span>{c.name}</span>
+                               <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-ibc-teal" />
+                             </button>
+                           ))}
+                         </div>
+                       )}
+
+                       {rhFilterType === 'birthdays' && !rhSelectedValue && (
+                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                           {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
+                             <button key={i} onClick={() => { setRhBirthdayMonth(i); setRhSelectedValue('selected'); }} className="p-4 bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] rounded-2xl font-bold text-gray-900 dark:text-gray-50 text-sm hover:border-ibc-teal hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-all text-left flex justify-between items-center group">
+                               <span>{m}</span>
+                               <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-ibc-teal" />
+                             </button>
+                           ))}
+                         </div>
+                       )}
+                     </div>
+                   )}
+                </section>
+              )}
+
+              {/* Shared Results section */}
+              {((appUser?.role === 'admin' && !isRHFilterCollapsed) || 
+                (appUser?.role !== 'admin' && rhFilterType !== 'all' && (rhSelectedValue || rhFilterType === 'couples' || rhFilterType === 'families' || rhFilterType === 'elders'))) && (
+                <section className={appUser?.role === 'admin' ? "bg-white dark:bg-[#111] rounded-3xl border-t-0 border border-gray-100 dark:border-[#222] shadow-sm p-4 sm:p-8 -mt-8 pt-10" : "bg-transparent mt-4"}>
+                                          {/* Resultados */}
+                                          <div className="mt-8 pt-6 border-t border-gray-50 dark:border-[#222]">
+                                            {rhFilterType === 'birthdays' ? (
+                                              <div className="space-y-6">
+                                                <div className="flex items-center justify-between">
+                                                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                                    Aniversariantes de {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][rhBirthdayMonth]}
+                                                  </h4>
+                                                  <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
+                                                    <Cake className="w-3.5 h-3.5 mr-2" />
+                                                    <span className="text-xs font-black uppercase tracking-tight">
+                                                      {getFilteredMembers().length} {getFilteredMembers().length === 1 ? 'Aniversariante' : 'Aniversariantes'}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                  {getFilteredMembers().map((member, index) => {
+                                                    const birthdayParts = member.birthDate.split('-');
+                                                    const day = birthdayParts[2] ? parseInt(birthdayParts[2], 10) : 0;
+                                                    const monthIdx = birthdayParts[1] ? parseInt(birthdayParts[1], 10) - 1 : 0;
+                                                    
+                                                    // Calculate approximate age if birthdate is full
+                                                    let ageDisplay = null;
+                                                    if (birthdayParts.length === 3 && birthdayParts[0].length === 4) {
+                                                      const birthYear = parseInt(birthdayParts[0], 10);
+                                                      const currentYear = new Date().getFullYear();
+                                                      ageDisplay = currentYear - birthYear;
+                                                    }
+                  
+                                                    return (
+                                                      <motion.div 
+                                                        key={member.id} 
+                                                        initial={{ opacity: 0, y: 10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ delay: index * 0.05 }}
+                                                        className="p-4 bg-white dark:bg-[#0a0a0a] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group transition-all flex items-center space-x-4 relative overflow-hidden"
+                                                      >
+                                                        {/* Birthday Icon indicator */}
+                                                        <div className="absolute top-0 left-0 w-8 h-8 bg-ibc-teal/10 flex items-center justify-center rounded-br-2xl">
+                                                          <Cake className="w-3.5 h-3.5 text-ibc-teal" />
+                                                        </div>
+                                                        <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-black overflow-hidden shrink-0 border border-gray-100 dark:border-[#222] flex items-center justify-center text-lg font-bold text-gray-400">
+                                                          {member.photoUrl ? (
+                                                            <img src={member.photoUrl} className="w-full h-full object-cover" alt={member.name} referrerPolicy="no-referrer" />
+                                                          ) : (
+                                                            member.name.charAt(0)
+                                                          )}
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                          <div className="font-extrabold text-gray-900 dark:text-gray-50 text-sm truncate group-hover:text-ibc-teal transition-colors">
+                                                            {member.name}
+                                                          </div>
+                                                          <div className="flex flex-col mt-0.5">
+                                                            <span className="text-[10px] text-ibc-teal font-black uppercase tracking-widest">
+                                                              {day.toString().padStart(2, '0')}/{ (monthIdx + 1).toString().padStart(2, '0')}
+                                                            </span>
+                                                            {ageDisplay !== null && (
+                                                              <span className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">
+                                                                Completa {ageDisplay} anos
+                                                              </span>
+                                                            )}
+                                                          </div>
+                                                        </div>
+                                                        {member.celular && (
+                                                          <button 
+                                                            onClick={() => handleContactMember(member.celular, member.name)}
+                                                            className="w-10 h-10 bg-ibc-teal/10 text-ibc-teal rounded-xl flex items-center justify-center hover:bg-ibc-teal/20 transition-all active:scale-95 shrink-0"
+                                                            title="Enviar mensagem"
+                                                          >
+                                                            <MessageSquare className="w-5 h-5 fill-current" />
+                                                          </button>
+                                                        )}
+                                                      </motion.div>
+                                                    );
+                                                  })}
+                                                  {getFilteredMembers().length === 0 && (
+                                                    <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
+                                                      <Cake className="w-8 h-8 text-gray-200 mx-auto mb-3" />
+                                                      <p className="text-xs text-gray-400 font-medium">Nenhum aniversariante encontrado neste mês.</p>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            ) : (rhFilterType === 'elders' || rhFilterType === 'age') ? (
+                                              <div className="space-y-6">
+                                                <div className="flex items-center justify-between">
+                                                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                                    {rhFilterType === 'elders' ? 'Idosos (60+ anos)' : `Idade: ${ageClassifications.find(c => c.id === rhSelectedValue)?.name || rhSelectedValue}`}
+                                                  </h4>
+                                                  <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
+                                                    <User className="w-3.5 h-3.5 mr-2" />
+                                                    <span className="text-xs font-black uppercase tracking-tight">
+                                                      {getFilteredMembers().length} {getFilteredMembers().length === 1 ? 'Membro' : 'Membros'}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                  {getFilteredMembers().map((member, index) => {
+                                                    let age = '-';
+                                                    if (member.birthDate) {
+                                                      const parts = member.birthDate.split('-');
+                                                      if (parts.length === 3) {
+                                                        const birthYear = parseInt(parts[0], 10);
+                                                        const birthMonth = parseInt(parts[1], 10) - 1;
+                                                        const birthDay = parseInt(parts[2], 10);
+                                                        const today = new Date();
+                                                        let calcAge = today.getFullYear() - birthYear;
+                                                        const monthDiff = today.getMonth() - birthMonth;
+                                                        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDay)) {
+                                                          calcAge--;
+                                                        }
+                                                        age = calcAge.toString();
+                                                      }
+                                                    }
+                                                    return (
+                                                      <motion.div 
+                                                        key={member.id} 
+                                                        initial={{ opacity: 0, y: 10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ delay: index * 0.05 }}
+                                                        className="p-4 bg-white dark:bg-[#0a0a0a] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group transition-all flex items-center space-x-4"
+                                                      >
+                                                        <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-black overflow-hidden shrink-0 border border-gray-100 dark:border-[#222] flex items-center justify-center text-lg font-bold text-gray-400">
+                                                          {member.photoUrl ? (
+                                                            <img src={member.photoUrl} className="w-full h-full object-cover" alt={member.name} referrerPolicy="no-referrer" />
+                                                          ) : (
+                                                            member.name.charAt(0)
+                                                          )}
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                          <div className="font-extrabold text-gray-900 dark:text-gray-50 text-sm truncate">{member.name}</div>
+                                                          <div className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">{member.function} • {age} Anos</div>
+                                                        </div>
+                                                      </motion.div>
+                                                    );
+                                                  })}
+                                                </div>
+                                              </div>
+                                            ) : rhFilterType === 'families' ? (
+                                              <div className="space-y-6">
+                                                <div className="flex items-center justify-between">
+                                                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Famílias da Igreja 👨‍👩‍👧‍👦</h4>
+                                                  <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
+                                                    <Users className="w-3.5 h-3.5 mr-2" />
+                                                    <span className="text-xs font-black uppercase tracking-tight">
+                                                      {getFamilies().length} {getFamilies().length === 1 ? 'Família' : 'Famílias'}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                  {getFamilies().map((family, index) => (
+                                                    <motion.div 
+                                                      key={index} 
+                                                      initial={{ opacity: 0, y: 10 }}
+                                                      animate={{ opacity: 1, y: 0 }}
+                                                      transition={{ delay: index * 0.05 }}
+                                                      className="p-6 bg-white dark:bg-[#0a0a0a] rounded-[40px] border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group transition-all flex flex-col relative overflow-hidden"
+                                                    >
+                                                      {/* Header Section */}
+                                                      <div className="flex items-center mb-6">
+                                                        <div className={cn(
+                                                          "w-12 h-12 rounded-full flex items-center justify-center mr-4 shrink-0",
+                                                          family.type === 'constituted' ? "bg-red-500/10 text-red-500" : "bg-blue-500/10 text-blue-500"
+                                                        )}>
+                                                          {family.type === 'constituted' ? <Heart className="w-6 h-6 fill-current" /> : <Users className="w-6 h-6" />}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                          <h5 className="font-black text-gray-900 dark:text-gray-50 text-base leading-tight truncate">
+                                                            {family.title}
+                                                          </h5>
+                                                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">
+                                                            {family.type === 'constituted' ? 'NÚCLEO FAMILIAR CONSTITUÍDO' : 'FAMÍLIA DE ORIGEM'}
+                                                          </p>
+                                                        </div>
+                                                      </div>
+                  
+                                                      {/* Separator */}
+                                                      <div className="w-full h-px bg-gray-100 dark:border-[#222] mb-8" />
+                  
+                                                      {/* Photos Section - Overlapping circles as in the image */}
+                                                      <div className="flex items-center justify-center w-full mb-8 relative z-10 -space-x-6">
+                                                        {family.members.slice(0, 5).map((m, mIdx) => (
+                                                          <div 
+                                                            key={m.id} 
+                                                            className="relative transition-transform hover:scale-110 hover:z-30 z-10" 
+                                                            style={{ zIndex: family.members.length - mIdx }}
+                                                            onClick={() => { setSelectedMember(m); setIsViewMemberModalOpen(true); }}
+                                                          >
+                                                            <div className="w-20 h-20 rounded-full cursor-pointer bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-4 border-white dark:border-[#0a0a0a] shadow-md hover:border-ibc-teal transition-all">
+                                                              {m.photoUrl ? (
+                                                                <img src={m.photoUrl} alt="" className="w-full h-full object-cover" />
+                                                              ) : (
+                                                                <div className="text-xl font-black text-gray-300">{m.name.charAt(0)}</div>
+                                                              )}
+                                                            </div>
+                                                          </div>
+                                                        ))}
+                                                        {family.members.length > 5 && (
+                                                          <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-[#222] border-4 border-white dark:border-[#0a0a0a] flex items-center justify-center text-gray-500 font-black z-0 -ml-6 shadow-md">
+                                                            +{family.members.length - 5}
+                                                          </div>
+                                                        )}
+                                                      </div>
+                                                      
+                                                      {/* Footer Section */}
+                                                      <div className="text-center w-full space-y-1">
+                                                        <p className="text-2xl font-black text-gray-900 dark:text-gray-50 leading-tight">
+                                                          Grupo de {family.members.length} {family.members.length === 1 ? 'membro' : 'membros'}
+                                                        </p>
+                                                        <p className="text-sm font-bold text-gray-400">
+                                                          {family.members.map(s => s.name.split(' ')[0]).join(', ').replace(/, ([^,]*)$/, ' e $1')}
+                                                        </p>
+                                                      </div>
+                                                    </motion.div>
+                                                  ))}
+                                                  {getFamilies().length === 0 && (
+                                                    <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
+                                                      <Users className="w-8 h-8 text-gray-200 mx-auto mb-3" />
+                                                      <p className="text-xs text-gray-400 font-medium">Nenhuma família identificada nos vínculos atuais.</p>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            ) : rhFilterType === 'couples' ? (
+                                              <div className="space-y-6">
+                                                <div className="flex items-center justify-between">
+                                                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Casais Identificados</h4>
+                                                  <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
+                                                    <Heart className="w-3.5 h-3.5 mr-2 text-red-500 fill-current" />
+                                                    <span className="text-xs font-black uppercase tracking-tight">
+                                                      {getCouples().length} {getCouples().length === 1 ? 'Casal' : 'Casais'}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                                                  {getCouples().map((couple, index) => (
+                                                    <motion.div 
+                                                      key={index} 
+                                                      initial={{ opacity: 0, y: 10 }}
+                                                      animate={{ opacity: 1, y: 0 }}
+                                                      transition={{ delay: index * 0.05 }}
+                                                      className="p-3 sm:p-4 bg-white dark:bg-[#0a0a0a] rounded-2xl sm:rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group hover:border-red-200 dark:hover:border-red-900/30 transition-all flex flex-col items-center relative overflow-hidden"
+                                                    >
+                                                      <div className="flex items-center justify-center w-full mb-2 sm:mb-3 relative z-10">
+                                                        {/* Left Person */}
+                                                        <div className="relative">
+                                                          <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-2 border-white dark:border-[#0a0a0a] shadow-sm z-10 relative">
+                                                            {(couple.husband || couple.raw[0])?.photoUrl ? (
+                                                              <img src={(couple.husband || couple.raw[0])!.photoUrl} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                              <User className="w-4 h-4 sm:w-6 sm:h-6 text-gray-300 dark:text-gray-600" />
+                                                            )}
+                                                          </div>
+                                                        </div>
+                  
+                                                        {/* Heart Center */}
+                                                        <div className="mx-1 sm:mx-2 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/10 p-1.5 sm:p-2 rounded-full z-20 shadow-sm border border-red-100 dark:border-red-900/30 group-hover:scale-110 group-hover:rotate-12 transition-transform -mt-2">
+                                                          <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 fill-current" />
+                                                        </div>
+                  
+                                                        {/* Right Person */}
+                                                        <div className="relative">
+                                                          <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-2 border-white dark:border-[#0a0a0a] shadow-sm z-10 relative">
+                                                            {(couple.wife || couple.raw[1])?.photoUrl ? (
+                                                              <img src={(couple.wife || couple.raw[1])!.photoUrl} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                              <User className="w-4 h-4 sm:w-6 sm:h-6 text-gray-300 dark:text-gray-600" />
+                                                            )}
+                                                          </div>
+                                                        </div>
+                                                      </div>
+                                                      
+                                                      <div className="text-center w-full">
+                                                        <p className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-200 truncate px-1">
+                                                          {(couple.husband || couple.raw[0]).name.split(' ')[0]} <span className="text-red-400 dark:text-red-600/50 font-normal mx-0.5">&</span> {(couple.wife || couple.raw[1]).name.split(' ')[0]}
+                                                        </p>
+                                                      </div>
+                                                    </motion.div>
+                                                  ))}
+                                                  {getCouples().length === 0 && (
+                                                    <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
+                                                      <Heart className="w-8 h-8 text-gray-200 mx-auto mb-3" />
+                                                      <p className="text-xs text-gray-400 font-medium">Nenhum casal identificado nos vínculos atuais.</p>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            ) : (rhFilterType === 'relationship' && ['irmão', 'irmã', 'irmão(ã)'].includes(rhSelectedValue.toLowerCase().trim())) ? (
+                                              <div className="space-y-6">
+                                                <div className="flex items-center justify-between">
+                                                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Grupos de Irmãos Identificados</h4>
+                                                  <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
+                                                    <Users className="w-3.5 h-3.5 mr-2 text-ibc-teal" />
+                                                    <span className="text-xs font-black uppercase tracking-tight">
+                                                      {getSiblingGroups().length} {getSiblingGroups().length === 1 ? 'Grupo' : 'Grupos'}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                  {getSiblingGroups().map((group, index) => (
+                                                    <motion.div 
+                                                      key={index} 
+                                                      initial={{ opacity: 0, y: 10 }}
+                                                      animate={{ opacity: 1, y: 0 }}
+                                                      transition={{ delay: index * 0.05 }}
+                                                      className="p-4 bg-white dark:bg-[#0a0a0a] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group transition-all flex flex-col relative overflow-hidden"
+                                                    >
+                                                      <div className="flex items-center justify-center w-full mb-4 relative z-10 -space-x-4">
+                                                        {group.map((sibling, sIdx) => {
+                                                          // Z-index trick: first ones are behind, or stack them side by side
+                                                          return (
+                                                            <div key={sibling.id} className="relative transition-transform hover:scale-110 hover:z-30 z-10" style={{ zIndex: group.length - sIdx }}>
+                                                              <div onClick={() => { setSelectedMember(sibling); setIsViewMemberModalOpen(true); }} className="w-12 h-12 rounded-full cursor-pointer bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-2 border-white dark:border-[#0a0a0a] shadow-sm hover:border-ibc-teal transition-all">
+                                                                {sibling.photoUrl ? (
+                                                                  <img src={sibling.photoUrl} alt="" className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                  <User className="w-5 h-5 text-gray-300 dark:text-gray-600" />
+                                                                )}
+                                                              </div>
+                                                            </div>
+                                                          );
+                                                        })}
+                                                      </div>
+                                                      
+                                                      <div className="text-center w-full space-y-1">
+                                                        <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                                          Grupo de {group.length} Irmãos
+                                                        </p>
+                                                        <p className="text-[10px] text-gray-400 font-medium">
+                                                          {group.map(s => s.name.split(' ')[0]).join(', ')}
+                                                        </p>
+                                                      </div>
+                                                    </motion.div>
+                                                  ))}
+                                                  {getSiblingGroups().length === 0 && (
+                                                    <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
+                                                      <Users className="w-8 h-8 text-gray-200 mx-auto mb-3" />
+                                                      <p className="text-xs text-gray-400 font-medium">Nenhum grupo de irmãos identificado nos vínculos atuais.</p>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            ) : (rhFilterType !== 'all' && rhSelectedValue) ? (
+                                              <div className="space-y-6">
+                                                <div className="flex items-center justify-between">
+                                                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Membros Encontrados</h4>
+                                                  <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
+                                                    <Users className="w-3.5 h-3.5 mr-2" />
+                                                    <span className="text-xs font-black uppercase tracking-tight">
+                                                      {getFilteredMembers().length} {getFilteredMembers().length === 1 ? 'Membro' : 'Membros'}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                  {getFilteredMembers().map((member, index) => (
+                                                    <motion.div 
+                                                      key={member.id} 
+                                                      initial={{ opacity: 0, y: 10 }}
+                                                      animate={{ opacity: 1, y: 0 }}
+                                                      transition={{ delay: index * 0.05 }}
+                                                      onClick={() => {
+                                                        setSelectedMember(member);
+                                                        setIsViewMemberModalOpen(true);
+                                                      }}
+                                                      className="p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] flex items-center space-x-3 hover:border-ibc-teal/30 hover:bg-white dark:bg-[#111] cursor-pointer transition-all hover:shadow-md"
+                                                    >
+                                                      <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-[#1a1a1a] shadow-sm flex items-center justify-center text-ibc-teal font-black text-xs overflow-hidden border border-gray-100 dark:border-[#222] shrink-0">
+                                                        {member.photoUrl ? (
+                                                          <img src={member.photoUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                                        ) : (
+                                                          <User className="w-5 h-5 text-gray-300" />
+                                                        )}
+                                                      </div>
+                                                      <div className="flex flex-col min-w-0">
+                                                        <span className="text-sm font-bold text-gray-700 dark:text-gray-200 truncate">{member.name}</span>
+                                                        <span className="text-[10px] font-medium text-gray-400">{member.function}</span>
+                                                      </div>
+                                                    </motion.div>
+                                                  ))}
+                                                  {getFilteredMembers().length === 0 && (
+                                                    <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
+                                                      <Search className="w-8 h-8 text-gray-200 mx-auto mb-3" />
+                                                      <p className="text-xs text-gray-400 font-medium">Nenhum membro encontrado com este filtro.</p>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
                                             ) : (
-                                              <div className="text-xl font-black text-gray-300">{m.name.charAt(0)}</div>
+                                              rhFilterType !== 'all' && (
+                                                <div className="text-center py-12 bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
+                                                  <Filter className="w-8 h-8 text-gray-200 mx-auto mb-3" />
+                                                  <p className="text-xs text-gray-400 font-medium">Selecione uma opção acima para visualizar os resultados.</p>
+                                                </div>
+                                              )
                                             )}
                                           </div>
-                                        </div>
-                                      ))}
-                                      {family.members.length > 5 && (
-                                        <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-[#222] border-4 border-white dark:border-[#0a0a0a] flex items-center justify-center text-gray-500 font-black z-0 -ml-6 shadow-md">
-                                          +{family.members.length - 5}
-                                        </div>
-                                      )}
-                                    </div>
-                                    
-                                    {/* Footer Section */}
-                                    <div className="text-center w-full space-y-1">
-                                      <p className="text-2xl font-black text-gray-900 dark:text-gray-50 leading-tight">
-                                        Grupo de {family.members.length} {family.members.length === 1 ? 'membro' : 'membros'}
-                                      </p>
-                                      <p className="text-sm font-bold text-gray-400">
-                                        {family.members.map(s => s.name.split(' ')[0]).join(', ').replace(/, ([^,]*)$/, ' e $1')}
-                                      </p>
-                                    </div>
-                                  </motion.div>
-                                ))}
-                                {getFamilies().length === 0 && (
-                                  <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
-                                    <Users className="w-8 h-8 text-gray-200 mx-auto mb-3" />
-                                    <p className="text-xs text-gray-400 font-medium">Nenhuma família identificada nos vínculos atuais.</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ) : rhFilterType === 'couples' ? (
-                            <div className="space-y-6">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Casais Identificados</h4>
-                                <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
-                                  <Heart className="w-3.5 h-3.5 mr-2 text-red-500 fill-current" />
-                                  <span className="text-xs font-black uppercase tracking-tight">
-                                    {getCouples().length} {getCouples().length === 1 ? 'Casal' : 'Casais'}
-                                  </span>
-                                </div>
-                              </div>
-                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                                {getCouples().map((couple, index) => (
-                                  <motion.div 
-                                    key={index} 
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    className="p-3 sm:p-4 bg-white dark:bg-[#0a0a0a] rounded-2xl sm:rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group hover:border-red-200 dark:hover:border-red-900/30 transition-all flex flex-col items-center relative overflow-hidden"
-                                  >
-                                    <div className="flex items-center justify-center w-full mb-2 sm:mb-3 relative z-10">
-                                      {/* Left Person */}
-                                      <div className="relative">
-                                        <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-2 border-white dark:border-[#0a0a0a] shadow-sm z-10 relative">
-                                          {(couple.husband || couple.raw[0])?.photoUrl ? (
-                                            <img src={(couple.husband || couple.raw[0])!.photoUrl} alt="" className="w-full h-full object-cover" />
-                                          ) : (
-                                            <User className="w-4 h-4 sm:w-6 sm:h-6 text-gray-300 dark:text-gray-600" />
-                                          )}
-                                        </div>
-                                      </div>
+                </section>
+              )}
 
-                                      {/* Heart Center */}
-                                      <div className="mx-1 sm:mx-2 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/10 p-1.5 sm:p-2 rounded-full z-20 shadow-sm border border-red-100 dark:border-red-900/30 group-hover:scale-110 group-hover:rotate-12 transition-transform -mt-2">
-                                        <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 fill-current" />
-                                      </div>
-
-                                      {/* Right Person */}
-                                      <div className="relative">
-                                        <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-2 border-white dark:border-[#0a0a0a] shadow-sm z-10 relative">
-                                          {(couple.wife || couple.raw[1])?.photoUrl ? (
-                                            <img src={(couple.wife || couple.raw[1])!.photoUrl} alt="" className="w-full h-full object-cover" />
-                                          ) : (
-                                            <User className="w-4 h-4 sm:w-6 sm:h-6 text-gray-300 dark:text-gray-600" />
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="text-center w-full">
-                                      <p className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-200 truncate px-1">
-                                        {(couple.husband || couple.raw[0]).name.split(' ')[0]} <span className="text-red-400 dark:text-red-600/50 font-normal mx-0.5">&</span> {(couple.wife || couple.raw[1]).name.split(' ')[0]}
-                                      </p>
-                                    </div>
-                                  </motion.div>
-                                ))}
-                                {getCouples().length === 0 && (
-                                  <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
-                                    <Heart className="w-8 h-8 text-gray-200 mx-auto mb-3" />
-                                    <p className="text-xs text-gray-400 font-medium">Nenhum casal identificado nos vínculos atuais.</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ) : (rhFilterType === 'relationship' && ['irmão', 'irmã', 'irmão(ã)'].includes(rhSelectedValue.toLowerCase().trim())) ? (
-                            <div className="space-y-6">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Grupos de Irmãos Identificados</h4>
-                                <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
-                                  <Users className="w-3.5 h-3.5 mr-2 text-ibc-teal" />
-                                  <span className="text-xs font-black uppercase tracking-tight">
-                                    {getSiblingGroups().length} {getSiblingGroups().length === 1 ? 'Grupo' : 'Grupos'}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {getSiblingGroups().map((group, index) => (
-                                  <motion.div 
-                                    key={index} 
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    className="p-4 bg-white dark:bg-[#0a0a0a] rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm hover:shadow-md group transition-all flex flex-col relative overflow-hidden"
-                                  >
-                                    <div className="flex items-center justify-center w-full mb-4 relative z-10 -space-x-4">
-                                      {group.map((sibling, sIdx) => {
-                                        // Z-index trick: first ones are behind, or stack them side by side
-                                        return (
-                                          <div key={sibling.id} className="relative transition-transform hover:scale-110 hover:z-30 z-10" style={{ zIndex: group.length - sIdx }}>
-                                            <div onClick={() => { setSelectedMember(sibling); setIsViewMemberModalOpen(true); }} className="w-12 h-12 rounded-full cursor-pointer bg-gray-50 dark:bg-[#111] overflow-hidden flex items-center justify-center border-2 border-white dark:border-[#0a0a0a] shadow-sm hover:border-ibc-teal transition-all">
-                                              {sibling.photoUrl ? (
-                                                <img src={sibling.photoUrl} alt="" className="w-full h-full object-cover" />
-                                              ) : (
-                                                <User className="w-5 h-5 text-gray-300 dark:text-gray-600" />
-                                              )}
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                    
-                                    <div className="text-center w-full space-y-1">
-                                      <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                        Grupo de {group.length} Irmãos
-                                      </p>
-                                      <p className="text-[10px] text-gray-400 font-medium">
-                                        {group.map(s => s.name.split(' ')[0]).join(', ')}
-                                      </p>
-                                    </div>
-                                  </motion.div>
-                                ))}
-                                {getSiblingGroups().length === 0 && (
-                                  <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
-                                    <Users className="w-8 h-8 text-gray-200 mx-auto mb-3" />
-                                    <p className="text-xs text-gray-400 font-medium">Nenhum grupo de irmãos identificado nos vínculos atuais.</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ) : (rhFilterType !== 'all' && rhSelectedValue) ? (
-                            <div className="space-y-6">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Membros Encontrados</h4>
-                                <div className="bg-ibc-teal/10 text-ibc-teal px-4 py-2 rounded-2xl flex items-center shadow-sm">
-                                  <Users className="w-3.5 h-3.5 mr-2" />
-                                  <span className="text-xs font-black uppercase tracking-tight">
-                                    {getFilteredMembers().length} {getFilteredMembers().length === 1 ? 'Membro' : 'Membros'}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {getFilteredMembers().map((member, index) => (
-                                  <motion.div 
-                                    key={member.id} 
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    onClick={() => {
-                                      setSelectedMember(member);
-                                      setIsViewMemberModalOpen(true);
-                                    }}
-                                    className="p-4 bg-gray-50 dark:bg-black rounded-2xl border border-gray-100 dark:border-[#222] flex items-center space-x-3 hover:border-ibc-teal/30 hover:bg-white dark:bg-[#111] cursor-pointer transition-all hover:shadow-md"
-                                  >
-                                    <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-[#1a1a1a] shadow-sm flex items-center justify-center text-ibc-teal font-black text-xs overflow-hidden border border-gray-100 dark:border-[#222] shrink-0">
-                                      {member.photoUrl ? (
-                                        <img src={member.photoUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                                      ) : (
-                                        <User className="w-5 h-5 text-gray-300" />
-                                      )}
-                                    </div>
-                                    <div className="flex flex-col min-w-0">
-                                      <span className="text-sm font-bold text-gray-700 dark:text-gray-200 truncate">{member.name}</span>
-                                      <span className="text-[10px] font-medium text-gray-400">{member.function}</span>
-                                    </div>
-                                  </motion.div>
-                                ))}
-                                {getFilteredMembers().length === 0 && (
-                                  <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
-                                    <Search className="w-8 h-8 text-gray-200 mx-auto mb-3" />
-                                    <p className="text-xs text-gray-400 font-medium">Nenhum membro encontrado com este filtro.</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            rhFilterType !== 'all' && (
-                              <div className="text-center py-12 bg-gray-50 dark:bg-black rounded-3xl border border-dashed border-gray-200 dark:border-[#333]">
-                                <Filter className="w-8 h-8 text-gray-200 mx-auto mb-3" />
-                                <p className="text-xs text-gray-400 font-medium">Selecione uma opção acima para visualizar os resultados.</p>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </section>
 
               {/* Member Functions Management Section moved from ADM to RH */}
               {appUser?.role === 'admin' ? (

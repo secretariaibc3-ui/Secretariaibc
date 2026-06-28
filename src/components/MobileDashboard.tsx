@@ -82,6 +82,9 @@ export const MobileDashboard = ({
     if (item.id === 'adm' && !isAdmin) {
       return { ...item, label: 'Ajustes' };
     }
+    if (item.id === 'rh' && !isAdmin) {
+      return { ...item, label: 'Relacionamento' };
+    }
     return item;
   });
 
@@ -92,7 +95,7 @@ export const MobileDashboard = ({
         <img 
           src="/icon-ibc-branco.png" 
           alt="Igreja Batista Seropédica" 
-          className="h-24 w-[90%] max-w-[320px] object-contain drop-shadow-md"
+          className="w-[95%] max-h-28 object-contain drop-shadow-md"
         />
       </div>
 
