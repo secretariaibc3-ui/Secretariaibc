@@ -120,7 +120,8 @@ import {
   setDoc,
   writeBatch,
   getDocFromServer,
-  Timestamp
+  Timestamp,
+  where
 } from 'firebase/firestore';
 import { 
   signInWithPopup, 
@@ -482,6 +483,22 @@ interface AppUser {
   handledByEmail?: string;
   handledByUid?: string;
   createdAt: any;
+  linkedMemberId?: string;
+}
+
+interface InternalMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderPhotoUrl?: string;
+  receiverId: string;
+  receiverName?: string;
+  receiverPhotoUrl?: string;
+  participants: string[];
+  content: string;
+  status: 'sent' | 'delivered' | 'read';
+  createdAt: any;
+  readAt?: any;
 }
 
 interface Ministry {
@@ -642,6 +659,7 @@ const UserManagementModal = ({
   isOpen, 
   onClose, 
   users,
+  members,
   appUser,
   onStartApproval, 
   onReject,
@@ -649,11 +667,13 @@ const UserManagementModal = ({
   onBlock,
   onUnblock,
   onDelete,
-  onAddNewUser
+  onAddNewUser,
+  onLinkMember
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
   users: AppUser[];
+  members: Member[];
   appUser: AppUser | null;
   onStartApproval: (user: AppUser) => void;
   onReject: (id: string, email: string) => void;
@@ -662,6 +682,7 @@ const UserManagementModal = ({
   onUnblock: (user: AppUser) => void;
   onDelete: (user: AppUser) => void;
   onAddNewUser: () => void;
+  onLinkMember: (user: AppUser, memberId: string) => void;
 }) => {
   const [activeTab, setActiveTab] = useState<'ativos' | 'pendentes' | 'historico'>('pendentes');
   
@@ -813,6 +834,21 @@ const UserManagementModal = ({
                           </p>
                         )}
                       </div>
+
+                      {appUser?.role === 'admin' && (
+                        <div className="mt-2">
+                          <select
+                            value={u.linkedMemberId || ''}
+                            onChange={(e) => onLinkMember(u, e.target.value)}
+                            className="text-xs p-1.5 border border-gray-200 dark:border-gray-700 rounded-md bg-transparent dark:text-gray-300 w-full max-w-[200px]"
+                          >
+                            <option value="">Sem vínculo (vincular a membro)</option>
+                            {members.map(m => (
+                              <option key={m.id} value={m.id}>{m.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                     </div>
 
                     {appUser?.role === 'admin' && u.email !== 'secretariaibc3@gmail.com' && (
@@ -1026,6 +1062,202 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg", classN
 };
 
 // --- Main App ---
+
+const SendMessageModal = ({
+  isOpen,
+  onClose,
+  recipient,
+  onSend,
+  initialMessage
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  recipient: { name: string, photoUrl?: string } | null;
+  onSend: (message: string) => Promise<void>;
+  initialMessage: string;
+}) => {
+  const [message, setMessage] = useState(initialMessage);
+  const [isSending, setIsSending] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) setMessage(initialMessage);
+  }, [isOpen, initialMessage]);
+
+  if (!recipient) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Enviar mensagem de aniversário">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#111] p-3 rounded-2xl border border-gray-100 dark:border-[#222]">
+          <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-black overflow-hidden flex items-center justify-center font-bold text-gray-500">
+            {recipient.photoUrl ? (
+              <img src={recipient.photoUrl} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+            ) : (
+              recipient.name.charAt(0)
+            )}
+          </div>
+          <div>
+            <p className="font-bold text-gray-900 dark:text-gray-50 text-sm">{recipient.name}</p>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Destinatário</p>
+          </div>
+        </div>
+        
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          className="w-full h-32 p-3 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-ibc-teal/20 custom-scrollbar resize-none"
+          placeholder="Escreva sua mensagem..."
+        />
+        
+        <div className="flex gap-2">
+          <button 
+            onClick={onClose}
+            className="flex-1 p-3 bg-gray-100 dark:bg-[#222] text-gray-600 dark:text-gray-300 font-bold text-sm rounded-xl"
+            disabled={isSending}
+          >
+            Cancelar
+          </button>
+          <button 
+            onClick={async () => {
+              setIsSending(true);
+              try {
+                await onSend(message);
+                onClose();
+              } finally {
+                setIsSending(false);
+              }
+            }}
+            disabled={!message.trim() || isSending}
+            className="flex-1 p-3 bg-ibc-teal text-white font-bold text-sm rounded-xl hover:bg-ibc-teal/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSending ? 'Enviando...' : 'Enviar'}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+const InboxModal = ({
+  isOpen,
+  onClose,
+  messages,
+  appUser,
+  onOpenMessage
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  messages: InternalMessage[];
+  appUser: AppUser;
+  onOpenMessage: (msg: InternalMessage) => void;
+}) => {
+  const myMessages = messages.filter(m => m.receiverId === appUser.id || m.senderId === appUser.id);
+  
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Caixa de Entrada" maxWidth="max-w-2xl">
+      <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+        {myMessages.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Nenhuma mensagem encontrada</p>
+          </div>
+        ) : (
+          myMessages.map(msg => {
+            const isReceived = msg.receiverId === appUser.id;
+            const isUnread = isReceived && msg.status !== 'read';
+            const otherName = isReceived ? msg.senderName : msg.receiverName;
+            const otherPhoto = isReceived ? msg.senderPhotoUrl : msg.receiverPhotoUrl;
+            
+            return (
+              <button 
+                key={msg.id}
+                onClick={() => onOpenMessage(msg)}
+                className={cn(
+                  "flex items-start gap-3 p-4 rounded-2xl border text-left transition-all",
+                  isUnread ? "bg-ibc-teal/5 border-ibc-teal/20" : "bg-white dark:bg-[#111] border-gray-100 dark:border-[#222] hover:bg-gray-50 dark:hover:bg-[#1a1a1a]"
+                )}
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-black overflow-hidden flex shrink-0 items-center justify-center font-bold text-gray-500">
+                  {otherPhoto ? <img src={otherPhoto} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : otherName?.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <p className={cn("text-sm truncate", isUnread ? "font-black text-gray-900 dark:text-gray-50" : "font-bold text-gray-700 dark:text-gray-300")}>
+                      {otherName} {isReceived ? '(Recebida)' : '(Enviada)'}
+                    </p>
+                    <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap ml-2">
+                      {msg.createdAt?.seconds ? new Date(msg.createdAt.seconds * 1000).toLocaleDateString('pt-BR') : ''}
+                    </span>
+                  </div>
+                  <p className={cn("text-xs truncate", isUnread ? "text-gray-700 dark:text-gray-200 font-medium" : "text-gray-500")}>
+                    {msg.content}
+                  </p>
+                  
+                  {!isReceived && (
+                    <div className="mt-1 flex items-center gap-1">
+                      {msg.status === 'read' ? (
+                        <span className="text-[10px] text-blue-500 font-bold flex items-center gap-1">✓✓ Lida {msg.readAt?.seconds ? `em ${new Date(msg.readAt.seconds * 1000).toLocaleString('pt-BR')}` : ''}</span>
+                      ) : msg.status === 'delivered' ? (
+                        <span className="text-[10px] text-gray-400 font-bold">✓✓ Entregue</span>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 font-bold">✓ Enviada</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {isUnread && <div className="w-2 h-2 rounded-full bg-ibc-teal shrink-0 mt-1.5" />}
+              </button>
+            );
+          })
+        )}
+      </div>
+    </Modal>
+  );
+};
+
+const ViewMessageModal = ({
+  isOpen,
+  onClose,
+  message,
+  appUser
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  message: InternalMessage | null;
+  appUser: AppUser;
+}) => {
+  if (!message) return null;
+  const isReceived = message.receiverId === appUser.id;
+  const otherName = isReceived ? message.senderName : message.receiverName;
+  const otherPhoto = isReceived ? message.senderPhotoUrl : message.receiverPhotoUrl;
+  const dateStr = message.createdAt?.seconds ? new Date(message.createdAt.seconds * 1000).toLocaleString('pt-BR') : '';
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={isReceived ? "Mensagem Recebida" : "Mensagem Enviada"}>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-black overflow-hidden flex items-center justify-center font-bold text-gray-500">
+            {otherPhoto ? <img src={otherPhoto} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : otherName?.charAt(0)}
+          </div>
+          <div>
+            <p className="font-bold text-gray-900 dark:text-gray-50 text-sm">{otherName}</p>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{dateStr}</p>
+          </div>
+        </div>
+        
+        <div className="bg-gray-50 dark:bg-[#111] p-4 rounded-2xl border border-gray-100 dark:border-[#222] min-h-[100px] text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+          {message.content}
+        </div>
+        
+        <button 
+          onClick={onClose}
+          className="w-full p-3 bg-gray-100 dark:bg-[#222] text-gray-600 dark:text-gray-300 font-bold text-sm rounded-xl"
+        >
+          Fechar
+        </button>
+      </div>
+    </Modal>
+  );
+};
 
 export default function App() {
   // Debug marker for user
@@ -1634,6 +1866,11 @@ export default function App() {
   const [atas, setAtas] = useState<Ata[]>(() => loadFromCache<Ata[]>('atas', []));
   const [presencas, setPresencas] = useState<Presenca[]>(() => loadFromCache<Presenca[]>('presencas', []));
   const [users, setUsers] = useState<AppUser[]>(() => loadFromCache<AppUser[]>('users', []));
+  const [messages, setMessages] = useState<InternalMessage[]>(() => loadFromCache<InternalMessage[]>('messages', []));
+  const [isInboxOpen, setIsInboxOpen] = useState(false);
+  const [isSendMessageOpen, setIsSendMessageOpen] = useState(false);
+  const [messageRecipient, setMessageRecipient] = useState<{ id: string, name: string, photoUrl?: string, userId: string } | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<InternalMessage | null>(null);
   const [appSettings, setAppSettings] = useState<any>(() => loadFromCache<any>('settings', { 
     logoUrl: '', 
     appName: 'IBC Seropédica', 
@@ -3249,6 +3486,37 @@ export default function App() {
       unsubscribeUsers();
     };
   }, [user?.uid, appUser?.role]);
+
+  // Fetch Messages
+  useEffect(() => {
+    if (!user) {
+      setMessages([]);
+      return;
+    }
+
+    const qMessages = query(
+      collection(db, 'messages'),
+      where('participants', 'array-contains', user.uid)
+    );
+
+    const unsubscribeMessages = onSnapshot(qMessages, (snapshot) => {
+      const messagesData = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as InternalMessage))
+        .sort((a, b) => {
+          const timeA = a.createdAt?.seconds || 0;
+          const timeB = b.createdAt?.seconds || 0;
+          return timeB - timeA;
+        });
+      setMessages(messagesData);
+      saveToCache('messages', messagesData);
+    }, (error) => {
+      console.error("Messages fetch error:", error);
+    });
+
+    return () => {
+      unsubscribeMessages();
+    };
+  }, [user?.uid]);
 
   const handleLogin = async (e?: React.FormEvent<HTMLFormElement>, methodOverride?: 'email' | 'google') => {
     if (e) e.preventDefault();
@@ -5467,12 +5735,94 @@ export default function App() {
         </div>
       )}
 
+      {/* Modals for Messaging */}
+      {appUser && (
+        <>
+          <SendMessageModal
+            isOpen={isSendMessageOpen}
+            onClose={() => setIsSendMessageOpen(false)}
+            recipient={messageRecipient}
+            initialMessage={
+              `Feliz aniversário! Que Deus continue abençoando sua vida com muita saúde, paz, sabedoria e muitos anos na presença d'Ele. Parabéns pelo seu dia!`
+            }
+            onSend={async (content) => {
+              if (!messageRecipient) return;
+              try {
+                await addDoc(collection(db, 'messages'), {
+                  senderId: appUser.id,
+                  senderName: appUser.email,
+                  receiverId: messageRecipient.userId,
+                  receiverName: messageRecipient.name,
+                  receiverPhotoUrl: messageRecipient.photoUrl || null,
+                  participants: [appUser.id, messageRecipient.userId],
+                  content,
+                  status: 'sent',
+                  createdAt: serverTimestamp()
+                });
+                showAlert("Sucesso", "Mensagem enviada com sucesso!");
+              } catch (e) {
+                console.error("Error sending message:", e);
+                showAlert("Erro", "Falha ao enviar mensagem.");
+              }
+            }}
+          />
+          <InboxModal
+            isOpen={isInboxOpen}
+            onClose={() => setIsInboxOpen(false)}
+            messages={messages}
+            appUser={appUser}
+            onOpenMessage={async (msg) => {
+              setSelectedMessage(msg);
+              setIsInboxOpen(false);
+              if (msg.receiverId === appUser.id && msg.status !== 'read') {
+                try {
+                  await updateDoc(doc(db, 'messages', msg.id), {
+                    status: 'read',
+                    readAt: serverTimestamp()
+                  });
+                } catch(e) {
+                  console.error("Error marking as read", e);
+                }
+              }
+            }}
+          />
+          <ViewMessageModal
+            isOpen={!!selectedMessage}
+            onClose={() => {
+              setSelectedMessage(null);
+              setIsInboxOpen(true); // Go back to inbox
+            }}
+            message={selectedMessage}
+            appUser={appUser}
+          />
+        </>
+      )}
+
+      {/* Floating Inbox Button */}
+      {appUser && (
+        <button
+          onClick={() => setIsInboxOpen(true)}
+          className="fixed bottom-24 right-6 md:bottom-8 md:right-8 w-14 h-14 bg-ibc-teal text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-[100]"
+        >
+          <MessageSquare className="w-6 h-6" />
+          {messages.filter(m => m.receiverId === appUser.id && m.status !== 'read').length > 0 && (
+            <span className="absolute top-0 right-0 w-5 h-5 bg-red-500 rounded-full border-2 border-white dark:border-[#111] flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+              {messages.filter(m => m.receiverId === appUser.id && m.status !== 'read').length}
+            </span>
+          )}
+        </button>
+      )}
+
       {/* User Management Modal */}
       <UserManagementModal 
         isOpen={isAccessControlOpen}
         onClose={() => setIsAccessControlOpen(false)}
         users={users}
+        members={members}
         appUser={appUser}
+        onLinkMember={async (u, memberId) => {
+          await updateDoc(doc(db, 'users', u.id), { linkedMemberId: memberId || null });
+        }}
         onStartApproval={(u) => {
           setApprovingUser({ id: u.id, email: u.email });
           setIsAccessControlOpen(false);
@@ -5720,9 +6070,14 @@ export default function App() {
       {activeTab === 'dashboard' ? (
         <MobileDashboard 
           members={members}
+          users={users}
           setActiveTab={setActiveTab} 
           onAddMember={() => setIsAddMemberModalOpen(true)}
           onAddMinistry={() => setIsAddMinistryModalOpen(true)}
+          onSendMessage={(recipient) => {
+            setMessageRecipient(recipient);
+            setIsSendMessageOpen(true);
+          }}
           isAdmin={appUser?.role === 'admin'}
         />
       ) : (

@@ -87,6 +87,7 @@ service cloud.firestore {
              data.role in ['admin', 'user'] &&
              (!('status' in data) || data.status in ['pending', 'approved', 'blocked']) &&
              (!('isFullAdmin' in data) || data.isFullAdmin is bool) &&
+             (!('linkedMemberId' in data) || data.linkedMemberId is string || data.linkedMemberId == null) &&
              (!('requestAt' in data) || data.requestAt is timestamp || data.requestAt == null) &&
              (!('approvedAt' in data) || data.approvedAt is timestamp || data.approvedAt == null) &&
              (!('rejectedAt' in data) || data.rejectedAt is timestamp || data.rejectedAt == null) &&
@@ -158,6 +159,21 @@ service cloud.firestore {
              data.minAge is number && 
              data.maxAge is number &&
              (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['senderId', 'receiverId', 'participants', 'content', 'status', 'createdAt']) &&
+             data.senderId is string &&
+             data.receiverId is string &&
+             data.participants is list && data.participants.size() == 2 &&
+             data.content is string && data.content.size() > 0 && data.content.size() <= 10000 &&
+             data.status in ['sent', 'delivered', 'read'] &&
+             data.createdAt is timestamp &&
+             (!('senderName' in data) || data.senderName is string) &&
+             (!('senderPhotoUrl' in data) || data.senderPhotoUrl is string) &&
+             (!('receiverName' in data) || data.receiverName is string) &&
+             (!('receiverPhotoUrl' in data) || data.receiverPhotoUrl is string) &&
+             (!('readAt' in data) || data.readAt is timestamp || data.readAt == null);
     }
 
     // ===============================================================
@@ -237,6 +253,18 @@ service cloud.firestore {
       allow get, list: if isSignedIn();
       allow create: if isEmailVerified() && isValidMinistryRole(incoming());
       allow update: if isFullAdmin() && isValidMinistryRole(incoming());
+      allow delete: if isFullAdmin();
+    }
+
+    match /messages/{messageId} {
+      allow get: if isSignedIn() && (existing().senderId == request.auth.uid || existing().receiverId == request.auth.uid);
+      allow list: if isSignedIn() && (request.auth.uid in existing().participants || request.query.limit <= 100); 
+      // Note: for list queries, the query must include a where clause on participants array containing request.auth.uid
+      allow create: if isEmailVerified() && incoming().senderId == request.auth.uid && isValidMessage(incoming());
+      allow update: if isEmailVerified() && (
+        (existing().receiverId == request.auth.uid && incoming().status == 'read') ||
+        (existing().receiverId == request.auth.uid && incoming().status == 'delivered')
+      ) && isValidMessage(incoming());
       allow delete: if isFullAdmin();
     }
 

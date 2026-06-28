@@ -42,15 +42,19 @@ const DASHBOARD_ITEMS = [
 
 export const MobileDashboard = ({ 
   members,
+  users,
   setActiveTab,
   onAddMember,
   onAddMinistry,
+  onSendMessage,
   isAdmin
 }: {
   members: Member[];
+  users: { id: string, linkedMemberId?: string }[];
   setActiveTab: (tab: any) => void;
   onAddMember: () => void;
   onAddMinistry: () => void;
+  onSendMessage: (recipient: {id: string, name: string, photoUrl?: string, userId: string}) => void;
   isAdmin: boolean;
 }) => {
   const [isFabOpen, setIsFabOpen] = useState(false);
@@ -150,6 +154,8 @@ export const MobileDashboard = ({
                     age = currentYear - birthYear;
                   }
 
+                  const linkedUser = users?.find(u => u.linkedMemberId === member.id);
+
                   return (
                     <div 
                       key={member.id}
@@ -179,14 +185,29 @@ export const MobileDashboard = ({
                         </div>
                       </div>
 
-                      {member.celular && (
-                        <button 
-                          onClick={() => handleContactMember(member.celular!, member.name)}
-                          className="w-10 h-10 bg-ibc-teal/10 text-ibc-teal rounded-xl flex items-center justify-center active:scale-90 transition-transform shrink-0"
-                        >
-                          <MessageSquare className="w-5 h-5 fill-current" />
-                        </button>
-                      )}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {linkedUser && (
+                          <button 
+                            onClick={() => onSendMessage({
+                              id: member.id,
+                              name: member.name,
+                              photoUrl: member.photoUrl,
+                              userId: linkedUser.id
+                            })}
+                            className="w-10 h-10 bg-blue-50 text-blue-500 dark:bg-blue-500/10 dark:text-blue-400 rounded-xl flex items-center justify-center active:scale-90 transition-transform"
+                          >
+                            <MessageSquare className="w-5 h-5 fill-current" />
+                          </button>
+                        )}
+                        {/* {member.celular && (
+                          <button 
+                            onClick={() => handleContactMember(member.celular!, member.name)}
+                            className="w-10 h-10 bg-ibc-teal/10 text-ibc-teal rounded-xl flex items-center justify-center active:scale-90 transition-transform"
+                          >
+                            <MessageSquare className="w-5 h-5 fill-current" />
+                          </button>
+                        )} */}
+                      </div>
                     </div>
                   );
                 })
