@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Escala } from '../../types/escalas';
-import { Member } from '../../App';
+import { Member } from '../../types/member';
 import { EscalaSection } from './EscalaSection';
 import { MemberSelector } from './MemberSelector';
 

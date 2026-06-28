@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Member } from '../../App';
+import { Member } from '../../types/member';
 import { Escala } from '../../types/escalas';
 import { ChevronRight } from 'lucide-react';
 // I will need to create separate management components
