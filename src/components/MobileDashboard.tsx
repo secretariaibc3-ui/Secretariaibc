@@ -52,11 +52,11 @@ export const MobileDashboard = ({
   return (
     <div className="flex flex-col h-full w-full bg-gray-50 dark:bg-[#0a0a0a] md:hidden">
       {/* Header */}
-      <div className="bg-ibc-teal pt-14 pb-10 px-6 rounded-b-[2.5rem] shadow-lg flex flex-col items-center justify-center relative z-10">
+      <div className="bg-ibc-teal pt-10 pb-6 px-6 rounded-b-[2.5rem] shadow-lg flex flex-col items-center justify-center relative z-10">
         <img 
           src="/icon-ibc-branco.png" 
           alt="Igreja Batista Coqueiral" 
-          className="h-32 w-auto object-contain drop-shadow-md"
+          className="h-44 w-auto object-contain drop-shadow-md"
         />
       </div>
 
@@ -107,53 +107,55 @@ export const MobileDashboard = ({
       </AnimatePresence>
 
       {/* FAB Menu */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-4">
-        <AnimatePresence>
-          {isFabOpen && (
-            <motion.div 
-              initial={{ opacity: 0, y: 20, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.8 }}
-              className="flex items-end gap-6 pb-2"
-            >
-              <div className="flex flex-col items-center gap-2">
-                <button 
-                  onClick={() => {
-                    setIsFabOpen(false);
-                    onAddMember();
-                  }}
-                  className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 text-ibc-teal shadow-xl flex items-center justify-center active:scale-95 transition-transform"
-                >
-                  <UserPlus className="w-5 h-5" />
-                </button>
-                <span className="text-white text-xs font-bold drop-shadow-md">Membro</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <button 
-                  onClick={() => {
-                    setIsFabOpen(false);
-                    onAddMinistry();
-                  }}
-                  className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 text-ibc-teal shadow-xl flex items-center justify-center active:scale-95 transition-transform"
-                >
-                  <BookOpen className="w-5 h-5" />
-                </button>
-                <span className="text-white text-xs font-bold drop-shadow-md">Ministério</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {isAdmin && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-4">
+          <AnimatePresence>
+            {isFabOpen && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.8 }}
+                className="flex items-end gap-6 pb-2"
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <button 
+                    onClick={() => {
+                      setIsFabOpen(false);
+                      onAddMember();
+                    }}
+                    className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 text-ibc-teal shadow-xl flex items-center justify-center active:scale-95 transition-transform"
+                  >
+                    <UserPlus className="w-5 h-5" />
+                  </button>
+                  <span className="text-white text-xs font-bold drop-shadow-md">Membro</span>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <button 
+                    onClick={() => {
+                      setIsFabOpen(false);
+                      onAddMinistry();
+                    }}
+                    className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 text-ibc-teal shadow-xl flex items-center justify-center active:scale-95 transition-transform"
+                  >
+                    <BookOpen className="w-5 h-5" />
+                  </button>
+                  <span className="text-white text-xs font-bold drop-shadow-md">Ministério</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        <button
-          onClick={() => setIsFabOpen(!isFabOpen)}
-          className={cn(
-            "w-14 h-14 rounded-full shadow-xl flex items-center justify-center active:scale-95 transition-all duration-300",
-            isFabOpen ? "bg-white text-ibc-teal rotate-45" : "bg-ibc-teal text-white"
-          )}
-        >
-          <Plus className="w-6 h-6" />
-        </button>
-      </div>
+          <button
+            onClick={() => setIsFabOpen(!isFabOpen)}
+            className={cn(
+              "w-14 h-14 rounded-full shadow-xl flex items-center justify-center active:scale-95 transition-all duration-300",
+              isFabOpen ? "bg-white text-ibc-teal rotate-45" : "bg-ibc-teal text-white"
+            )}
+          >
+            <Plus className="w-6 h-6" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

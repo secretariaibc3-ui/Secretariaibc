@@ -1636,7 +1636,8 @@ export default function App() {
   const [users, setUsers] = useState<AppUser[]>(() => loadFromCache<AppUser[]>('users', []));
   const [appSettings, setAppSettings] = useState<any>(() => loadFromCache<any>('settings', { 
     logoUrl: '', 
-    appName: 'IBC Coqueiral', 
+    appName: 'ibcseropedica', 
+    appLink: 'https://ibcseropedica.vercel.app/',
     churchCnpj: '',
     churchAddress: '',
     churchCoordinates: null,
@@ -1744,7 +1745,7 @@ export default function App() {
   const [isViewMemberModalOpen, setIsViewMemberModalOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const publicAppLink = "https://secretariaibc.vercel.app/";
+  const publicAppLink = "https://ibcseropedica.vercel.app/";
   const [isAddMinistryModalOpen, setIsAddMinistryModalOpen] = useState(false);
   const [isEditMinistryModalOpen, setIsEditMinistryModalOpen] = useState(false);
   const [isAddAtaModalOpen, setIsAddAtaModalOpen] = useState(false);
@@ -4757,7 +4758,7 @@ export default function App() {
         await navigator.share({
           title: appSettings.appName,
           text: `Acesse o sistema da ${appSettings.appName}`,
-          url: publicAppLink,
+          url: appSettings.appLink || publicAppLink,
         });
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
@@ -8155,6 +8156,37 @@ export default function App() {
                 </div>
               </section>
 
+              {/* Theme Control Section - Visible on Mobile */}
+              <section className="bg-white dark:bg-[#111] p-8 rounded-3xl border border-gray-100 dark:border-[#222] shadow-sm relative overflow-hidden group md:hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-ibc-teal/5 rounded-full translate-x-1/3 -translate-y-1/3 blur-2xl pointer-events-none group-hover:bg-ibc-teal/10 transition-all duration-700" />
+                <div className="flex flex-col items-center justify-between gap-6 relative z-10">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-14 h-14 rounded-2xl bg-ibc-teal/10 flex items-center justify-center text-ibc-teal mb-4 transition-transform group-hover:scale-110">
+                      {isDarkMode ? <Sun className="w-7 h-7" /> : <Moon className="w-7 h-7" />}
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-extrabold text-gray-900 dark:text-gray-50 tracking-tight">Tema do Sistema</h3>
+                      <p className="text-sm text-gray-400 font-medium mt-1">Alterne entre o modo claro e escuro.</p>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={toggleTheme}
+                    className="w-full flex items-center justify-center gap-4 bg-gray-50 dark:bg-black px-6 py-5 rounded-2xl border border-gray-100 dark:border-[#222] hover:bg-gray-100 dark:hover:bg-[#111] transition-all active:scale-95"
+                  >
+                    <div className={cn(
+                      "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
+                      isDarkMode ? "bg-amber-100 text-amber-600 shadow-lg shadow-amber-500/20" : "bg-indigo-100 text-indigo-600 shadow-lg shadow-indigo-500/20"
+                    )}>
+                      {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                    </div>
+                    <span className="text-sm font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest">
+                      Ativar {isDarkMode ? 'Modo Claro' : 'Modo Escuro'}
+                    </span>
+                  </button>
+                </div>
+              </section>
+
               {/* Sharing Link Section */}
               <section className="bg-blue-50/50 dark:bg-[#111] p-8 rounded-3xl border border-blue-100 dark:border-[#222] shadow-sm relative overflow-hidden group">
                 <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20 transition-all duration-700"></div>
@@ -8184,11 +8216,11 @@ export default function App() {
                     
                     <div className="flex items-center space-x-3">
                       <div className="flex-1 bg-white dark:bg-[#111] border border-blue-100 p-3 sm:p-4 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm text-gray-600 dark:text-gray-300 font-bold font-mono outline-none shadow-inner overflow-hidden whitespace-nowrap overflow-ellipsis">
-                        {publicAppLink}
+                        {appSettings.appLink || publicAppLink}
                       </div>
                       <button 
                         onClick={() => {
-                          navigator.clipboard.writeText(publicAppLink);
+                          navigator.clipboard.writeText(appSettings.appLink || publicAppLink);
                           showAlert("Sucesso", "Link copiado para a área de transferência!");
                         }}
                         className="bg-white dark:bg-[#111] text-ibc-blue p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-blue-100 hover:bg-blue-50 transition-all shadow-sm active:scale-95 shrink-0"
@@ -8253,16 +8285,20 @@ export default function App() {
                           O sistema ajustará automaticamente para o formato quadrado.
                         </p>
                         <div className="flex items-center gap-3">
-                          <label className="bg-ibc-teal text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-ibc-teal/90 transition-all cursor-pointer shadow-lg shadow-ibc-teal/10">
+                          <label className={twMerge(
+                            "px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-ibc-teal/10",
+                            appUser?.role === 'admin' ? "bg-ibc-teal text-white hover:bg-ibc-teal/90 cursor-pointer" : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          )}>
                             Alterar Foto do App
                             <input 
                               type="file" 
                               accept="image/png, image/jpeg" 
                               className="hidden" 
+                              disabled={appUser?.role !== 'admin'}
                               onChange={handleLogoUpload}
                             />
                           </label>
-                          {appSettings.logoUrl && (
+                          {appSettings.logoUrl && appUser?.role === 'admin' && (
                             <button 
                               onClick={async () => {
                                 const oldData = { ...appSettings };
@@ -8292,9 +8328,10 @@ export default function App() {
                           <input 
                             type="text" 
                             defaultValue={appSettings.appName}
+                            disabled={appUser?.role !== 'admin'}
                             onBlur={async (e) => {
                               const newName = e.target.value.trim();
-                              if (newName && newName !== appSettings.appName) {
+                              if (newName && newName !== appSettings.appName && appUser?.role === 'admin') {
                                 const oldData = { ...appSettings };
                                 await setDoc(doc(db, 'settings', 'app'), { appName: newName }, { merge: true });
                                 triggerUndo({
@@ -8314,13 +8351,40 @@ export default function App() {
                       </div>
 
                       <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Link do Aplicativo</label>
+                        <input 
+                          type="text" 
+                          defaultValue={appSettings.appLink || 'https://ibcseropedica.vercel.app/'}
+                          disabled={appUser?.role !== 'admin'}
+                          onBlur={async (e) => {
+                            const newLink = e.target.value.trim();
+                            if (newLink && newLink !== appSettings.appLink && appUser?.role === 'admin') {
+                              const oldData = { ...appSettings };
+                              await setDoc(doc(db, 'settings', 'app'), { appLink: newLink }, { merge: true });
+                              triggerUndo({
+                                type: 'update',
+                                collection: 'settings',
+                                id: 'app',
+                                data: oldData,
+                                message: "Link do aplicativo atualizado."
+                              });
+                              showAlert("Sucesso", "Link do aplicativo atualizado!");
+                            }
+                          }}
+                          className="w-full p-3 bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-ibc-teal/20"
+                          placeholder="Ex: https://meuapp.vercel.app/"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">CNPJ da Igreja (Para Relatórios)</label>
                         <input 
                           type="text" 
                           defaultValue={appSettings.churchCnpj}
+                          disabled={appUser?.role !== 'admin'}
                           onBlur={async (e) => {
                             const newCnpj = e.target.value.trim();
-                            if (newCnpj !== appSettings.churchCnpj) {
+                            if (newCnpj !== appSettings.churchCnpj && appUser?.role === 'admin') {
                               const oldData = { ...appSettings };
                               await setDoc(doc(db, 'settings', 'app'), { churchCnpj: newCnpj }, { merge: true });
                               triggerUndo({
@@ -8345,9 +8409,10 @@ export default function App() {
                         <div className="flex gap-2 items-start">
                           <textarea 
                             defaultValue={appSettings.churchAddress}
+                            disabled={appUser?.role !== 'admin'}
                             onBlur={async (e) => {
                               const newAddress = e.target.value;
-                              if (newAddress !== appSettings.churchAddress) {
+                              if (newAddress !== appSettings.churchAddress && appUser?.role === 'admin') {
                                 const oldData = { ...appSettings };
                                 // Try to find CEP in the string if not separate
                                 const newChurchCoords = await getCoordinatesFromAddress(newAddress);
@@ -8542,7 +8607,7 @@ export default function App() {
             <button 
               type="button"
               onClick={() => {
-                const url = `https://wa.me/?text=${encodeURIComponent(`Acesse o sistema da ${appSettings.appName}: ${publicAppLink}`)}`;
+                const url = `https://wa.me/?text=${encodeURIComponent(`Acesse o sistema da ${appSettings.appName}: ${appSettings.appLink || publicAppLink}`)}`;
                 window.open(url, '_blank');
               }}
               className="flex flex-col items-center justify-center p-6 bg-green-50 rounded-3xl border border-green-100 hover:bg-green-100 transition-all group"
@@ -8556,7 +8621,7 @@ export default function App() {
             <button 
               type="button"
               onClick={() => {
-                const url = `mailto:?subject=${encodeURIComponent(`Convite: Sistema ${appSettings.appName}`)}&body=${encodeURIComponent(`Olá,\n\nConvido você a acessar o sistema da ${appSettings.appName} através link:\n${publicAppLink}`)}`;
+                const url = `mailto:?subject=${encodeURIComponent(`Convite: Sistema ${appSettings.appName}`)}&body=${encodeURIComponent(`Olá,\n\nConvido você a acessar o sistema da ${appSettings.appName} através link:\n${appSettings.appLink || publicAppLink}`)}`;
                 window.open(url, '_blank');
               }}
               className="flex flex-col items-center justify-center p-6 bg-blue-50 rounded-3xl border border-blue-100 hover:bg-blue-100 transition-all group"
@@ -8570,7 +8635,7 @@ export default function App() {
             <button 
               type="button"
               onClick={() => {
-                const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(publicAppLink)}`;
+                const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(appSettings.appLink || publicAppLink)}`;
                 window.open(url, '_blank');
               }}
               className="flex flex-col items-center justify-center p-6 bg-blue-50 rounded-3xl border border-blue-100 hover:bg-blue-100 transition-all group"
@@ -8584,7 +8649,7 @@ export default function App() {
             <button 
               type="button"
               onClick={() => {
-                navigator.clipboard.writeText(publicAppLink);
+                navigator.clipboard.writeText(appSettings.appLink || publicAppLink);
                 showAlert("Sucesso", "Link copiado!");
                 setIsShareModalOpen(false);
               }}
