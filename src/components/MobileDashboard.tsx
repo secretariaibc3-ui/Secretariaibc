@@ -52,16 +52,16 @@ export const MobileDashboard = ({
   return (
     <div className="flex flex-col h-full w-full bg-gray-50 dark:bg-[#0a0a0a] md:hidden">
       {/* Header */}
-      <div className="bg-ibc-teal pt-8 pb-4 px-6 rounded-b-[2rem] shadow-lg flex flex-col items-center justify-center relative z-10">
+      <div className="bg-ibc-teal pt-6 pb-2 px-6 rounded-b-[2rem] shadow-lg flex flex-col items-center justify-center relative z-10 h-32">
         <img 
           src="/icon-ibc-branco.png" 
           alt="Igreja Batista Seropédica" 
-          className="w-[85%] max-w-[280px] h-auto object-contain drop-shadow-md"
+          className="h-20 w-auto object-contain drop-shadow-md"
         />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 px-6 pt-6 pb-32 overflow-y-auto">
+      <div className="flex-1 px-6 pt-4 pb-32 overflow-y-auto">
         <div className="grid grid-cols-2 gap-4">
           {dashboardItems.map((item) => {
             const Icon = item.icon;
