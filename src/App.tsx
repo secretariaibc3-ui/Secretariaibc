@@ -138,6 +138,9 @@ import { ref, uploadBytes, getDownloadURL, uploadBytesResumable, UploadTaskSnaps
 import { format } from 'date-fns';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useBackButton } from './hooks/useBackButton';
+
+import { MobileDashboard } from './components/MobileDashboard';
 
 // --- Offine Cache Helpers ---
 const loadFromCache = <T,>(key: string, defaultValue: T): T => {
@@ -562,7 +565,7 @@ const SidebarItem = ({
   >
     {showDragHandle && !collapsed && (
       <div 
-        className="absolute left-2 opacity-0 group-hover:opacity-40 transition-opacity cursor-grab active:cursor-grabbing p-1"
+        className="absolute left-2 opacity-40 lg:opacity-0 lg:group-hover:opacity-40 transition-opacity cursor-grab active:cursor-grabbing p-1 touch-none select-none"
         onPointerDown={(e) => dragControls?.start(e)}
       >
         <GripVertical className="w-4 h-4" />
@@ -964,6 +967,12 @@ const RoleSelectionModal = ({
 );
 
 const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-lg", className = "", fullscreen = false }: { isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; maxWidth?: string; className?: string; fullscreen?: boolean }) => {
+  const modalId = React.useId();
+  
+  // Create a stable callback for onClose
+  const handleClose = React.useCallback(() => onClose(), [onClose]);
+  useBackButton(isOpen, handleClose, `app-modal-${modalId}`);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -1044,7 +1053,26 @@ export default function App() {
       saveToCache('appUser', appUser);
     }
   }, [appUser]);
-  const [activeTab, setActiveTab] = useState<'members' | 'ministries' | 'assembleia' | 'reports' | 'rh' | 'adm' | 'normativos' | 'agenda'>('members');
+  const [activeTabState, setActiveTabState] = useState<'dashboard' | 'members' | 'ministries' | 'assembleia' | 'reports' | 'rh' | 'adm' | 'normativos' | 'agenda'>(() => {
+    return window.innerWidth < 768 ? 'dashboard' : 'members';
+  });
+  const activeTab = activeTabState;
+  const setActiveTab = (tab: 'dashboard' | 'members' | 'ministries' | 'assembleia' | 'reports' | 'rh' | 'adm' | 'normativos' | 'agenda') => {
+    setActiveTabState(tab);
+    if (window.innerWidth < 768) {
+      window.history.pushState({ tab }, '');
+    }
+  };
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768 && activeTabState === 'dashboard') {
+        setActiveTabState('members');
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [activeTabState]);
   const [assembleiaSubTab, setAssembleiaSubTab] = useState<'assembleia' | 'reuniao'>('assembleia');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -2308,7 +2336,7 @@ export default function App() {
     const handlePopState = (event: PopStateEvent) => {
       const state = event.state;
       if (state) {
-        if (state.tab) setActiveTab(state.tab);
+        if (state.tab) setActiveTabState(state.tab);
         
         // Close all modals if we go back
         setIsAddMemberModalOpen(false);
@@ -5583,91 +5611,9 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Mobile Menu Overlay */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          />
-        )}
-      </AnimatePresence>
+      {/* Mobile Menu Overlay removed as per instructions */}
 
-      {/* Mobile Sidebar */}
-      <motion.aside
-        initial={{ x: '-100%' }}
-        animate={{ x: isMobileMenuOpen ? 0 : '-100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="fixed inset-y-0 left-0 w-72 bg-white/85 dark:bg-gray-900/85 backdrop-blur-[20px] z-50 md:hidden shadow-2xl rounded-r-[3rem] border-r border-white/40 dark:border-white/10"
-      >
-        <div className="p-8 flex items-center justify-between">
-          <div className="flex flex-col items-start">
-            <img 
-              src={currentLogo} 
-              alt={appSettings.appName} 
-              className="h-10 w-auto mb-1 rounded-lg"
-              referrerPolicy="no-referrer"
-            />
-            <h1 className="text-sm font-black text-gray-900 dark:text-gray-50 tracking-tight leading-none uppercase">
-              {appSettings.appName}
-            </h1>
-            <p className="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-widest">{appSettings.churchCnpj || "CNPJ Não informado"}</p>
-            {appSettings.churchAddress && (
-              <a
-                href={`https://maps.google.com/?q=${encodeURIComponent(appSettings.churchAddress)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 text-[10px] font-bold text-ibc-teal flex items-start gap-1 hover:underline text-left w-full max-w-[200px]"
-                title="Ver no mapa"
-              >
-                <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
-                <span className="line-clamp-2 leading-tight">{appSettings.churchAddress}</span>
-              </a>
-            )}
-          </div>
-          <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 hover:bg-gray-100 dark:bg-[#1a1a1a] rounded-xl transition-colors">
-            <X className="w-6 h-6 text-gray-400" />
-          </button>
-        </div>
-        <Reorder.Group 
-          axis="y" 
-          values={filteredNavItems} 
-          onReorder={(newOrder) => {
-            if (appUser?.role === 'admin') handleNavReorder(newOrder);
-          }}
-          className="p-4 space-y-2 list-none"
-        >
-          {filteredNavItems.map((item) => (
-            <NavReorderItem 
-              key={item.id}
-              item={item}
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              setIsMobileMenuOpen={setIsMobileMenuOpen}
-              collapsed={false}
-              isAdmin={appUser?.role === 'admin'}
-              isReorderingNav={isReorderingNav}
-            />
-          ))}
-        </Reorder.Group>
-
-
-        <div className="absolute bottom-0 left-0 right-0 p-6">
-          <div className="flex items-center p-4 rounded-2xl bg-gray-50 dark:bg-black border border-gray-100 dark:border-[#222] space-x-3">
-            <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}`} className="w-10 h-10 rounded-xl border-2 border-white dark:border-[#111] shadow-sm" alt="Profile" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-gray-900 dark:text-gray-50 truncate">{user.displayName}</p>
-              <button onClick={handleLogout} className="text-xs text-red-500 font-bold hover:underline">Sair da conta</button>
-            </div>
-            <button onClick={toggleTheme} className="p-2 hover:bg-gray-200 dark:hover:bg-[#333] text-gray-500 dark:text-gray-400 rounded-xl transition-all">
-              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-      </motion.aside>
+      {/* Mobile Sidebar removed as per instructions */}
 
       <div className="flex-1 flex flex-col md:flex-row relative z-0" style={{ transform: `scale(${uiScale})`, transformOrigin: 'top left', width: `${100 / uiScale}%`, height: `${100 / uiScale}%` }}>
 
@@ -5770,15 +5716,28 @@ export default function App() {
       </motion.aside>
 
       {/* Main Content */}
+      {activeTab === 'dashboard' ? (
+        <MobileDashboard 
+          setActiveTab={setActiveTab} 
+          onAddMember={() => setIsAddMemberModalOpen(true)}
+          onAddMinistry={() => setIsAddMinistryModalOpen(true)}
+        />
+      ) : (
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
         <header className="px-4 sm:px-8 pt-2 sm:pt-12 pb-2 sm:pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-0 z-20 transition-all glass-header">
           <div className="flex items-center">
             <button 
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="md:hidden p-2 mr-3 bg-white dark:bg-[#111] shadow-sm border border-gray-100 dark:border-[#222] rounded-xl"
+              onClick={() => {
+                if (window.history.state?.tab) {
+                   window.history.back();
+                } else {
+                   setActiveTab('dashboard');
+                }
+              }}
+              className="md:hidden p-2 mr-3 bg-white dark:bg-[#111] shadow-sm border border-gray-100 dark:border-[#222] rounded-xl text-gray-600 dark:text-gray-300"
             >
-              <Menu className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
             <div className="flex flex-col">
               <div className="flex items-center flex-wrap">
@@ -8542,6 +8501,7 @@ export default function App() {
       )}
     </div>
   </main>
+  )}
 </div>
 
     {/* Modals */}
@@ -11431,7 +11391,7 @@ export default function App() {
               <div className="bg-gradient-to-br from-ibc-teal to-teal-700 p-8 flex flex-col items-center text-center space-y-4">
                 <div className="w-20 h-20 bg-white dark:bg-[#111] rounded-3xl shadow-xl p-2 flex items-center justify-center overflow-hidden">
                    <img 
-                     src={appSettings.logoUrl || 'https://firebasestorage.googleapis.com/v0/b/igreja-batista-coqueiral.appspot.com/o/assets%2Flogo_ibc.png?alt=media'} 
+                     src={appSettings.logoUrl || '/icon-192.png'} 
                      alt="App Logo"
                      className="w-full h-full object-contain"
                    />

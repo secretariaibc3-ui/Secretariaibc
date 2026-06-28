@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useId, useCallback } from "react";
+import { useBackButton } from "../../hooks/useBackButton";
 import { motion, AnimatePresence } from "motion/react";
 import {
   X,
@@ -129,6 +130,17 @@ export const AgendaBottomSheet: React.FC<AgendaBottomSheetProps> = ({
   // Ministry Selector State
   const [isMinistrySelectorOpen, setIsMinistrySelectorOpen] = useState(false);
   const [ministrySearch, setMinistrySearch] = useState("");
+
+  const modalId = useId();
+  
+  // Use useCallback so we don't recreate functions and trigger infinite loops
+  const handleCloseMain = useCallback(() => onClose(), [onClose]);
+  const handleCloseMinistry = useCallback(() => setIsMinistrySelectorOpen(false), []);
+  const handleCloseMember = useCallback(() => setIsMemberSelectorOpen(false), []);
+
+  useBackButton(isOpen, handleCloseMain, `agenda-main-${modalId}`);
+  useBackButton(isMinistrySelectorOpen, handleCloseMinistry, `agenda-ministry-${modalId}`);
+  useBackButton(isMemberSelectorOpen, handleCloseMember, `agenda-member-${modalId}`);
 
   useEffect(() => {
     if (isOpen) {

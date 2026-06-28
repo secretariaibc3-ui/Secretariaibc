@@ -110,7 +110,7 @@ async function startServer() {
 
   // Dynamic PWA Manifest Route
   app.get('/api/manifest', (req, res) => {
-    const iconUrl = req.query.icon as string || '/logo-secretariaibc.png';
+    const iconUrl = req.query.icon as string || '/icon-192.png';
     const userName = req.query.name as string || 'Secretaria IBC';
     const themeColor = "#0d9488";
 
@@ -118,7 +118,7 @@ async function startServer() {
     const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
     
     const icons = sizes.map(size => {
-      const src = (iconUrl === '/logo-secretariaibc.png' && [144, 192, 512].includes(size)) 
+      const src = (iconUrl === '/icon-192.png' && [144, 192, 512].includes(size)) 
         ? `/icon-${size}.png` 
         : iconUrl;
       return {

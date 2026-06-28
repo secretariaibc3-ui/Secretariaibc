@@ -124,8 +124,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'Novo do Sistema IBC';
   const options = {
     body: data.body || 'Você tem uma nova atualização.',
-    icon: '/logo-secretariaibc.png',
-    badge: '/logo-secretariaibc.png'
+    icon: '/icon-192.png',
+    badge: '/icon-192.png'
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });

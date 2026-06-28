@@ -49,7 +49,7 @@ const SplashScreen = () => {
           className="w-48 h-48 md:w-64 md:h-64 mb-10 flex items-center justify-center"
         >
           <img 
-            src={isDark ? "/logo-secretariaibc-inicioescuro.png" : "/logo-secretariaibc-inicio.png"} 
+            src={isDark ? "/icon-ibc-branco.png" : "/icon-512.png"} 
             alt="IBC Logo" 
             className="max-w-full max-h-full object-contain"
           />
