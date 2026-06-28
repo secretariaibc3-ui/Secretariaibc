@@ -78,7 +78,7 @@ import {
   Calendar,
   Activity
 } from 'lucide-react';
-import { motion, AnimatePresence, Reorder } from 'motion/react';
+import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react';
 import SplashScreen from './components/SplashScreen';
 import { AgendaTab } from './components/Agenda/AgendaTab';
 
@@ -532,7 +532,8 @@ const SidebarItem = ({
   active, 
   onClick, 
   collapsed,
-  showDragHandle = false
+  showDragHandle = false,
+  dragControls
 }: { 
   icon: any; 
   label: string; 
@@ -540,6 +541,7 @@ const SidebarItem = ({
   onClick: () => void;
   collapsed: boolean;
   showDragHandle?: boolean;
+  dragControls?: any;
 }) => (
   <div
     onClick={onClick}
@@ -559,7 +561,10 @@ const SidebarItem = ({
     )}
   >
     {showDragHandle && !collapsed && (
-      <div className="absolute left-2 opacity-0 group-hover:opacity-40 transition-opacity cursor-grab active:cursor-grabbing">
+      <div 
+        className="absolute left-2 opacity-0 group-hover:opacity-40 transition-opacity cursor-grab active:cursor-grabbing p-1"
+        onPointerDown={(e) => dragControls?.start(e)}
+      >
         <GripVertical className="w-4 h-4" />
       </div>
     )}
@@ -584,6 +589,51 @@ const SidebarItem = ({
     )}
   </div>
 );
+
+const NavReorderItem: React.FC<{
+  item: any;
+  activeTab: string;
+  setActiveTab: (tab: any) => void;
+  setIsMobileMenuOpen?: (open: boolean) => void;
+  collapsed: boolean;
+  isAdmin: boolean;
+  isReorderingNav: React.MutableRefObject<boolean>;
+}> = ({ 
+  item, 
+  activeTab, 
+  setActiveTab, 
+  setIsMobileMenuOpen, 
+  collapsed, 
+  isAdmin,
+  isReorderingNav
+}) => {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item 
+      value={item}
+      dragListener={false}
+      dragControls={dragControls}
+      className="relative list-none"
+      onDragStart={() => { isReorderingNav.current = true; }}
+      onDragEnd={() => { isReorderingNav.current = false; }}
+      whileDrag={{ scale: 1.02 }}
+    >
+      <SidebarItem 
+        icon={TAB_ICONS[item.id]} 
+        label={item.label} 
+        active={activeTab === item.id} 
+        onClick={() => { 
+          setActiveTab(item.id as any); 
+          if (setIsMobileMenuOpen) setIsMobileMenuOpen(false); 
+        }}
+        collapsed={collapsed}
+        showDragHandle={isAdmin}
+        dragControls={dragControls}
+      />
+    </Reorder.Item>
+  );
+};
 
 const UserManagementModal = ({ 
   isOpen, 
@@ -5591,24 +5641,16 @@ export default function App() {
           className="p-4 space-y-2 list-none"
         >
           {filteredNavItems.map((item) => (
-            <Reorder.Item 
-              key={item.id} 
-              value={item}
-              dragListener={appUser?.role === 'admin'}
-              className="relative cursor-grab active:cursor-grabbing list-none"
-              onDragStart={() => { isReorderingNav.current = true; }}
-              onDragEnd={() => { isReorderingNav.current = false; }}
-              whileDrag={{ scale: 1.02 }}
-            >
-              <SidebarItem 
-                icon={TAB_ICONS[item.id]} 
-                label={item.label} 
-                active={activeTab === item.id} 
-                onClick={() => { setActiveTab(item.id as any); setIsMobileMenuOpen(false); }}
-                collapsed={false}
-                showDragHandle={appUser?.role === 'admin'}
-              />
-            </Reorder.Item>
+            <NavReorderItem 
+              key={item.id}
+              item={item}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              setIsMobileMenuOpen={setIsMobileMenuOpen}
+              collapsed={false}
+              isAdmin={appUser?.role === 'admin'}
+              isReorderingNav={isReorderingNav}
+            />
           ))}
         </Reorder.Group>
 
@@ -5683,24 +5725,15 @@ export default function App() {
           className="flex-1 px-4 space-y-2 list-none"
         >
           {filteredNavItems.map((item) => (
-            <Reorder.Item 
-              key={item.id} 
-              value={item}
-              dragListener={appUser?.role === 'admin'}
-              className="relative cursor-grab active:cursor-grabbing list-none"
-              onDragStart={() => { isReorderingNav.current = true; }}
-              onDragEnd={() => { isReorderingNav.current = false; }}
-              whileDrag={{ scale: 1.02 }}
-            >
-              <SidebarItem 
-                icon={TAB_ICONS[item.id]} 
-                label={item.label} 
-                active={activeTab === item.id} 
-                onClick={() => setActiveTab(item.id as any)}
-                collapsed={isSidebarCollapsed}
-                showDragHandle={appUser?.role === 'admin'}
-              />
-            </Reorder.Item>
+            <NavReorderItem 
+              key={item.id}
+              item={item}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              collapsed={isSidebarCollapsed}
+              isAdmin={appUser?.role === 'admin'}
+              isReorderingNav={isReorderingNav}
+            />
           ))}
         </Reorder.Group>
 

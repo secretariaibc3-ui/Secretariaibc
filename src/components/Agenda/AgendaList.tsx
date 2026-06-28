@@ -2,7 +2,7 @@ import React from 'react';
 import { format, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion } from 'motion/react';
-import { MapPin, Clock, CheckCircle2, Circle } from 'lucide-react';
+import { MapPin, Clock, CheckCircle, Circle } from 'lucide-react';
 import { AgendaItem, AgendaEvent, AgendaTask } from '../../types/Agenda';
 
 interface AgendaListProps {
@@ -65,7 +65,7 @@ export const AgendaList: React.FC<AgendaListProps> = ({ selectedDate, agendaItem
                   {item.type === 'task' && (
                     <span className="inline-block mr-2 align-middle">
                       {(item as AgendaTask).status === 'concluida' ? 
-                        <CheckCircle2 className="w-4 h-4 text-green-500" /> : 
+                        <CheckCircle className="w-4 h-4 text-green-500" /> : 
                         <Circle className="w-4 h-4 text-gray-300" />
                       }
                     </span>
