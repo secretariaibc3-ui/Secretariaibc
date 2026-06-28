@@ -43,11 +43,11 @@ export const MobileDashboard = ({
   return (
     <div className="flex flex-col h-full w-full bg-gray-50 dark:bg-[#0a0a0a] md:hidden">
       {/* Header */}
-      <div className="bg-ibc-teal pt-12 pb-8 px-6 rounded-b-[2.5rem] shadow-lg flex flex-col items-center justify-center relative z-10">
+      <div className="bg-ibc-teal pt-14 pb-10 px-6 rounded-b-[2.5rem] shadow-lg flex flex-col items-center justify-center relative z-10">
         <img 
           src="/icon-ibc-branco.png" 
           alt="Igreja Batista Coqueiral" 
-          className="h-16 w-auto object-contain drop-shadow-md"
+          className="h-32 w-auto object-contain drop-shadow-md"
         />
       </div>
 
