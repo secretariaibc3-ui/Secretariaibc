@@ -85,6 +85,7 @@ import SplashScreen from './components/SplashScreen';
 import { AgendaTab } from './components/Agenda/AgendaTab';
 import { EscalasTab } from './components/Escalas/EscalasTab';
 import { Escala } from './types/escalas';
+import { Member, Relationship, RelationshipType, MemberMinistry } from './types/member';
 
 // Navigation configuration
 const TAB_ICONS: Record<string, any> = {
@@ -95,7 +96,8 @@ const TAB_ICONS: Record<string, any> = {
   rh: Briefcase,
   normativos: Scale,
   agenda: Calendar,
-  adm: Settings
+  adm: Settings,
+  escalas: Calendar // Using Calendar icon for Escalas
 };
 
 const DEFAULT_NAV_ITEMS = [
@@ -414,20 +416,6 @@ const saveToCache = <T,>(key: string, data: T) => {
   };
 
 // --- Types ---
-interface Relationship {
-  memberId: string;
-  type: string;
-}
-
-interface RelationshipType {
-  id: string;
-  name: string;
-}
-
-interface MemberMinistry {
-  ministryId: string;
-  role: string;
-}
 
 interface MinistryRole {
   id: string;
@@ -445,37 +433,6 @@ interface AgeClassification {
   name: string;
   minAge: number;
   maxAge: number;
-}
-
-export interface Member {
-  id: string;
-  name: string;
-  function: string;
-  ministryId?: string; // Mantido para compatibilidade
-  ministryIds?: string[]; // Múltiplos ministérios
-  ministries?: MemberMinistry[];
-  relationships?: Relationship[];
-  gender?: 'Homem' | 'Mulher';
-  birthDate: string;
-  startDate: string;
-  photoUrl?: string;
-  isActive: boolean;
-  isAbsent?: boolean;
-  exitDate?: string;
-  exitReason?: string;
-  celular?: string;
-  cep?: string;
-  logradouro?: string;
-  numero?: string;
-  complemento?: string;
-  bairro?: string;
-  cidade?: string;
-  estado?: string;
-  pais?: string;
-  coordinates?: { lat: number, lng: number };
-  distanceToChurch?: number;
-  createdAt: any;
-  updatedAt: any;
 }
 
 interface AppUser {

@@ -184,6 +184,12 @@ service cloud.firestore {
       allow read: if true;
     }
 
+    match /escalas/{escalaId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isEmailVerified() && isAdmin();
+      allow delete: if isFullAdmin();
+    }
+
     match /members/{memberId} {
       allow get: if isSignedIn();
       allow list: if isSignedIn();

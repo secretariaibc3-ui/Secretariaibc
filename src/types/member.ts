@@ -8,6 +8,11 @@ export interface MemberMinistry {
   role: string;
 }
 
+export interface RelationshipType {
+  id: string;
+  name: string;
+}
+
 export interface Member {
   id: string;
   name: string;
@@ -19,4 +24,22 @@ export interface Member {
   gender?: 'Homem' | 'Mulher';
   birthDate: string;
   startDate: string;
+  photoUrl?: string;
+  isActive: boolean;
+  isAbsent?: boolean;
+  exitDate?: string;
+  exitReason?: string;
+  celular?: string;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
+  coordinates?: { lat: number, lng: number };
+  distanceToChurch?: number;
+  createdAt: any;
+  updatedAt: any;
 }

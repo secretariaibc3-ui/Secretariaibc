@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, X } from 'lucide-react';
-import { Member } from '../../App';
+import { Member } from '../../types/member';
 
 interface EscalaSectionProps {
   title: string;

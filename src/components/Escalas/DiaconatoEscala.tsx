@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
 import { Escala } from '../../types/escalas';
-import { Member } from '../../App';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
+import { Member } from '../../types/member';
+import { Plus, Trash2, Edit2, ChevronLeft } from 'lucide-react';
 import { MemberSelector } from './MemberSelector';
 
-export const DiaconatoEscala = ({ members, escalas, onUpdate }: { members: Member[], escalas: Escala[], onUpdate: (e: Escala) => void }) => {
+export const DiaconatoEscala = ({ members, escalas, onUpdate, onBack }: { members: Member[], escalas: Escala[], onUpdate: (e: Escala) => void, onBack: () => void }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [newEscala, setNewEscala] = useState<Partial<Escala>>({ type: 'diaconato', responsibleIds: [], date: '', responsibility: '' });
 
   return (
     <div className="p-4 space-y-6">
-      <h2 className="text-2xl font-black">Diaconato</h2>
+      <div className="flex items-center gap-4">
+        <button onClick={onBack} className="p-2 hover:bg-gray-100 dark:hover:bg-[#222] rounded-full transition-colors">
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <h2 className="text-2xl font-black">Diaconato</h2>
+      </div>
       <button 
         onClick={() => setIsFormOpen(true)}
         className="flex items-center gap-2 p-3 bg-ibc-teal text-white rounded-xl font-bold text-sm"
